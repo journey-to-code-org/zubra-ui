@@ -1,5 +1,6 @@
 import '../Container/index.js';
 import '../Loading/index.js';
+import '../ContentModal/index.js'; // Import ContentModal
 
 class GalleryImage extends HTMLElement {
     constructor() {
@@ -28,6 +29,13 @@ class GalleryImage extends HTMLElement {
 
             wrapper.classList.remove('from-top', 'from-bottom');
             wrapper.classList.add(fromTop ? 'from-top' : 'from-bottom');
+        });
+
+        // Add click event to open modal with full-size image
+        wrapper.addEventListener('click', () => {
+            const modal = document.querySelector('content-modal');
+            modal.innerHTML = `<img src="${this.src}" alt="${this.alt}" style="width: 100%; height: auto;">`;
+            modal.open();
         });
     }
 
@@ -360,6 +368,7 @@ class ImageGallery extends HTMLElement {
                     column-gap="${this.getAttribute('column-gap') || '10px'}" 
                     item-gap="${this.getAttribute('item-gap') || '10px'}">
                 </masonry-layout>
+                <content-modal></content-modal> <!-- Add ContentModal here -->
             </div>
         `;
 
