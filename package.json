@@ -1,0 +1,15 @@
+{
+  "name": "web-components-library",
+  "version": "1.0.0",
+  "description": "A library of reusable web components",
+  "main": "src/index.js",
+  "bin": {
+    "wcl": "./cli/index.js"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {}
+}
