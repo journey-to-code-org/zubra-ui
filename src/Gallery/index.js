@@ -283,8 +283,12 @@ class ImageGallery extends HTMLElement {
             ];
             return captions[Math.floor(Math.random() * captions.length)];
         };
-        const images = Array.from({ length: 9 }, () => {
 
+        const gallery = this.shadowRoot.querySelector('#imageGallery');
+        const columns = parseInt(gallery.getAttribute('columns')) || 3;
+        const imagesToLoad = columns * 3; // Load 3 images per column
+
+        const images = Array.from({ length: imagesToLoad }, () => {
             const width = randomWidth();
             const height = randomHeight();
             const fallbackUrl = this.getPlaceholderUrl(width, height);
@@ -342,21 +346,25 @@ class ImageGallery extends HTMLElement {
         const columns = parseInt(gallery.getAttribute('columns')) || 3;
         const images = Array.from(gallery.children);
 
-        // Sort images by their natural height to create more balanced columns
-        images.sort((a, b) => {
-            const heightA = parseInt(a.getAttribute('height'));
-            const heightB = parseInt(b.getAttribute('height'));
-            return heightB - heightA;
-        });
-
         // Clear gallery
         while (gallery.firstChild) {
             gallery.removeChild(gallery.firstChild);
         }
 
-        // Reinsert images in sorted order
-        images.forEach(image => {
-            gallery.appendChild(image);
+        // Create column containers
+        const columnContainers = Array.from({ length: columns }, () => {
+            const column = document.createElement('div');
+            column.style.flex = '1';
+            column.style.display = 'flex';
+            column.style.flexDirection = 'column';
+            column.style.gap = gallery.getAttribute('item-gap') || '10px';
+            gallery.appendChild(column);
+            return column;
+        });
+
+        // Distribute images evenly into columns
+        images.forEach((image, index) => {
+            columnContainers[index % columns].appendChild(image);
         });
     }
 
@@ -402,6 +410,9 @@ class ImageGallery extends HTMLElement {
             const modal = document.createElement('content-modal');
             document.body.appendChild(modal);
         }
+
+        // Add scroll event listener to recalculate layout
+        window.addEventListener('scroll', this.recalculateLayout.bind(this));
     }
 
     disconnectedCallback() {
@@ -414,6 +425,8 @@ class ImageGallery extends HTMLElement {
         if (this.resizeTimeout) {
             clearTimeout(this.resizeTimeout);
         }
+        // Remove scroll event listener
+        window.removeEventListener('scroll', this.recalculateLayout.bind(this));
     }
 }
 
