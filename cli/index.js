@@ -70,21 +70,20 @@ function injectImportStatement(jsFilePath, importPath) {
 
 function getComponentDependencies(componentName) {
   const dependencies = {
-    'image-gallery': ['gallery-image', 'content-modal', 'loading-flame-cubes'],
+    'Gallery': ['Container','ContentModal', 'Loading'],
     // Add other components and their dependencies here
   };
   return dependencies[componentName] || [];
 }
 
-function installComponent(componentName, destDir, componentsDir) {
-  const destComponentDir = path.join(destDir, componentName);
-  const destPath = path.join(destComponentDir, "index.js");
-
-  if (fs.existsSync(destPath)) {
-    fs.unlinkSync(destPath);
-    console.log(`Uninstalled old version of ${componentName} from ${destPath}`);
+function installComponent(componentName, destDir, componentsDir, installedComponents = new Set()) {
+  if (installedComponents.has(componentName)) {
+    console.log(`Component ${componentName} already installed, skipping...`);
+    return;
   }
 
+  const destComponentDir = path.join(destDir, componentName);
+  const destPath = path.join(destComponentDir, "index.js");
   const componentPath = path.join(componentsDir, componentName, "index.js");
 
   if (!fs.existsSync(componentPath)) {
@@ -97,31 +96,29 @@ function installComponent(componentName, destDir, componentsDir) {
   }
 
   fs.copyFileSync(componentPath, destPath);
+  installedComponents.add(componentName);
   console.log(`Successfully installed ${componentName} to ${destPath}`);
 
-  const customElements = extractCustomElements(destPath);
-  if (customElements.length > 0) {
-    console.log(`Custom elements defined in ${componentName}:`);
-    customElements.forEach((element) => console.log(`- ${element}`));
-  } else {
-    console.log(`No custom elements defined in ${componentName}`);
+  // Get and install dependencies first
+  const dependencies = getComponentDependencies(componentName);
+  for (const dependency of dependencies) {
+    installComponent(dependency, destDir, componentsDir, installedComponents);
   }
 
-  const dependencies = getComponentDependencies(componentName);
-  dependencies.forEach((dependency) => {
-    installComponent(dependency, destDir, componentsDir);
-  });
-
+  // After installing dependencies, update map.js with imports
   const mapFilePath = path.resolve(process.cwd(), "./src/components/map.js");
   if (!fs.existsSync(mapFilePath)) {
     fs.writeFileSync(mapFilePath, "", "utf-8");
     console.log(`Created ${mapFilePath}`);
   }
-  injectImportStatement(mapFilePath, `./${componentName}/index.js`);
 
-  dependencies.forEach((dependency) => {
-    injectImportStatement(mapFilePath, `./${dependency}/index.js`);
+  // Add imports for both component and its dependencies
+  injectImportStatement(mapFilePath, `./${componentName}/index.js`);
+  dependencies.forEach(dep => {
+    injectImportStatement(mapFilePath, `./${dep}/index.js`);
   });
+
+  return installedComponents;
 }
 
 if (command === 'boilerplate' || command === 'init') { 
@@ -205,10 +202,12 @@ if (
   const componentsDir = path.resolve(__dirname, "../src");
 
   try {
-    installComponent(componentName, destDir, componentsDir);
+    const installedComponents = installComponent(componentName, destDir, componentsDir, new Set());
+    console.log('Installed components:', Array.from(installedComponents).join(', '));
+    
     const htmlFilePath = path.resolve(process.cwd(), "./src/index.html");
     if (fs.existsSync(htmlFilePath)) {
-      injectScriptTag(htmlFilePath, "./components/map.js");
+      injectScriptTag(htmlFilePath);
     }
   } catch (error) {
     console.error(`Installation failed: ${error.message}`);
