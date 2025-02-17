@@ -31,11 +31,24 @@ class GalleryImage extends HTMLElement {
             wrapper.classList.add(fromTop ? 'from-top' : 'from-bottom');
         });
 
-        // Add click event to open modal with full-size image
+        // Ensure content-modal is in the document body
+        if (!document.querySelector('content-modal')) {
+            const modal = document.createElement('content-modal');
+            document.body.appendChild(modal);
+        }
+
+        // Add click event to open modal with full-size image and caption
         wrapper.addEventListener('click', () => {
             const modal = document.querySelector('content-modal');
-            modal.innerHTML = `<img src="${this.src}" alt="${this.alt}" style="width: 100%; height: auto;">`;
-            modal.open();
+            if (modal) {
+                modal.innerHTML = `
+                    <img src="${this.src}" alt="${this.alt}">
+                    <p style="margin-top: 10px;">${this.caption}</p>
+                `;
+                modal.open();
+            } else {
+                console.error('ContentModal element not found');
+            }
         });
     }
 
@@ -368,7 +381,6 @@ class ImageGallery extends HTMLElement {
                     column-gap="${this.getAttribute('column-gap') || '10px'}" 
                     item-gap="${this.getAttribute('item-gap') || '10px'}">
                 </masonry-layout>
-                <content-modal></content-modal> <!-- Add ContentModal here -->
             </div>
         `;
 
@@ -383,6 +395,12 @@ class ImageGallery extends HTMLElement {
         const gallery = this.shadowRoot.querySelector('#imageGallery');
         if (gallery) {
             this.resizeObserver.observe(gallery);
+        }
+
+        // Ensure content-modal is in the document body
+        if (!document.querySelector('content-modal')) {
+            const modal = document.createElement('content-modal');
+            document.body.appendChild(modal);
         }
     }
 
