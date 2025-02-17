@@ -57,14 +57,34 @@ class MasonryLayout extends HTMLElement {
           margin: 0.5rem 0;
         }
         .masonry-wrapper {
-          display: flex;
+          display: grid;
           gap: ${this.columnGap};
+          grid-template-columns: repeat(${this.columns}, 1fr);
         }
         .masonry-column {
-          flex: 1;
           display: flex;
           flex-direction: column;
           gap: ${this.itemGap};
+        }
+        @media (max-width: 600px) {
+          .masonry-wrapper {
+            grid-template-columns: 1fr;
+          }
+        }
+        @media (min-width: 601px) and (max-width: 900px) {
+          .masonry-wrapper {
+            grid-template-columns: repeat(2, 1fr);
+          }
+        }
+        @media (min-width: 901px) and (max-width: 1200px) {
+          .masonry-wrapper {
+            grid-template-columns: repeat(3, 1fr);
+          }
+        }
+        @media (min-width: 1201px) {
+          .masonry-wrapper {
+            grid-template-columns: repeat(4, 1fr);
+          }
         }
       `;
 
@@ -106,6 +126,8 @@ class MasonryLayout extends HTMLElement {
       // Append style and container to shadow DOM.
       this.shadowRoot.appendChild(style);
       this.shadowRoot.appendChild(container);
+
+      this._distributeContent(); // Ensure content is distributed after rendering columns
     }
   }
 
