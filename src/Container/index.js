@@ -59,7 +59,7 @@ class MasonryLayout extends HTMLElement {
         .masonry-wrapper {
           display: grid;
           gap: ${this.columnGap};
-          grid-template-columns: repeat(${this.columns}, 1fr);
+          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
         }
         .masonry-column {
           display: flex;
@@ -69,21 +69,6 @@ class MasonryLayout extends HTMLElement {
         @media (max-width: 600px) {
           .masonry-wrapper {
             grid-template-columns: 1fr;
-          }
-        }
-        @media (min-width: 601px) and (max-width: 900px) {
-          .masonry-wrapper {
-            grid-template-columns: repeat(2, 1fr);
-          }
-        }
-        @media (min-width: 901px) and (max-width: 1200px) {
-          .masonry-wrapper {
-            grid-template-columns: repeat(3, 1fr);
-          }
-        }
-        @media (min-width: 1201px) {
-          .masonry-wrapper {
-            grid-template-columns: repeat(4, 1fr);
           }
         }
       `;
