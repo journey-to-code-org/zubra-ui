@@ -270,6 +270,9 @@ if (command === 'image-info') {
       const outputFilePath = path.join(folderPath, 'index.json');
       fs.writeFileSync(outputFilePath, JSON.stringify(imageInfoList, null, 2), 'utf-8');
       console.log(`Image info written to ${outputFilePath}`);
+
+      // Ensure convertImagesToWebFriendly is running
+      await convertImagesToWebFriendly(absoluteFolderPath);
     } catch (error) {
       console.error(`Error gathering image info: ${error.message}`);
       process.exit(1);
