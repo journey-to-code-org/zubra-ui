@@ -1,6 +1,14 @@
 #!/usr/bin/env node
-const fs = require("fs");
-const path = require("path");
+import fs from 'fs';
+import path from 'path';
+import sharp from 'sharp';
+import exifParser from 'exif-parser';
+import inquirer from 'inquirer';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const [, , command, componentName] = process.argv;
 
 // Update components directory path
@@ -16,6 +24,58 @@ function findComponentsFolder() {
     return srcPath;
   }
   return path.resolve(process.cwd(), "./src/components");
+}
+
+async function gatherImageInfo(folderPath) {
+  const files = fs.readdirSync(folderPath);
+  const imageInfoList = [];
+  for (const file of files) {
+    const filePath = path.join(folderPath, file);
+    const fileStats = fs.statSync(filePath);
+
+    if (fileStats.isFile() && /\.(jpg|jpeg|png|gif)$/i.test(file)) {
+      try {
+        const image = sharp(filePath);
+        const metadata = await image.metadata();
+        const buffer = fs.readFileSync(filePath);
+        const parser = exifParser.create(buffer);
+        const exifData = parser.parse();
+
+        const imageInfo = {
+          fileName: file,
+          dimensions: {
+            width: metadata.width,
+            height: metadata.height,
+          },
+          format: metadata.format,
+          size: fileStats.size,
+          creationDate: fileStats.birthtime,
+          modificationDate: fileStats.mtime,
+          exif: {
+            make: exifData.tags.Make || 'N/A',
+            model: exifData.tags.Model || 'N/A',
+            dateTimeOriginal: exifData.tags.DateTimeOriginal || 'N/A',
+            description: exifData.tags.ImageDescription || 'N/A',
+            author: exifData.tags.Artist || 'N/A',
+            software: exifData.tags.Software || 'N/A',
+            location: {
+              latitude: exifData.tags.GPSLatitude || 'N/A',
+              longitude: exifData.tags.GPSLongitude || 'N/A',
+            },
+            exposureTime: exifData.tags.ExposureTime || 'N/A',
+            fNumber: exifData.tags.FNumber || 'N/A',
+            iso: exifData.tags.ISO || 'N/A',
+            focalLength: exifData.tags.FocalLength || 'N/A',
+          },
+        };
+
+        imageInfoList.push(imageInfo);
+      } catch (error) {
+        console.error(`Error processing file ${file}: ${error.message}`);
+      }
+    }
+  }
+  return imageInfoList;
 }
 
 function extractCustomElements(filePath) {
@@ -121,7 +181,39 @@ function installComponent(componentName, destDir, componentsDir, installedCompon
   return installedComponents;
 }
 
-if (command === 'boilerplate' || command === 'init') { 
+if (command === 'image-info') {
+  async function promptForFolder() {
+    const { folderPath } = await inquirer.prompt([
+      {
+        type: 'input',
+        name: 'folderPath',
+        message: 'Please enter the relative path to the folder containing images:',
+        default: './images',
+      },
+    ]);
+    return folderPath;
+  }
+
+  (async () => {
+    try {
+      const folderPath = process.argv[3] || await promptForFolder();
+      const absoluteFolderPath = path.resolve(process.cwd(), folderPath);
+      if (!fs.existsSync(absoluteFolderPath)) {
+        console.error(`Folder not found: ${absoluteFolderPath}`);
+        process.exit(1);
+      }
+      const imageInfoList = await gatherImageInfo(absoluteFolderPath);
+      const outputFilePath = path.join(folderPath, 'index.json');
+      fs.writeFileSync(outputFilePath, JSON.stringify(imageInfoList, null, 2), 'utf-8');
+      console.log(`Image info written to ${outputFilePath}`);
+    } catch (error) {
+      console.error(`Error gathering image info: ${error.message}`);
+      process.exit(1);
+    }
+  })();
+}
+
+else if (command === 'boilerplate' || command === 'init') { 
     const srcDir = path.resolve(process.cwd(), "./src");
     const htmlFilePath = path.resolve(srcDir, "index.html");
     const componentsDir = path.resolve(srcDir, "components");
@@ -175,6 +267,7 @@ if (command === 'boilerplate' || command === 'init') {
         injectScriptTag(htmlFilePath);
     }
 }
+
 if (
   (command === "install" && componentName === "all") ||
   (command === "i" && componentName === "all")
