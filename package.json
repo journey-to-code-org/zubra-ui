@@ -6,9 +6,15 @@
   "bin": {
     "wcl": "./cli/index.js"
   },
+  "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "exif-parser": "^0.1.12",
+    "inquirer": "^12.4.2",
+    "sharp": "^0.33.5"
+  }
 }
