@@ -339,13 +339,11 @@ class ImageGallery extends HTMLElement {
         const width = randomWidth();
         const height = randomHeight();
         const selectedImage = `https://picsum.photos/seed/${Math.random()}/${width}/${height}`;
-        const thumbnailUrl = `./thumbs/thumb-${selectedImage.split('/').pop()}`;
-
         const image = {
             srcset: `${selectedImage} 400w, ${selectedImage} 800w, ${selectedImage} 1200w`,
             sizes: "(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw",
             src: selectedImage,
-            thumbnail: thumbnailUrl,
+            thumbnail: selectedImage,
             alt: "Random placeholder image",
             width: `${width}`,
             height: `${height}`,
