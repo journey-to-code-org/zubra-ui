@@ -38,9 +38,56 @@ function sanitizeFileNames(folderPath) {
     }
   });
 }
+async function convertImagesToWebFriendly(folderPath) {
+  const files = fs.readdirSync(folderPath);
+  for (const file of files) {
+    const filePath = path.join(folderPath, file);
+    const fileStats = fs.statSync(filePath);
 
+    if (fileStats.isFile() && /\.(jpg|jpeg|png|gif)$/i.test(file)) {
+      try {
+        const outputFilePath = path.join(folderPath, `web-${file}`);
+        await sharp(filePath)
+          .resize({ width: 1920 })
+          .toFormat('webp')
+          .toFile(outputFilePath);
+        console.log(`Converted ${file} to web-friendly version: ${outputFilePath}`);
+      } catch (error) {
+        console.error(`Error converting file ${file}: ${error.message}`);
+      }
+    }
+  }
+}
+
+async function createThumbnails(folderPath) {
+  const thumbsDir = path.join(folderPath, 'thumbs');
+  if (!fs.existsSync(thumbsDir)) {
+    fs.mkdirSync(thumbsDir);
+  }
+
+  const files = fs.readdirSync(folderPath);
+  for (const file of files) {
+    const filePath = path.join(folderPath, file);
+    const fileStats = fs.statSync(filePath);
+
+    if (fileStats.isFile() && /\.(jpg|jpeg|png|gif)$/i.test(file)) {
+      try {
+        const outputFilePath = path.join(thumbsDir, `thumb-${file}`);
+        await sharp(filePath)
+          .resize({ width: 200 })
+          .toFormat('webp')
+          .toFile(outputFilePath);
+        console.log(`Created thumbnail for ${file}: ${outputFilePath}`);
+      } catch (error) {
+        console.error(`Error creating thumbnail for file ${file}: ${error.message}`);
+      }
+    }
+  }
+}
 async function gatherImageInfo(folderPath) {
   sanitizeFileNames(folderPath);
+  await convertImagesToWebFriendly(folderPath);
+  await createThumbnails(folderPath);
   const files = fs.readdirSync(folderPath);
   const imageInfoList = [];
   for (const file of files) {
@@ -61,6 +108,7 @@ async function gatherImageInfo(folderPath) {
             width: metadata.width,
             height: metadata.height,
           },
+          thumbnail: `${componentName.replace('/src/', '/').replace('./', '/')}/thumbs/thumb-${file}`,
           format: metadata.format,
           size: fileStats.size,
           creationDate: fileStats.birthtime,
@@ -141,6 +189,8 @@ function injectImportStatement(jsFilePath, importPath) {
     console.log(`Import statement already exists in ${jsFilePath}`);
   }
 }
+
+
 
 function getComponentDependencies(componentName) {
   const dependencies = {
