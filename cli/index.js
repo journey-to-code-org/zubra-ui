@@ -136,12 +136,12 @@ async function gatherImageInfo(folderPath) {
         const exifData = parser.parse();
 
         const imageInfo = {
-          fileName: `${componentName.replace('/src/', '/').replace('./', '/')}/web-${file}`,
+          fileName: `${componentName.replace('/src/', '/').replace('./', '')}/web-${file}`,
           dimensions: {
             width: metadata.width,
             height: metadata.height,
           },
-          thumbnail: `${componentName.replace('/src/', '/').replace('./', '/')}/thumbs/${file}`,
+          thumbnail: `${componentName.replace('/src/', '/').replace('./', '')}/thumbs/${file}`,
           format: metadata.format,
           size: fileStats.size,
           creationDate: fileStats.birthtime,
