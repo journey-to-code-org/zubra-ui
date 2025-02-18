@@ -1,4 +1,4 @@
-import '../Container/index.js';
+import '../MasonryGrid/index.js';
 import '../Loading/index.js';
 import '../ContentModal/index.js';
 
@@ -22,6 +22,7 @@ class GalleryImage extends HTMLElement {
     }
 
     connectedCallback() {
+        console.log(this.thumbnail)
         this.render();
         const wrapper = this.shadowRoot.querySelector('.image-wrapper');
 
@@ -240,14 +241,15 @@ class ImageGallery extends HTMLElement {
     renderFetchedImage(placeholder, image) {
         const galleryImage = document.createElement('gallery-image');
         const imageUrl = image.fileName;
-        const thumbnailUrl = `./thumbs/thumb-${image.fileName}`;
+        const thumbnailUrl = `${image.fileName.replace(/^images\/web-/, 'images/thumbs/')}`;
+        console.log(thumbnailUrl)
         galleryImage.setAttribute('src', imageUrl);
         galleryImage.setAttribute('thumbnail', thumbnailUrl);
         galleryImage.setAttribute('alt', image.fileName);
         galleryImage.setAttribute('width', image.dimensions.width);
         galleryImage.setAttribute('height', image.dimensions.height);
         galleryImage.setAttribute('caption', `Format: ${image.format} - ${image.size} bytes`);
-        galleryImage.setAttribute('srcset', `${imageUrl} 1x, ${imageUrl} 2x`);
+        galleryImage.setAttribute('srcset', `${thumbnailUrl} 1x, ${thumbnailUrl} 2x`);
         galleryImage.setAttribute('sizes', '100vw');
         placeholder.replaceWith(galleryImage);
     };
