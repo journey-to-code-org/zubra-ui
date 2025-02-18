@@ -56,7 +56,7 @@ async function gatherImageInfo(folderPath) {
         const exifData = parser.parse();
 
         const imageInfo = {
-          fileName: file,
+          fileName: `${componentName.replace('/src/', '/').replace('./', '/')}/${file}`,
           dimensions: {
             width: metadata.width,
             height: metadata.height,
@@ -144,7 +144,7 @@ function injectImportStatement(jsFilePath, importPath) {
 
 function getComponentDependencies(componentName) {
   const dependencies = {
-    'Gallery': ['Container','ContentModal', 'Loading'],
+    'Gallery': ['Container', 'ContentModal', 'Loading'],
     // Add other components and their dependencies here
   };
   return dependencies[componentName] || [];
@@ -227,38 +227,38 @@ if (command === 'image-info') {
   })();
 }
 
-else if (command === 'boilerplate' || command === 'init') { 
-    const srcDir = path.resolve(process.cwd(), "./src");
-    const htmlFilePath = path.resolve(srcDir, "index.html");
-    const componentsDir = path.resolve(srcDir, "components");
-    const mapFilePath = path.resolve(componentsDir, "map.js");
+else if (command === 'boilerplate' || command === 'init') {
+  const srcDir = path.resolve(process.cwd(), "./src");
+  const htmlFilePath = path.resolve(srcDir, "index.html");
+  const componentsDir = path.resolve(srcDir, "components");
+  const mapFilePath = path.resolve(componentsDir, "map.js");
 
-    // Ensure ./src directory exists
-    if (!fs.existsSync(srcDir)) {
-        fs.mkdirSync(srcDir, { recursive: true });
-        console.log(`Created directory: ${srcDir}`);
-    }
+  // Ensure ./src directory exists
+  if (!fs.existsSync(srcDir)) {
+    fs.mkdirSync(srcDir, { recursive: true });
+    console.log(`Created directory: ${srcDir}`);
+  }
 
-    // Ensure ./src/components directory exists
-    if (!fs.existsSync(componentsDir)) {
-        fs.mkdirSync(componentsDir, { recursive: true });
-        console.log(`Created directory: ${componentsDir}`);
-    }
+  // Ensure ./src/components directory exists
+  if (!fs.existsSync(componentsDir)) {
+    fs.mkdirSync(componentsDir, { recursive: true });
+    console.log(`Created directory: ${componentsDir}`);
+  }
 
-    // Ensure ./src/components/map.js file exists
-    if (!fs.existsSync(mapFilePath)) {
-        fs.writeFileSync(mapFilePath, "", "utf-8");
-        console.log(`Created ${mapFilePath}`);
-    }
+  // Ensure ./src/components/map.js file exists
+  if (!fs.existsSync(mapFilePath)) {
+    fs.writeFileSync(mapFilePath, "", "utf-8");
+    console.log(`Created ${mapFilePath}`);
+  }
 
-    // Check if index.html exists in the current working directory
-    const existingHtmlFilePath = path.resolve(process.cwd(), "index.html");
-    if (fs.existsSync(existingHtmlFilePath)) {
-        fs.renameSync(existingHtmlFilePath, htmlFilePath);
-        console.log(`Moved existing index.html to ${htmlFilePath}`);
-    } else if (!fs.existsSync(htmlFilePath)) {
-        // Create a basic HTML boilerplate if index.html does not exist
-        const boilerplateContent = `<!DOCTYPE html>
+  // Check if index.html exists in the current working directory
+  const existingHtmlFilePath = path.resolve(process.cwd(), "index.html");
+  if (fs.existsSync(existingHtmlFilePath)) {
+    fs.renameSync(existingHtmlFilePath, htmlFilePath);
+    console.log(`Moved existing index.html to ${htmlFilePath}`);
+  } else if (!fs.existsSync(htmlFilePath)) {
+    // Create a basic HTML boilerplate if index.html does not exist
+    const boilerplateContent = `<!DOCTYPE html>
 <html lang="en">
 <head>
         <meta charset="UTF-8">
@@ -270,16 +270,16 @@ else if (command === 'boilerplate' || command === 'init') {
         <h1>Welcome to Web Component Library</h1>
 </body>
 </html>`;
-        fs.writeFileSync(htmlFilePath, boilerplateContent, "utf-8");
-        console.log(`Created new index.html at ${htmlFilePath}`);
-    } else {
-        console.log(`index.html already exists at ${htmlFilePath}`);
-    }
+    fs.writeFileSync(htmlFilePath, boilerplateContent, "utf-8");
+    console.log(`Created new index.html at ${htmlFilePath}`);
+  } else {
+    console.log(`index.html already exists at ${htmlFilePath}`);
+  }
 
-    // Inject script tag into index.html if it exists
-    if (fs.existsSync(htmlFilePath)) {
-        injectScriptTag(htmlFilePath);
-    }
+  // Inject script tag into index.html if it exists
+  if (fs.existsSync(htmlFilePath)) {
+    injectScriptTag(htmlFilePath);
+  }
 }
 
 if (
@@ -311,7 +311,7 @@ if (
   try {
     const installedComponents = installComponent(componentName, destDir, componentsDir, new Set());
     console.log('Installed components:', Array.from(installedComponents).join(', '));
-    
+
     const htmlFilePath = path.resolve(process.cwd(), "./src/index.html");
     if (fs.existsSync(htmlFilePath)) {
       injectScriptTag(htmlFilePath);
