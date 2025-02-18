@@ -39,10 +39,14 @@ function sanitizeFileNames(folderPath) {
   });
 }
 async function convertImagesToWebFriendly(folderPath) {
+
   const files = fs.readdirSync(folderPath);
   for (const file of files) {
     const filePath = path.join(folderPath, file);
     const fileStats = fs.statSync(filePath);
+    if (file.startsWith('web-')) {
+      return;
+    }
 
     if (fileStats.isFile() && /\.(jpg|jpeg|png|gif)$/i.test(file)) {
       try {
@@ -56,6 +60,22 @@ async function convertImagesToWebFriendly(folderPath) {
         console.error(`Error converting file ${file}: ${error.message}`);
       }
     }
+    if (fileStats.isFile() && /\.webp$/i.test(file)) {
+      const equivalentFile = filePath.replace(/\.webp$/i, (match) => {
+        const extensions = ['.jpg', '.jpeg', '.png'];
+        for (const ext of extensions) {
+          const equivalentFilePath = filePath.replace(/\.webp$/i, ext);
+          if (fs.existsSync(equivalentFilePath)) {
+            fs.unlinkSync(equivalentFilePath);
+            console.log(`Removed equivalent file: ${equivalentFilePath}`);
+          }
+        }
+
+        return match;
+      });
+    }
+
+
   }
 }
 
@@ -67,16 +87,28 @@ async function createThumbnails(folderPath) {
 
   const files = fs.readdirSync(folderPath);
   for (const file of files) {
+    if (file.startsWith('web-')) {
+      console.log(`Skipping file ${file} as it starts with 'web-'`);
+      continue;
+    }
     const filePath = path.join(folderPath, file);
     const fileStats = fs.statSync(filePath);
 
     if (fileStats.isFile() && /\.(jpg|jpeg|png|gif)$/i.test(file)) {
       try {
-        const outputFilePath = path.join(thumbsDir, `thumb-${file}`);
-        await sharp(filePath)
-          .resize({ width: 200 })
-          .toFormat('webp')
-          .toFile(outputFilePath);
+        const outputFilePath = path.join(thumbsDir, `${file}`);
+
+        // Randomly change the aspect ratio
+        const randomAspectRatio = Math.random() * (1.5 - 0.5) + 0.5;
+        const image = sharp(filePath);
+        const randomNumber = () => Math.random() * (2800 - 1080) + 1080;
+        const newWidth = Math.round(randomNumber() * randomAspectRatio);
+        const newHeight = Math.round(randomNumber() * randomAspectRatio);
+
+        await image
+        .resize({ width: newWidth, height: newHeight })
+        .toFormat('webp')
+        .toFile(outputFilePath);
         console.log(`Created thumbnail for ${file}: ${outputFilePath}`);
       } catch (error) {
         console.error(`Error creating thumbnail for file ${file}: ${error.message}`);
@@ -84,6 +116,7 @@ async function createThumbnails(folderPath) {
     }
   }
 }
+
 async function gatherImageInfo(folderPath) {
   sanitizeFileNames(folderPath);
   await convertImagesToWebFriendly(folderPath);
@@ -103,12 +136,12 @@ async function gatherImageInfo(folderPath) {
         const exifData = parser.parse();
 
         const imageInfo = {
-          fileName: `${componentName.replace('/src/', '/').replace('./', '/')}/${file}`,
+          fileName: `${componentName.replace('/src/', '/').replace('./', '/')}/web-${file}`,
           dimensions: {
             width: metadata.width,
             height: metadata.height,
           },
-          thumbnail: `${componentName.replace('/src/', '/').replace('./', '/')}/thumbs/thumb-${file}`,
+          thumbnail: `${componentName.replace('/src/', '/').replace('./', '/')}/thumbs/${file}`,
           format: metadata.format,
           size: fileStats.size,
           creationDate: fileStats.birthtime,
@@ -271,7 +304,6 @@ if (command === 'image-info') {
       fs.writeFileSync(outputFilePath, JSON.stringify(imageInfoList, null, 2), 'utf-8');
       console.log(`Image info written to ${outputFilePath}`);
 
-      // Ensure convertImagesToWebFriendly is running
       await convertImagesToWebFriendly(absoluteFolderPath);
     } catch (error) {
       console.error(`Error gathering image info: ${error.message}`);
