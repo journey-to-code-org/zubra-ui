@@ -149,9 +149,11 @@ class MasonryLayout extends HTMLElement {
 
         // Assign each default node a slot attribute based on round-robin.
         nodes.forEach((node, index) => {
-            const originalSlotName = this._columnSlotNames[index % this.columns];
-            const randomSlotName = this._columnSlotNames[Math.floor(Math.random() * this.columns)];
-            const slotName = this._columnSlotNames[Math.floor(Math.random() * this.columns)];
+            const columnLengths = this._columnSlotNames.map(slotName => {
+                return this.querySelectorAll(`[slot="${slotName}"]`).length;
+            });
+            const minLength = Math.min(...columnLengths);
+            const slotName = this._columnSlotNames[columnLengths.indexOf(minLength)];
             node.setAttribute('slot', slotName);
         });
     }
@@ -161,9 +163,20 @@ class MasonryLayout extends HTMLElement {
         const windowHeight = window.innerHeight;
         const documentHeight = document.documentElement.scrollHeight;
 
-        if (scrollTop + windowHeight >= documentHeight - 50) {
-            window.scrollTo(0, scrollTop - 30); // Adjust the scroll position to slow down scrolling
+        // Check the number of items in the last row
+        const wrapper = this.shadowRoot.querySelector('.masonry-wrapper');
+        const columns = Array.from(wrapper.children);
+        const itemsInLastRow = columns.reduce((count, column) => {
+            const items = Array.from(column.children);
+            return count + items.filter(item => item.getBoundingClientRect().bottom <= windowHeight).length;
+        }, 0);
+
+        if (itemsInLastRow <= 8) {
+            window.scrollTo(0, scrollTop); // Stop scrolling
+        } else if (scrollTop + windowHeight >= documentHeight - 100) { // Increase the threshold
+            window.scrollTo(0, scrollTop - 50); // Slow down scrolling more
         }
+        
     }
 }
 
