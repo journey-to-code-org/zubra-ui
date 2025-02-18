@@ -1,433 +1,377 @@
 import '../Container/index.js';
 import '../Loading/index.js';
-import '../ContentModal/index.js'; // Import ContentModal
+import '../ContentModal/index.js';
 
+// -----------------------------
+// Define the gallery-image component
+// -----------------------------
 class GalleryImage extends HTMLElement {
-    constructor() {
-        super();
-        this.attachShadow({ mode: 'open' });
-        this.mousePosition = { x: 0, y: 0 };
+  constructor() {
+    super();
+    this.attachShadow({ mode: 'open' });
+    this.mousePosition = { x: 0, y: 0 };
+  }
+
+  static get observedAttributes() {
+    return ['srcset', 'sizes', 'src', 'alt', 'width', 'height', 'caption'];
+  }
+
+  attributeChangedCallback(name, oldValue, newValue) {
+    this[name] = newValue;
+    this.render();
+  }
+
+  connectedCallback() {
+    this.render();
+    const wrapper = this.shadowRoot.querySelector('.image-wrapper');
+
+    wrapper.addEventListener('mouseenter', (e) => {
+      const rect = wrapper.getBoundingClientRect();
+      const y = e.clientY - rect.top;
+      const fromTop = y <= rect.height / 2;
+
+      wrapper.classList.remove('from-top', 'from-bottom');
+      wrapper.classList.add(fromTop ? 'from-top' : 'from-bottom');
+    });
+
+    // Ensure content-modal is in the document body
+    if (!document.querySelector('content-modal')) {
+      const modal = document.createElement('content-modal');
+      document.body.appendChild(modal);
     }
 
-    static get observedAttributes() {
-        return ['srcset', 'sizes', 'src', 'alt', 'width', 'height', 'caption'];
-    }
-
-    attributeChangedCallback(name, oldValue, newValue) {
-        this[name] = newValue;
-        this.render();
-    }
-
-    connectedCallback() {
-        this.render();
-        const wrapper = this.shadowRoot.querySelector('.image-wrapper');
-
-        wrapper.addEventListener('mouseenter', (e) => {
-            const rect = wrapper.getBoundingClientRect();
-            const y = e.clientY - rect.top;
-            const fromTop = y <= rect.height / 2;
-
-            wrapper.classList.remove('from-top', 'from-bottom');
-            wrapper.classList.add(fromTop ? 'from-top' : 'from-bottom');
-        });
-
-        // Ensure content-modal is in the document body
-        if (!document.querySelector('content-modal')) {
-            const modal = document.createElement('content-modal');
-            document.body.appendChild(modal);
-        }
-
-        // Add click event to open modal with full-size image and caption
-        wrapper.addEventListener('click', () => {
-            const modal = document.querySelector('content-modal');
-            if (modal) {
-                modal.innerHTML = `
-                    <img src="${this.src}" alt="${this.alt}">
-                    <p style="margin-top: 10px;">${this.caption}</p>
-                `;
-                modal.open();
-            } else {
-                console.error('ContentModal element not found');
-            }
-        });
-    }
-
-    render() {
-        const isPortrait = parseInt(this.height) > parseInt(this.width);
-        this.shadowRoot.innerHTML = `
-            <style>
-                .image-wrapper {
-                    position: relative;
-                    overflow: hidden;
-                    cursor: pointer;
-                }
-                .responsive-image {
-                    width: 100%;
-                    height: auto;
-                    display: block;
-                }
-                figcaption {
-                    position: absolute;
-                    left: 0;
-                    right: 0;
-                    background: rgba(0, 0, 0, 0.7);
-                    color: white;
-                    padding: 1rem;
-                    transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
-                    font-size: 0.9rem;
-                    opacity: 0;
-                }
-                .from-top figcaption {
-                    top: 0;
-                    transform: translateY(-100%);
-                }
-                .from-bottom figcaption {
-                    bottom: 0;
-                    transform: translateY(100%);
-                }
-                .image-wrapper:hover figcaption {
-                    transform: translateY(0);
-                    opacity: 1;
-                }
-                loading-flame-cubes {
-                    position: absolute;
-                    top: 50%;
-                    left: 50%;
-                    transform: translate(-50%, -50%);
-                }
-                .responsive-image.loaded + loading-flame-cubes {
-                    display: none;
-                }
-                .responsive-image.error {
-                    filter: grayscale(1);
-                    opacity: 0.7;
-                }
-            </style>
-            <figure class="image-wrapper ${isPortrait ? 'portrait' : 'landscape'}">
-                <img class="responsive-image" 
-                    srcset="${this.srcset}" 
-                    sizes="${this.sizes}" 
-                    src="${this.src}" 
-                    alt="${this.alt}"
-                    loading="lazy" 
-                    width="${this.width}" 
-                    height="${this.height}"
-                    onload="this.classList.add('loaded')"
-                    onerror="this.src='https://placehold.co/' + this.width + 'x' + this.height + '/e0e0e0/999999?text=Image+Not+Found'; this.classList.add('error'); this.classList.add('loaded');">
-                <loading-flame-cubes></loading-flame-cubes>
-                <figcaption>${this.caption}</figcaption>
-            </figure>
+    // Add click event to open modal with full-size image and caption
+    wrapper.addEventListener('click', () => {
+      const modal = document.querySelector('content-modal');
+      if (modal) {
+        modal.innerHTML = `
+          <img src="${this.src}" alt="${this.alt}">
+          <p style="margin-top: 10px;">${this.caption}</p>
         `;
-    }
+        modal.open();
+      } else {
+        console.error('ContentModal element not found');
+      }
+    });
+  }
+
+  render() {
+    const isPortrait = parseInt(this.height) > parseInt(this.width);
+    // Updated the onerror to check for a fallback flag so it only runs once.
+    this.shadowRoot.innerHTML = `
+      <style>
+        .image-wrapper {
+          position: relative;
+          overflow: hidden;
+          cursor: pointer;
+        }
+        .responsive-image {
+          width: 100%;
+          height: auto;
+          display: block;
+        }
+        figcaption {
+          position: absolute;
+          left: 0;
+          right: 0;
+          background: rgba(0, 0, 0, 0.7);
+          color: white;
+          padding: 1rem;
+          transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
+          font-size: 0.9rem;
+          opacity: 0;
+        }
+        .from-top figcaption {
+          top: 0;
+          transform: translateY(-100%);
+        }
+        .from-bottom figcaption {
+          bottom: 0;
+          transform: translateY(100%);
+        }
+        .image-wrapper:hover figcaption {
+          transform: translateY(0);
+          opacity: 1;
+        }
+        loading-flame-cubes {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+        }
+        .responsive-image.loaded + loading-flame-cubes {
+          display: none;
+        }
+        .responsive-image.error {
+          filter: grayscale(1);
+          opacity: 0.7;
+        }
+      </style>
+      <figure class="image-wrapper ${isPortrait ? 'portrait' : 'landscape'}">
+          <img class="responsive-image" 
+              srcset="${this.srcset}" 
+              sizes="${this.sizes}" 
+              src="${this.src}" 
+              alt="${this.alt}"
+              loading="lazy" 
+              width="${this.width}" 
+              height="${this.height}"
+              onload="this.classList.add('loaded')"
+              onerror="if(!this.dataset.fallback){this.dataset.fallback='true'; this.src='https://placehold.co/' + this.width + 'x' + this.height + '/e0e0e0/999999?text=Image+Not+Found'; this.classList.add('error'); this.classList.add('loaded');}">
+          <loading-flame-cubes></loading-flame-cubes>
+          <figcaption>${this.caption}</figcaption>
+      </figure>
+    `;
+  }
 }
 
 customElements.define('gallery-image', GalleryImage);
 
+// -----------------------------
+// Define the merged image-gallery component
+// -----------------------------
 class ImageGallery extends HTMLElement {
-    constructor() {
-        super();
-        this.attachShadow({ mode: 'open' });
-        this.page = 1;
-        this.loading = false;
-        this._infinite = false;
-        this.loadingThreshold = 0.5; // Load more when 50% of sentinel is visible
-        this.resizeTimeout = null;
-        this.resizeObserver = new ResizeObserver(this.handleResize.bind(this));
-    }
+  constructor() {
+    super();
+    this.attachShadow({ mode: 'open' });
+    this.page = 1;
+    this.loading = false;
+    this._infinite = false;
+    this.loadingThreshold = 0.5; // Load more when 50% of the sentinel is visible
+  }
 
-    static get observedAttributes() {
-        return ['infinite'];
-    }
+  static get observedAttributes() {
+    return ['src', 'infinite', 'columns', 'column-gap', 'item-gap'];
+  }
 
-    get infinite() {
-        return this._infinite;
-    }
+  get infinite() {
+    return this._infinite;
+  }
 
-    set infinite(value) {
-        this._infinite = value === '' || value === 'true';
-    }
+  set infinite(value) {
+    this._infinite = (value === '' || value === 'true');
+  }
 
-    attributeChangedCallback(name, oldValue, newValue) {
-        if (name === 'infinite') {
-            this.infinite = newValue;
+  attributeChangedCallback(name, oldValue, newValue) {
+    if (name === 'src') {
+      if (newValue) {
+        this.fetchData(newValue);
+      }
+    } else if (name === 'infinite') {
+      this.infinite = newValue;
+    } else if (name === 'columns' || name === 'column-gap' || name === 'item-gap') {
+      // Update masonry-layout attributes directly
+      const gallery = this.shadowRoot.querySelector('#imageGallery');
+      if (gallery) {
+        gallery.setAttribute(name, newValue);
+      }
+    }
+  }
+
+  connectedCallback() {
+    this.shadowRoot.innerHTML = `
+      <style>
+        :host {
+          display: block;
         }
-    }
-
-    setupInfiniteScroll() {
-        const gallery = this.shadowRoot.querySelector('#imageGallery');
-        if (!gallery) return;
-
-        // Create and style sentinel element
-        const sentinel = document.createElement('div');
-        sentinel.id = 'sentinel';
-        sentinel.style.width = '100%';
-        sentinel.style.height = '50px';
-        sentinel.style.marginTop = '20px';
-        gallery.after(sentinel);
-
-        // Create loading indicator
-        const loadingIndicator = document.createElement('loading-flame-cubes');
-        loadingIndicator.style.display = 'none';
-        sentinel.appendChild(loadingIndicator);
-
-        this.observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting && !this.loading && this.infinite) {
-                    loadingIndicator.style.display = 'block';
-                    this.loadMoreImages().then(() => {
-                        loadingIndicator.style.display = 'none';
-                    });
-                }
-            });
-        }, {
-            root: null,
-            rootMargin: '100px',
-            threshold: this.loadingThreshold
-        });
-
-        this.observer.observe(sentinel);
-    }
-
-    async loadMoreImages() {
-        if (this.loading) return;
-
-        this.loading = true;
-        try {
-            await this.createImages();
-            this.page++;
-        } catch (error) {
-            console.error('Failed to load more images:', error);
-        } finally {
-            this.loading = false;
+        #container {
+          display: flex;
+          flex-direction: column;
         }
-    }
-
-    getPlaceholderUrl(width, height) {
-        return `https://placehold.co/${width}x${height}/e0e0e0/999999`;
-    }
-
-    createImage() {
-        const randomWidth = () => Math.floor(Math.random() * 1000) + 400;
-        const randomHeight = () => Math.floor(Math.random() * 1000) + 300;
-        const width = randomWidth();
-        const height = randomHeight();
-        const fallbackUrl = this.getPlaceholderUrl(width, height);
-        const selectedImage = `https://picsum.photos/seed/${Math.random()}/${width}/${height}`;
-
-        const image = {
-            srcset: `${selectedImage} 400w, ${selectedImage} 800w, ${selectedImage} 1200w`,
-            sizes: "(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw",
-            src: selectedImage,
-            alt: "Random placeholder image",
-            width: `${width}`,
-            height: `${height}`,
-            caption: "Responsive image with multiple sizes"
-        };
-        const galleryImage = document.createElement('gallery-image');
-        galleryImage.setAttribute('srcset', image.srcset);
-        galleryImage.setAttribute('sizes', image.sizes);
-        galleryImage.setAttribute('src', image.src);
-        galleryImage.setAttribute('alt', image.alt);
-        galleryImage.setAttribute('width', image.width);
-        galleryImage.setAttribute('height', image.height);
-        galleryImage.setAttribute('caption', image.caption);
-        this.shadowRoot.querySelector('#imageGallery').appendChild(galleryImage);
-
-    }
-
-    createImages() {
-        const randomWidth = () => Math.floor(Math.random() * 1000) + 400;
-        const randomHeight = () => Math.floor(Math.random() * 1000) + 300;
-        const randomCaption = () => {
-            const captions = [
-                "A beautiful scenery",
-                "An amazing sunset",
-                "A stunning landscape",
-                "A picturesque view",
-                "A breathtaking moment",
-                "A serene environment",
-                "A captivating scene",
-                "A lovely snapshot",
-                "A charming picture",
-                "A delightful image",
-                "A tranquil beach",
-                "A vibrant cityscape",
-                "A majestic mountain",
-                "A peaceful forest",
-                "A bustling market",
-                "A quiet village",
-                "A historic landmark",
-                "A colorful garden",
-                "A snowy landscape",
-                "A starry night",
-                "A lively festival",
-                "A serene lake",
-                "A rustic cabin",
-                "A golden field",
-                "A misty morning",
-                "A crystal-clear river",
-                "A dramatic cliff",
-                "A cozy cottage",
-                "A winding road",
-                "A hidden waterfall",
-                "A lush valley",
-                "A charming street",
-                "A radiant sunrise",
-                "A foggy forest",
-                "A tranquil pond",
-                "A vibrant sunset",
-                "A picturesque harbor",
-                "A scenic overlook",
-                "A peaceful meadow",
-                "A bustling city"
-            ];
-            return captions[Math.floor(Math.random() * captions.length)];
-        };
-
-        const gallery = this.shadowRoot.querySelector('#imageGallery');
-        const columns = parseInt(gallery.getAttribute('columns')) || 3;
-        const imagesToLoad = columns * 3; // Load 3 images per column
-
-        const images = Array.from({ length: imagesToLoad }, () => {
-            const width = randomWidth();
-            const height = randomHeight();
-            const fallbackUrl = this.getPlaceholderUrl(width, height);
-            const selectedImage = `https://picsum.photos/seed/${Math.random()}/${width}/${height}`;
-
-            return {
-                srcset: `${selectedImage} 400w, ${selectedImage} 800w, ${selectedImage} 1200w`,
-                sizes: "(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw",
-                src: selectedImage,
-                alt: "Random placeholder image",
-                width: `${width}`,
-                height: `${height}`,
-                caption: randomCaption()
-            };
-        });
-
-        images.forEach(image => {
-            const galleryImage = document.createElement('gallery-image');
-            galleryImage.setAttribute('srcset', image.srcset);
-            galleryImage.setAttribute('sizes', image.sizes);
-            galleryImage.setAttribute('src', image.src);
-            galleryImage.setAttribute('alt', image.alt);
-            galleryImage.setAttribute('width', image.width);
-            galleryImage.setAttribute('height', image.height);
-            galleryImage.setAttribute('caption', image.caption);
-            this.shadowRoot.querySelector('#imageGallery').appendChild(galleryImage);
-        });
-        const pageImages = images.map(image => ({
-            ...image,
-            src: `${image.src}?page=${this.page}`,
-            srcset: image.srcset.split(', ').map(set => `${set.split(' ')[0]}?page=${this.page} ${set.split(' ')[1]}`).join(', '),
-            caption: `${image.caption} (Set ${this.page})`
-        }));
-
-        pageImages.forEach(image => {
-            this.createImage();
-        });
-    }
-
-    handleResize(entries) {
-        // Debounce resize events
-        if (this.resizeTimeout) {
-            clearTimeout(this.resizeTimeout);
+        #sentinel {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          margin: 20px 0;
         }
+      </style>
+      <div id="container">
+        <masonry-layout id="imageGallery" 
+            columns="${this.getAttribute('columns') || 3}" 
+            column-gap="${this.getAttribute('column-gap') || '10px'}" 
+            item-gap="${this.getAttribute('item-gap') || '10px'}">
+        </masonry-layout>
+      </div>
+    `;
 
-        this.resizeTimeout = setTimeout(() => {
-            this.recalculateLayout();
-        }, 250); // Wait for resize to finish
+    // Ensure content-modal exists
+    if (!document.querySelector('content-modal')) {
+      const modal = document.createElement('content-modal');
+      document.body.appendChild(modal);
     }
 
-    recalculateLayout() {
-        const gallery = this.shadowRoot.querySelector('#imageGallery');
-        if (!gallery) return;
+    // Initial load
+    if (this.hasAttribute('src')) {
+      this.fetchData(this.getAttribute('src'));
+    } else {
+      this.createImages();
+    }
 
-        const columns = parseInt(gallery.getAttribute('columns')) || 3;
-        const images = Array.from(gallery.children);
+    // Setup infinite scroll if enabled
+    if (this.infinite) {
+      this.setupInfiniteScroll();
+    }
+  }
 
-        // Clear gallery
-        while (gallery.firstChild) {
-            gallery.removeChild(gallery.firstChild);
+  disconnectedCallback() {
+    if (this.observer) {
+      this.observer.disconnect();
+    }
+  }
+
+  // -----------------------------
+  // Fetched Data Mode Methods
+  // -----------------------------
+  async fetchData(url) {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error('Network response was not ok');
+      const data = await response.json();
+      // Store the fetched data for later duplication if needed
+      this.fetchedData = data;
+      this.renderFetchedImages(data);
+    } catch (error) {
+      this.renderError(error);
+    }
+  }
+
+  renderFetchedImages(data) {
+    const gallery = this.shadowRoot.querySelector('#imageGallery');
+    data.forEach(image => {
+      const galleryImage = document.createElement('gallery-image');
+      const imageUrl = `/images/${image.fileName}`;
+      galleryImage.setAttribute('src', imageUrl);
+      galleryImage.setAttribute('alt', image.fileName);
+      galleryImage.setAttribute('width', image.dimensions.width);
+      galleryImage.setAttribute('height', image.dimensions.height);
+      galleryImage.setAttribute('caption', `Format: ${image.format} - ${image.size} bytes`);
+      galleryImage.setAttribute('srcset', `${imageUrl} 1x, ${imageUrl} 2x`);
+      galleryImage.setAttribute('sizes', '100vw');
+      gallery.appendChild(galleryImage);
+    });
+  }
+
+  // This method duplicates the fetched images (i.e. re-appends them)
+  duplicateFetchedImages() {
+    if (!this.fetchedData) return;
+    const gallery = this.shadowRoot.querySelector('#imageGallery');
+    this.fetchedData.forEach(image => {
+      const galleryImage = document.createElement('gallery-image');
+      const imageUrl = `/images/${image.fileName}`;
+      galleryImage.setAttribute('src', imageUrl);
+      galleryImage.setAttribute('alt', image.fileName);
+      galleryImage.setAttribute('width', image.dimensions.width);
+      galleryImage.setAttribute('height', image.dimensions.height);
+      galleryImage.setAttribute('caption', `Format: ${image.format} - ${image.size} bytes`);
+      galleryImage.setAttribute('srcset', `${imageUrl} 1x, ${imageUrl} 2x`);
+      galleryImage.setAttribute('sizes', '100vw');
+      gallery.appendChild(galleryImage);
+    });
+  }
+
+  renderError(error) {
+    this.shadowRoot.innerHTML = `
+      <style>
+        :host {
+          display: block;
+          color: red;
         }
+      </style>
+      <div>Error loading gallery: ${error.message}</div>
+    `;
+  }
 
-        // Create column containers
-        const columnContainers = Array.from({ length: columns }, () => {
-            const column = document.createElement('div');
-            column.style.flex = '1';
-            column.style.display = 'flex';
-            column.style.flexDirection = 'column';
-            column.style.gap = gallery.getAttribute('item-gap') || '10px';
-            gallery.appendChild(column);
-            return column;
-        });
+  // -----------------------------
+  // Random/Infinite Mode Methods
+  // -----------------------------
+  getPlaceholderUrl(width, height) {
+    return `https://placehold.co/${width}x${height}/e0e0e0/999999`;
+  }
 
-        // Distribute images evenly into columns
-        images.forEach((image, index) => {
-            columnContainers[index % columns].appendChild(image);
-        });
+  createImage() {
+    const gallery = this.shadowRoot.querySelector('#imageGallery');
+    const randomWidth = () => Math.floor(Math.random() * 1000) + 400;
+    const randomHeight = () => Math.floor(Math.random() * 1000) + 300;
+    const width = randomWidth();
+    const height = randomHeight();
+    const selectedImage = `https://picsum.photos/seed/${Math.random()}/${width}/${height}`;
+
+    const image = {
+      srcset: `${selectedImage} 400w, ${selectedImage} 800w, ${selectedImage} 1200w`,
+      sizes: "(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw",
+      src: selectedImage,
+      alt: "Random placeholder image",
+      width: `${width}`,
+      height: `${height}`,
+      caption: "Responsive image with multiple sizes"
+    };
+    const galleryImage = document.createElement('gallery-image');
+    galleryImage.setAttribute('srcset', image.srcset);
+    galleryImage.setAttribute('sizes', image.sizes);
+    galleryImage.setAttribute('src', image.src);
+    galleryImage.setAttribute('alt', image.alt);
+    galleryImage.setAttribute('width', image.width);
+    galleryImage.setAttribute('height', image.height);
+    galleryImage.setAttribute('caption', image.caption);
+    gallery.appendChild(galleryImage);
+  }
+
+  createImages() {
+    const gallery = this.shadowRoot.querySelector('#imageGallery');
+    const columns = parseInt(gallery.getAttribute('columns')) || 3;
+    const imagesToLoad = columns * 3; // For example, load 3 images per column
+
+    for (let i = 0; i < imagesToLoad; i++) {
+      this.createImage();
     }
+  }
 
-    connectedCallback() {
-        this.shadowRoot.innerHTML = `
-            <style>
-                :host {
-                    display: block;
-                }
-                #sentinel {
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                }
-                loading-flame-cubes {
-                    margin: 20px 0;
-                }
-            </style>
-            <div style="display: flex; flex-direction: column;">
-                <masonry-layout id="imageGallery" 
-                    columns="${this.getAttribute('columns') || 3}" 
-                    column-gap="${this.getAttribute('column-gap') || '10px'}" 
-                    item-gap="${this.getAttribute('item-gap') || '10px'}">
-                </masonry-layout>
-            </div>
-        `;
+  async loadMoreImages() {
+    if (this.loading) return;
 
+    this.loading = true;
+    try {
+      // If a src attribute is provided, duplicate the fetched images;
+      // otherwise, create random images.
+      if (this.hasAttribute('src')) {
+        this.duplicateFetchedImages();
+      } else {
         this.createImages();
-
-        // Setup infinite scroll if enabled
-        if (this.infinite) {
-            this.setupInfiniteScroll();
-        }
-
-        // Observe gallery for resize events
-        const gallery = this.shadowRoot.querySelector('#imageGallery');
-        if (gallery) {
-            this.resizeObserver.observe(gallery);
-        }
-
-        // Ensure content-modal is in the document body
-        if (!document.querySelector('content-modal')) {
-            const modal = document.createElement('content-modal');
-            document.body.appendChild(modal);
-        }
-
-        // Add scroll event listener to recalculate layout
-        window.addEventListener('scroll', this.recalculateLayout.bind(this));
+      }
+      this.page++;
+    } catch (error) {
+      console.error('Failed to load more images:', error);
+    } finally {
+      this.loading = false;
     }
+  }
 
-    disconnectedCallback() {
-        if (this.resizeObserver) {
-            this.resizeObserver.disconnect();
+  setupInfiniteScroll() {
+    const container = this.shadowRoot.querySelector('#container');
+    const sentinel = document.createElement('div');
+    sentinel.id = 'sentinel';
+    container.appendChild(sentinel);
+
+    const loadingIndicator = document.createElement('loading-flame-cubes');
+    loadingIndicator.style.display = 'none';
+    sentinel.appendChild(loadingIndicator);
+
+    this.observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting && !this.loading && this.infinite) {
+          loadingIndicator.style.display = 'block';
+          this.loadMoreImages().then(() => {
+            loadingIndicator.style.display = 'none';
+          });
         }
-        if (this.observer) {
-            this.observer.disconnect();
-        }
-        if (this.resizeTimeout) {
-            clearTimeout(this.resizeTimeout);
-        }
-        // Remove scroll event listener
-        window.removeEventListener('scroll', this.recalculateLayout.bind(this));
-    }
+      });
+    }, {
+      rootMargin: '100px',
+      threshold: this.loadingThreshold
+    });
+
+    this.observer.observe(sentinel);
+  }
 }
 
 customElements.define('image-gallery', ImageGallery);
