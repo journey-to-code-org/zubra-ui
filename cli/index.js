@@ -194,7 +194,7 @@ function injectImportStatement(jsFilePath, importPath) {
 
 function getComponentDependencies(componentName) {
   const dependencies = {
-    'Gallery': ['Container', 'ContentModal', 'Loading'],
+    'Gallery': ['MasonryGrid', 'ContentModal', 'Loading'],
     // Add other components and their dependencies here
   };
   return dependencies[componentName] || [];
