@@ -26,7 +26,21 @@ function findComponentsFolder() {
   return path.resolve(process.cwd(), "./src/components");
 }
 
+function sanitizeFileNames(folderPath) {
+  const files = fs.readdirSync(folderPath);
+  files.forEach(file => {
+    const sanitizedFileName = file.replace(/[^a-zA-Z0-9.\-_]/g, '_');
+    const oldFilePath = path.join(folderPath, file);
+    const newFilePath = path.join(folderPath, sanitizedFileName);
+    if (oldFilePath !== newFilePath) {
+      fs.renameSync(oldFilePath, newFilePath);
+      console.log(`Renamed ${oldFilePath} to ${newFilePath}`);
+    }
+  });
+}
+
 async function gatherImageInfo(folderPath) {
+  sanitizeFileNames(folderPath);
   const files = fs.readdirSync(folderPath);
   const imageInfoList = [];
   for (const file of files) {
