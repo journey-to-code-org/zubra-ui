@@ -49,18 +49,18 @@ class GalleryImage extends HTMLElement {
           <p style="margin-top: 10px;">${this.caption}</p>
         `;
 
-        const img = modal.querySelector('img');
-        img.addEventListener('mousemove', (e) => {
-            const rect = img.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-            img.style.transformOrigin = `${(x / rect.width) * 100}% ${(y / rect.height) * 100}%`;
-            img.style.transform = 'scale(2)';
-        });
+                const img = modal.querySelector('img');
+                img.addEventListener('mousemove', (e) => {
+                    const rect = img.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+                    img.style.transformOrigin = `${(x / rect.width) * 100}% ${(y / rect.height) * 100}%`;
+                    img.style.transform = 'scale(2)';
+                });
 
-        img.addEventListener('mouseleave', () => {
-            img.style.transform = 'scale(1)';
-        });
+                img.addEventListener('mouseleave', () => {
+                    img.style.transform = 'scale(1)';
+                });
                 modal.open();
             } else {
                 console.error('ContentModal element not found');
@@ -178,7 +178,10 @@ class ImageGallery extends HTMLElement {
             });
             this.dispatchEvent(event);
             if (this.infinite) {
-                this.setupInfiniteScroll();
+                // Check if container exists before setting up infinite scroll
+                if (this.shadowRoot.querySelector('#container')) {
+                    this.setupInfiniteScroll();
+                }
             } else if (this.observer) {
                 this.observer.disconnect();
             }
@@ -245,6 +248,11 @@ class ImageGallery extends HTMLElement {
                 this.observer.disconnect();
             }
         });
+
+        // Move initial setup of infinite scroll to the end of connectedCallback
+        if (this.infinite) {
+            this.setupInfiniteScroll();
+        }
     }
 
     disconnectedCallback() {
@@ -431,6 +439,13 @@ class ImageGallery extends HTMLElement {
 
     setupInfiniteScroll() {
         const container = this.shadowRoot.querySelector('#container');
+
+        // Check if container exists before proceeding
+        if (!container) {
+            console.warn('Container element not found in shadow DOM. Infinite scroll setup aborted.');
+            return;
+        }
+
         const sentinel = document.createElement('div');
         sentinel.id = 'sentinel';
         container.appendChild(sentinel);
