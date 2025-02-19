@@ -45,7 +45,7 @@ class GalleryImage extends HTMLElement {
             const modal = document.querySelector('content-modal');
             if (modal) {
                 modal.innerHTML = `
-          <img src="${this.src}" alt="${this.alt}">
+          <img src="${this.src}" alt="${this.alt}" style=" object-fit: contain;width: 100%;height: auto;">
           <p style="margin-top: 10px;">${this.caption}</p>
         `;
                 modal.open();
