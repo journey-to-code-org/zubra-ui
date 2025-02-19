@@ -45,9 +45,22 @@ class GalleryImage extends HTMLElement {
             const modal = document.querySelector('content-modal');
             if (modal) {
                 modal.innerHTML = `
-          <img src="${this.src}" alt="${this.alt}" style=" object-fit: contain;width: 100%;height: auto;">
+          <img src="${this.src}" alt="${this.alt}" style="max-width: 100%; max-height: 100%;">
           <p style="margin-top: 10px;">${this.caption}</p>
         `;
+
+        const img = modal.querySelector('img');
+        img.addEventListener('mousemove', (e) => {
+            const rect = img.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            img.style.transformOrigin = `${(x / rect.width) * 100}% ${(y / rect.height) * 100}%`;
+            img.style.transform = 'scale(2)';
+        });
+
+        img.addEventListener('mouseleave', () => {
+            img.style.transform = 'scale(1)';
+        });
                 modal.open();
             } else {
                 console.error('ContentModal element not found');
