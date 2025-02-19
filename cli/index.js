@@ -51,10 +51,17 @@ async function convertImagesToWebFriendly(folderPath) {
     if (fileStats.isFile() && /\.(jpg|jpeg|png|gif)$/i.test(file)) {
       try {
         const outputFilePath = path.join(folderPath, `web-${file}`);
-        await sharp(filePath)
-          .resize({ width: 1920 })
-          .toFormat('webp')
-          .toFile(outputFilePath);
+        const metadata = await sharp(filePath).metadata();
+        if (metadata.width > 1920) {
+          await sharp(filePath)
+            .resize({ width: 1920 })
+            .toFormat('webp')
+            .toFile(outputFilePath);
+        } else {
+          await sharp(filePath)
+            .toFormat('webp')
+            .toFile(outputFilePath);
+        }
         console.log(`Converted ${file} to web-friendly version: ${outputFilePath}`);
       } catch (error) {
         console.error(`Error converting file ${file}: ${error.message}`);
@@ -99,11 +106,18 @@ async function createThumbnails(folderPath) {
         const outputFilePath = path.join(thumbsDir, `${file}`);
 
         // Randomly change the aspect ratio
-        const randomAspectRatio = Math.random() * (1.5 - 0.5) + 0.5;
+        let newWidth, newHeight;
         const image = sharp(filePath);
-        const randomNumber = () => Math.random() * (2800 - 1080) + 1080;
-        const newWidth = Math.round(randomNumber() * randomAspectRatio);
-        const newHeight = Math.round(randomNumber() * randomAspectRatio);
+        if (process.argv.includes('-randomAspectRatio')) {
+          const randomAspectRatio = Math.random() * (1.5 - 0.5) + 0.5;
+          const randomNumber = () => Math.random() * (2800 - 1080) + 1080;
+          newWidth = Math.round(randomNumber() * randomAspectRatio);
+          newHeight = Math.round(randomNumber() * randomAspectRatio);
+        } else {
+          const metadata = await image.metadata();
+          newWidth = metadata.width;
+          newHeight = metadata.height;
+        }
 
         await image
         .resize({ width: newWidth, height: newHeight })
@@ -135,13 +149,14 @@ async function gatherImageInfo(folderPath) {
         const parser = exifParser.create(buffer);
         const exifData = parser.parse();
 
+        const sanitizedComponentName = componentName.replace('/public/', '/').replace('/src/', '/').replace('./', '');
         const imageInfo = {
-          fileName: `${componentName.replace('/src/', '/').replace('./', '')}/web-${file}`,
+          fileName: `${sanitizedComponentName}/web-${file}`,
           dimensions: {
             width: metadata.width,
             height: metadata.height,
           },
-          thumbnail: `${componentName.replace('/src/', '/').replace('./', '')}/thumbs/${file}`,
+          thumbnail: `${sanitizedComponentName}/thumbs/${file}`,
           format: metadata.format,
           size: fileStats.size,
           creationDate: fileStats.birthtime,
@@ -228,6 +243,10 @@ function injectImportStatement(jsFilePath, importPath) {
 function getComponentDependencies(componentName) {
   const dependencies = {
     'Gallery': ['MasonryGrid', 'ContentModal', 'Loading'],
+    'BlockContainer': ['Layout'],
+    'FlexContainer': ['Layout'],
+    "InlineContainer": ['Layout'],
+    "GridContainer": ['Layout'],
     // Add other components and their dependencies here
   };
   return dependencies[componentName] || [];
