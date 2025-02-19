@@ -25,6 +25,10 @@ class MasonryLayout extends HTMLElement {
             this.render();
             this._distributeContent();
             if (name === 'infinite-scroll') {
+                const event = new CustomEvent('infinite-scroll-changed', {
+                    detail: { infiniteScroll: newValue !== null }
+                });
+                this.dispatchEvent(event);
                 if (newValue !== null) {
                     window.addEventListener('scroll', this._handleScroll);
                 } else {
@@ -176,7 +180,7 @@ class MasonryLayout extends HTMLElement {
         } else if (scrollTop + windowHeight >= documentHeight - 100) { // Increase the threshold
             window.scrollTo(0, scrollTop - 50); // Slow down scrolling more
         }
-        
+
     }
 }
 
