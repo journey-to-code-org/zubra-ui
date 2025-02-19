@@ -22,7 +22,6 @@ class GalleryImage extends HTMLElement {
     }
 
     connectedCallback() {
-        console.log(this.thumbnail)
         this.render();
         const wrapper = this.shadowRoot.querySelector('.image-wrapper');
 
@@ -139,6 +138,7 @@ class ImageGallery extends HTMLElement {
         this.loading = false;
         this._infinite = false;
         this.loadingThreshold = 0.5; // Load more when 50% of the sentinel is visible
+        this.imagesLoaded = false; // Flag to track if images have been loaded
     }
 
     static get observedAttributes() {
@@ -154,12 +154,21 @@ class ImageGallery extends HTMLElement {
     }
 
     attributeChangedCallback(name, oldValue, newValue) {
-        if (name === 'src') {
+        if (name === 'src' && newValue !== oldValue) {
             if (newValue) {
                 this.fetchData(newValue);
             }
         } else if (name === 'infinite') {
             this.infinite = newValue;
+            const event = new CustomEvent('infinite-scroll-changed', {
+                detail: { infiniteScroll: this.infinite }
+            });
+            this.dispatchEvent(event);
+            if (this.infinite) {
+                this.setupInfiniteScroll();
+            } else if (this.observer) {
+                this.observer.disconnect();
+            }
         } else if (name === 'columns' || name === 'column-gap' || name === 'item-gap') {
             // Update masonry-layout attributes directly
             const gallery = this.shadowRoot.querySelector('#imageGallery');
@@ -214,6 +223,15 @@ class ImageGallery extends HTMLElement {
                 this.setupInfiniteScroll();
             }
         }
+
+        this.addEventListener('infinite-scroll-changed', (event) => {
+            console.log('Infinite scroll changed inside gallery:', event.detail.infiniteScroll);
+            if (event.detail.infiniteScroll) {
+                this.setupInfiniteScroll();
+            } else if (this.observer) {
+                this.observer.disconnect();
+            }
+        });
     }
 
     disconnectedCallback() {
@@ -232,7 +250,10 @@ class ImageGallery extends HTMLElement {
             const data = await response.json();
             // Store the fetched data for later duplication if needed
             this.fetchedData = data;
-            this.renderFetchedImages(data);
+            if (!this.imagesLoaded) {
+                this.renderFetchedImages(data);
+                this.imagesLoaded = true; // Set flag to true after initial load
+            }
         } catch (error) {
             this.renderError(error);
         }
@@ -242,7 +263,6 @@ class ImageGallery extends HTMLElement {
         const galleryImage = document.createElement('gallery-image');
         const imageUrl = image.fileName;
         const thumbnailUrl = `${image.fileName.replace(/^images\/web-/, 'images/thumbs/')}`;
-        console.log(thumbnailUrl)
         galleryImage.setAttribute('src', imageUrl);
         galleryImage.setAttribute('thumbnail', thumbnailUrl);
         galleryImage.setAttribute('alt', image.fileName);
@@ -284,7 +304,11 @@ class ImageGallery extends HTMLElement {
 
     // This method duplicates the fetched images (i.e. re-appends them)
     duplicateFetchedImages() {
-        if (!this.fetchedData) return;
+        if (!this.fetchedData) return; // Prevent duplicates
+
+        // Shuffle the fetched data
+        const shuffledData = this.fetchedData.sort(() => Math.random() - 0.5);
+
         const gallery = this.shadowRoot.querySelector('#imageGallery');
         const galleryWidth = gallery.clientWidth;
         const columns = parseInt(gallery.getAttribute('columns')) || 3;
@@ -300,10 +324,10 @@ class ImageGallery extends HTMLElement {
             });
         });
 
-        this.fetchedData.forEach(image => {
+        shuffledData.forEach(image => {
             const aspectRatio = image.dimensions.height / image.dimensions.width;
             const placeholderHeight = columnWidth * aspectRatio;
-            const placeholder = document.createElement('loading-flame-cubes');
+            const placeholder = document.createElement('div');
             placeholder.style.height = `${placeholderHeight}px`;
             placeholder.style.width = `${columnWidth}px`;
 
