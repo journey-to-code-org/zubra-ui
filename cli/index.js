@@ -350,16 +350,36 @@ class CLI {
         if (await FileHandler.exists(htmlPath)) return;
 
         const content = `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <title>Web Components</title>
-  <script type="module" src="${DEFAULT_PATHS.map}"></script>
-</head>
-<body>
-  <main></main>
-</body>
-</html>`;
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Web Components Demo" />
+    <meta
+      name="theme-color"
+      content="#ffffff"
+      media="(prefers-color-scheme: light)"
+    />
+    <meta
+      name="theme-color"
+      content="#1a1a1a"
+      media="(prefers-color-scheme: dark)"
+    />
+    <title>Web Components Demo</title>
+   <link rel="stylesheet" href="styles/base.css" type="css" />
+   <style>
+     @media (prefers-color-scheme: dark) {
+       body {
+         background-color: #1a1a1a;
+         color: #ffffff;
+       }
+     }
+   </style>
+     <body>
+      <demo-page></demo-page>
+     </body>
+   </html>
+   `;
 
         await fs.writeFile(htmlPath, content);
       },
