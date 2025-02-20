@@ -341,7 +341,9 @@ class CLI {
     init: {
       execute: async () => {
         await FileHandler.ensureDirectory(DEFAULT_PATHS.components);
-        await this.createHTML();
+        await this.commands.init.createHTML();
+        const manager = new ComponentManager();
+        await manager.install("Example", DEFAULT_PATHS.components);
         console.log("Project initialized");
       },
 
@@ -367,6 +369,7 @@ class CLI {
     />
     <title>Web Components Demo</title>
    <link rel="stylesheet" href="styles/base.css" type="css" />
+   <script type="module" src="./components/map.js"></script>
    <style>
      @media (prefers-color-scheme: dark) {
        body {
