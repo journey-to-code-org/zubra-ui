@@ -1,6 +1,8 @@
+const templateString = `<p class="warning">Change this text to update the copyright message.</p>`;
+
 class CopyRight extends HTMLElement {
 connectedCallback() {
-    const est = this.getAttribute("est") || "2023";
+    const est = this.getAttribute("est") || '';
     const year = this.getAttribute("year") || new Date().getFullYear();
     const template = document.createElement("template");
     this.attachShadow({ mode: "open" });
@@ -24,11 +26,11 @@ class TradeMark extends HTMLElement {
     const template = document.createElement("template");
     this.attachShadow({ mode: "open" });
 
-    let content = `&trade; <slot>Your Company Name</slot>`;
-    if (!this.getAttribute("before") && !this.getAttribute("blank")) {
+    let content = `&trade; <slot><p style></slot>`;
+    if (this.getAttribute("before") && !this.getAttribute("blank")) {
         content = ` <slot>Your Company Name</slot>&trade;`;
-    } else if (!this.hasAttribute("blank")) {
-        content += ` &trade; <slot>Your Company Name</slot>`;
+    } else if (!this.getAttribute("before") && !this.hasAttribute("blank")) {
+        content = ` &trade; <slot >Your Company Name</slot>`;
     }
 
     template.innerHTML = content;

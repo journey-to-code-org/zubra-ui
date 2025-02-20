@@ -86,52 +86,70 @@ class DemoPage extends HTMLElement {
         <p>Explore different layout configurations using the Layout Manager.</p>
         
         <div class="tabs">
+          <button class="tab-button" data-tab="absolute">Absolute Demo</button>
           <button class="tab-button active" data-tab="block">Block Demo</button>
           <button class="tab-button" data-tab="flex">Flex Demo</button>
           <button class="tab-button" data-tab="grid">Grid Demo</button>
           <button class="tab-button" data-tab="combined">Combined Layouts</button>
         </div>
 
-    <!-- Absolute Layout Demo -->
-        <div class="demo-section active" data-tab-content="block">
-          <h2>Block Layout</h2>
+        <!-- Absolute Layout Demo -->
+        <div class="demo-section" data-tab-content="absolute">
+          <h2>Absolute Layout</h2>
           <div class="layout-visual">
             <h3>Absolute Layout</h3>
             <div class="code-sample">
               &lt;absolute-container"&gt;...&lt;/layout-manager&gt;
             </div>
-            <layout-manager mode="block">
-              <div style="color: var(--theme-text-color-light-1); background: var(--theme-color-light-1); padding: 1rem;">
-                Block Item 1
+            <div >
+                <absolute-container>
+                    <div style="color: var(--theme-text-color-light-1); background: var(--theme-color-light-1); padding: 1rem;" >
+                        Absolute Item 1
+                    </div>
+                    <div style="color: var(--theme-text-color-light-2); background: var(--theme-color-light-2); padding: 1rem;" slot="top-right">
+                        Absolute Item 2
+                    </div>
+                    <div style="color: var(--theme-text-color-light-3); background: var(--theme-color-light-3); padding: 1rem;" slot="bottom-left">
+                        Absolute Item 3
+                    </div>
+                    <div style="color: var(--theme-text-color-light-4); background: var(--theme-color-light-4); padding: 1rem;" slot="bottom-right">
+                        Absolute Item 4
+                    </div>
+                </absolute-container>
+            </div>
+            <absolute-container>
+              <div style="color: var(--theme-text-color-light-1); background: var(--theme-color-light-1); padding: 1rem;" slot="top-left">
+                Absolute Item 5
               </div>
-              <div style="color: var(--theme-text-color-light-2); background: var(--theme-color-light-2); padding: 1rem;">
-                Block Item 2
+              <div style="color: var(--theme-text-color-light-2); background: var(--theme-color-light-2); padding: 1rem;" slot="top-right">
+                Absolute Item 6
               </div>
-              <div style="color: var(--theme-text-color-light-3); background: var(--theme-color-light-3); padding: 1rem;">
-                Block Item 3
+              <div style="color: var(--theme-text-color-light-3); background: var(--theme-color-light-3); padding: 1rem;" slot="bottom-left">
+                Absolute Item 7
               </div>
-              <div style="color: var(--theme-text-color-light-4); background: var(--theme-color-light-4); padding: 1rem;">
-                Block Item 4
+              <div style="color: var(--theme-text-color-light-4); background: var(--theme-color-light-4); padding: 1rem;" slot="bottom-right">
+                Absolute Item 8
               </div>
-            </layout-manager>
+            </absolute-container>
 
-            <h3>Inline Block Layout</h3>
+            <h3>Fixed Absolute Layout</h3>
             <div class="code-sample">
               &lt;layout-manager mode="inline-block"&gt;...&lt;/layout-manager&gt;
             </div>
-            <layout-manager mode="inline-block">
-              <div style="color: var(--theme-text-color-light-5); background: var(--theme-color-light-5); padding: 1rem;">
-                Inline Block Item 1
+            <absolute-container fixed>
+              <div style="color: var(--theme-text-color-light-5); background: var(--theme-color-light-5); padding: 1rem;" slot="top-center">
+                Fixed Item 1
               </div>
-              <div style="color: var(--theme-text-color-light-6); background: var(--theme-color-light-6); padding: 1rem;">
-                Inline Block Item 2
+              <div style="color: var(--theme-text-color-light-6); background: var(--theme-color-light-6); padding: 1rem; " slot="mid-bottom-center">
+                Fixed Item 2
               </div>
-              <div style="color: var(--theme-text-color-light-7); background: var(--theme-color-light-7); padding: 1rem;">
-                Inline Block Item 3
+              <div style="color: var(--theme-text-color-light-7); background: var(--theme-color-light-7); padding: 1rem; " slot="bottom-center">
+                Fixed Item 3
               </div>
-            </layout-manager>
-          </div>
+            </absolute-container>
 
+            
+          </div>
         </div>
 
         <!-- Block Layout Demo -->

@@ -10,6 +10,7 @@ class TabContent extends HTMLElement {
 
     render() {
         this.shadowRoot.innerHTML = `
+ 
             <div class="tabs">
                 <button class="tab-button active" data-tab="block">Block Demo</button>
                 <button class="tab-button" data-tab="flex">Flex Demo</button>

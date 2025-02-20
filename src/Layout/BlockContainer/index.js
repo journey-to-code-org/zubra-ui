@@ -1,7 +1,7 @@
 class BlockContainer extends HTMLElement {
   static get observedAttributes() {
     // Observe attributes relevant for both block behavior and potential mode changes.
-    return ["height", "width", "mode", "breakpoint", "direction"];
+    return ["height", "width", "mode", "breakpoint", "direction", "inline"];
   }
 
   constructor() {
@@ -32,10 +32,18 @@ class BlockContainer extends HTMLElement {
   _updateAttribute(name, value) {
     // For attributes that should be forwarded to the inner <layout-manager>
     const layoutManager = this.shadowRoot.querySelector("layout-manager");
-    if (!layoutManager) return;
-
+    if (!layoutManager || !name || !value && name !== 'inline') return;
+    layoutManager.setAttribute(name, value);
+    
+    if (name === "inline") {
+      // this.style.setProperty("display", value === "true" ? "inline-block" : "block");
+      const slottedElements = this.shadowRoot.querySelector('slot').assignedElements();
+      slottedElements.forEach(el => {
+        el.style.display = "inline-block";
+      });
+    } 
     // For mode and display, forward directly to layout-manager.
-    if (["mode", "display"].includes(name)) {
+    else if (["mode", "display"].includes(name)) {
       layoutManager.setAttribute(name, value);
     } else if (name === "breakpoint" || name === "direction") {
       // You might handle responsive or direction-based styles here.
@@ -71,46 +79,37 @@ class BlockContainer extends HTMLElement {
 
   render() {
     // We default to mode="block", but allow overrides via attribute.
-    const mode = this.getAttribute("mode") === "inline" || "inline";
-    if (mode === "inline-block") {
-      this.style.display = "inline-block";
-    }
+    const mode = this.getAttribute("mode") || "block";
     this.shadowRoot.innerHTML = `
         <style>
           :host {
-           
             width: 100%;
             height: auto;
           }
+            p.warning {
+              color: var(--warning-color, orange);
+            }
+          :host([mode="inline"]) {
+            display: inline-block;
+          }
+            ::slotted(*) {
+             
+            }
         </style>
         <layout-manager mode="${mode}">
           <slot>
-              <div>
-      <article>
-        <header>
-          <h2>Featured Article 1</h2>
-        </header>
-        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
-      </article>
-    </div>
-    <div>
-      <article>
-        <header>
-          <h2>Featured Article 2</h2>
-        </header>
-        <p>Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
-      </article>
-    </div>
-    <div>
-      <article>
-        <header>
-          <h2>Featured Article 3</h2>
-        </header>
-        <p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.</p>
-      </article>
-    </div>
+            <p class="warning">Update the content of this block container.</p>
           </slot>
         </layout-manager>
+        <block-container height="200px" width="100%" mode="block">
+          <p>Block Container Example 1</p>
+        </block-container>
+        <block-container height="150px" width="50%" mode="inline">
+          <p>Block Container Example 2</p>
+        </block-container>
+        <block-container height="100px" width="75%" mode="block" breakpoint="medium">
+          <p>Block Container Example 3</p>
+        </block-container>
       `;
   }
 }
