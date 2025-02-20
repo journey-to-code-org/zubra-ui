@@ -1,4 +1,4 @@
-import "../Layout/index.js";
+import "../index.js";
 
 class FlexContainer extends HTMLElement {
   static get observedAttributes() {

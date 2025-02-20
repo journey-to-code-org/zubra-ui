@@ -94,7 +94,7 @@ class DemoPage extends HTMLElement {
         </div>
 
         <!-- Absolute Layout Demo -->
-        <div class="demo-section" data-tab-content="absolute">
+        <div class="demo-section" active data-tab-content="absolute">
           <h2>Absolute Layout</h2>
           <div class="layout-visual">
             <h3>Absolute Layout</h3>

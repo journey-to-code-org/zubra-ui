@@ -1,4 +1,4 @@
-import { generateRandomArticles } from "../../utils/randomGenerator.js";
+// import { generateRandomArticles } from "../../utils/randomGenerator.js";
 class DemoPage extends HTMLElement {
   static observedAttributes = ["theme-color", "layout-type"];
   
@@ -336,4 +336,4 @@ class DemoPage extends HTMLElement {
   }
 }
 
-customElements.define("demo-page", DemoPage);
+customElements.define("demo-page1", DemoPage);
