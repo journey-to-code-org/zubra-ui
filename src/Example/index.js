@@ -1,4 +1,4 @@
-import { generateRandomArticles } from "../../utils/randomGenerator.js";
+import { generateRandomArticles } from "../utils/randomGenerator/index.js";
 class DemoPage extends HTMLElement {
   static observedAttributes = ["theme-color", "layout-type"];
   
