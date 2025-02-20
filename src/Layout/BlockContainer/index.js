@@ -71,14 +71,14 @@ class BlockContainer extends HTMLElement {
 
   render() {
     // We default to mode="block", but allow overrides via attribute.
-    const mode = this.getAttribute("mode") || "block";
+    const mode = this.getAttribute("mode") === "inline" || "inline";
     if (mode === "inline-block") {
-      this.style.display = "block";
+      this.style.display = "inline-block";
     }
     this.shadowRoot.innerHTML = `
         <style>
           :host {
-            display: block;
+           
             width: 100%;
             height: auto;
           }
