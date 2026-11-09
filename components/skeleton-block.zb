@@ -9,8 +9,8 @@
 </script>
 <style>
   :host { display: block; }
-  .skeleton-bone { display: block; border-radius: calc(var(--radius, 0.625rem) - 4px); background: linear-gradient(90deg, var(--muted, #f4f4f5) 0%, color-mix(in oklab, var(--muted, #f4f4f5) 55%, var(--background, #fff)) 50%, var(--muted, #f4f4f5) 100%) 0 0 / 200% 100%; animation: shimmer 1.4s ease-in-out infinite; }
-  .skeleton-text { display: grid; gap: 0.55rem; }
+  .skeleton-bone { display: block; max-width: 100%; border-radius: calc(var(--radius, 0.625rem) - 4px); background: linear-gradient(90deg, var(--muted, #f4f4f5) 0%, color-mix(in oklab, var(--muted, #f4f4f5) 55%, var(--background, #fff)) 50%, var(--muted, #f4f4f5) 100%) 0 0 / 200% 100%; animation: shimmer 1.4s ease-in-out infinite; }
+  .skeleton-text { display: grid; gap: 0.55rem; max-width: 100%; }
   .skeleton-text .skeleton-bone { height: 0.85rem; }
   .skeleton-text .skeleton-bone.last { width: 65%; }
   .skeleton-circle { border-radius: 50%; }
