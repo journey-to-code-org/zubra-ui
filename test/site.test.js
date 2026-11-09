@@ -163,6 +163,28 @@ test('on a phone nothing scrolls sideways, and the nav lists every component', a
   assert.deepEqual(failures, [], failures.join('\n'));
 });
 
+// One exclusion: the donut chart's total sits in the ring's empty hole, but axe measures it against
+// the ring's stroke colour (the circles have no fill). The contrast test above checks it for real.
+test('axe finds no serious or critical problems on any page, light or dark', async () => {
+  const axe = readFileSync(join(root, 'node_modules/axe-core/axe.min.js'), 'utf8');
+  const context = await browser.newContext({ reducedMotion: 'reduce' });
+  const failures = [];
+  await Promise.all(['/', ...components.map(({ name }) => `/components/${name}/`)].map(async (path) => {
+    const { page } = await open(path, { context });
+    await page.addScriptTag({ content: axe });
+    for (const mode of ['light', 'dark']) {
+      if (mode === 'dark') await page.click('#mode');
+      const violations = await page.evaluate(async () => (await window.axe.run({ exclude: [['donut-chart .middle']] }, { resultTypes: ['violations'] })).violations
+        .filter((violation) => ['serious', 'critical'].includes(violation.impact))
+        .map((violation) => `${violation.id}: ${violation.nodes.slice(0, 3).map((node) => node.target.join(' ')).join(', ')}`));
+      for (const violation of violations) failures.push(`${path} (${mode}) ${violation}`);
+    }
+    await page.close();
+  }));
+  await context.close();
+  assert.deepEqual(failures, [], failures.join('\n'));
+});
+
 test('previews report their events', async () => {
   const { page, problems } = await open('/components/quantity-stepper/');
   await page.locator('quantity-stepper').getByRole('button', { name: /increase|more|\+/i }).first().click();

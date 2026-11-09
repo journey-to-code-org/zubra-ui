@@ -51,7 +51,7 @@ a { color: inherit; text-underline-offset: 0.18em; text-decoration-color: color-
 a:hover { text-decoration-color: currentColor; }
 :focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 code { font-family: var(--mono); font-size: 0.86em; }
-:not(pre) > code { padding: 0.1em 0.35em; border-radius: calc(var(--radius) - 6px); background: var(--muted); }
+:not(pre) > code { padding: 0.1em 0.35em; border-radius: calc(var(--radius) - 6px); background: var(--muted); color: var(--foreground); }
 .skip { position: absolute; left: -999px; top: 0.5rem; z-index: 20; padding: 0.5rem 0.75rem; background: var(--background); color: var(--foreground); }
 .skip:focus { left: 0.5rem; }
 @media (prefers-reduced-motion: reduce) { *, ::before, ::after { transition-duration: 0s !important; animation-duration: 0s !important; } }

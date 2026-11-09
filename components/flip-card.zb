@@ -17,7 +17,7 @@
   .flipped { transform: rotateY(180deg); }
   .face { grid-area: 1 / 1; display: grid; place-items: center; padding: 2rem; border-radius: 1.25rem; backface-visibility: hidden; background: var(--card-front, var(--card, #ffffff)); color: var(--card-foreground, inherit); box-shadow: 0 2px 4px #0001, 0 16px 40px #00000014; text-align: center; }
   .back { transform: rotateY(180deg); background: var(--card-back, var(--muted, #f4f4f5)); }
-  .hint { position: absolute; bottom: 0.75rem; left: 0; right: 0; text-align: center; font-size: 0.75rem; color: var(--muted-foreground, #888); backface-visibility: hidden; }
+  .hint { position: absolute; bottom: 0.75rem; left: 0; right: 0; text-align: center; font-size: 0.75rem; color: color-mix(in oklab, var(--muted-foreground, #71717a) 75%, var(--foreground, #18181b)); backface-visibility: hidden; }
   @media (prefers-reduced-motion: reduce) { .card { transition: none; } }
 </style>
 <flip-card shadow flipped:model={false} hint="Click or press Space to flip">

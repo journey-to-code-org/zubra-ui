@@ -51,7 +51,8 @@
   h2 { margin: 0; font-size: 0.8125rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
   .count { padding: 0 0.45rem; border-radius: 999px; background: var(--card, #ffffff); font-size: 0.75rem; font-weight: 700; color: var(--muted-foreground, #667085); }
   .full .count { background: var(--destructive, #d92d20); color: white; }
-  .limit { margin-left: auto; font-size: 0.75rem; color: var(--muted-foreground, #667085); }
+  /* Muted text on the muted column: nudged toward the foreground for 4.5:1. */
+  .limit { margin-left: auto; font-size: 0.75rem; color: color-mix(in oklab, var(--muted-foreground, #71717a) 75%, var(--foreground, #18181b)); }
   .full .limit { color: var(--destructive, #d92d20); font-weight: 700; }
   .cards { display: flex; flex-direction: column; gap: 0.5rem; flex: 1; min-height: 4rem; }
   footer { display: flex; flex-direction: column; }
