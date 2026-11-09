@@ -10,7 +10,9 @@ import { cpSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
+import { processFolder } from 'zubra-imager';
 import { demos } from '../site/demos.js';
+import { samplePhotos } from '../site/sample-photos.mjs';
 import { highlight } from '../site/highlight.js';
 import { STACKS, STACK_NAMES, snippets } from '../site/snippets.js';
 
@@ -51,6 +53,12 @@ const importMap = (prefix) => JSON.stringify({
     '@zag-js/vanilla': `${prefix}vendor/zag-vanilla.js`,
   },
 });
+
+// The image-gallery demo's photos: sample scenes, through zubra-imager, as a reader would do it.
+// Made in a cache (dist/ is wiped each build; unchanged photos are skipped there), then copied in.
+const cache = join(root, 'node_modules/.cache/zubra-ui');
+await processFolder(await samplePhotos(join(cache, 'photos')), join(cache, 'gallery'));
+cpSync(join(cache, 'gallery'), join(out, 'gallery'), { recursive: true });
 
 const sizes = {};
 // The runtime as a page really loads it: the component's imports bundled and minified (the
@@ -99,7 +107,7 @@ function slotDocs(component) {
 
 // ---- the page frame
 
-const CATEGORIES = { input: 'Form controls', widget: 'Widgets', display: 'Display', app: 'App pieces' };
+const CATEGORIES = { input: 'Form controls', widget: 'Widgets', display: 'Display', layout: 'Layout', app: 'App pieces' };
 for (const component of components) {
   if (!CATEGORIES[component.category]) throw new Error(`${component.name}: no nav section for category "${component.category}"`);
 }
@@ -156,7 +164,7 @@ function frame({ prefix, title, description, current, body, scripts = [] }) {
     </div>
   </header>
   <div class="layout">
-    <nav class="side" aria-label="Components">
+    <nav class="site-nav" aria-label="Components">
       <a class="side-home" href="${prefix}"${current ? '' : ' aria-current="page"'}>Getting started</a>
       ${nav}
     </nav>
@@ -200,7 +208,8 @@ const stackCode = (name, demo) => STACKS.map((stack) => `<div class="stack-only"
 // ---- the preview: the element as the HTML snippet writes it, with its props set by a module script
 
 function preview(name, demo) {
-  const attributes = Object.entries(demo.attrs ?? {}).map(([attribute, value]) => ` ${attribute}="${escape(value)}"`).join('');
+  // previewAttrs: what the live preview needs that the snippets shouldn't show (a path from this page).
+  const attributes = Object.entries({ ...demo.attrs, ...demo.previewAttrs }).map(([attribute, value]) => ` ${attribute}="${escape(value)}"`).join('');
   const opener = demo.opener ? `<button type="button" class="button" data-open="${name}">${escape(demo.opener)}</button>` : '';
   return `<div class="stage" data-preview="${name}">${opener}<${name}${attributes}>${demo.html ?? ''}</${name}></div>
       <p class="event" data-events="${name}" aria-live="polite">${demo.events?.length ? `Try it: events appear here (${demo.events.map((event) => `<code>${event}</code>`).join(', ')}).` : 'This one has no events: it shows what it\'s given.'}</p>`;

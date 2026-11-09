@@ -10,6 +10,15 @@
       "dependencies": []
     },
     {
+      "name": "auto-grid",
+      "category": "layout",
+      "description": "A grid with as many equal columns as fit, each at least `min` wide: four on a wide screen, one on a phone, with no media queries.",
+      "files": [
+        "auto-grid.zb"
+      ],
+      "dependencies": []
+    },
+    {
       "name": "chat-message",
       "category": "app",
       "description": "One message: avatar, author, time, text (with @mentions and links picked out), the message it replies to, and reactions. `me` is the signed-in user's name: their messages, mentions of them and their reactions are marked.",
@@ -24,6 +33,15 @@
       "description": "Pick one of several cards: a radio group. A form control; arrow keys move the choice. Each item is `{ id, title, detail, price, note }` (`note` and `price` optional).",
       "files": [
         "choice-cards.zb"
+      ],
+      "dependencies": []
+    },
+    {
+      "name": "cluster-layout",
+      "category": "layout",
+      "description": "Children in a row that wraps onto more lines when there isn't room: buttons, tags, footer links. `justify` and `align` line them up.",
+      "files": [
+        "cluster-layout.zb"
       ],
       "dependencies": []
     },
@@ -86,6 +104,15 @@
       "dependencies": []
     },
     {
+      "name": "image-gallery",
+      "category": "display",
+      "description": "A photo gallery: a masonry grid in reading order and a lightbox with previous and next (arrow keys too). Photos come from `items`, or from `src`, a gallery.json that `npx zubra-imager <photos>` writes (sizes in AVIF, WebP and JPEG, alt text, placeholders). `index` is the open photo (-1 when closed) and is two-way.",
+      "files": [
+        "image-gallery.zb"
+      ],
+      "dependencies": []
+    },
+    {
       "name": "kanban-column",
       "category": "app",
       "description": "A board column: a heading with a count and an optional work-in-progress limit, its cards (the default slot) and a drop zone for cards dragged from anywhere on the board.",
@@ -100,6 +127,15 @@
       "description": "A price chart: an area under a line, with the high, low and a crosshair that follows the pointer and shows the value under it.",
       "files": [
         "line-chart.zb"
+      ],
+      "dependencies": []
+    },
+    {
+      "name": "masonry-grid",
+      "category": "display",
+      "description": "A masonry layout for items of different heights (cards, notes, photos): packed into columns at least `column` wide, while the order stays the reading order for Tab, screen readers and search.",
+      "files": [
+        "masonry-grid.zb"
       ],
       "dependencies": []
     },
@@ -158,11 +194,29 @@
       "dependencies": []
     },
     {
+      "name": "sidebar-layout",
+      "category": "layout",
+      "description": "A sidebar beside the main content that moves above it when the content would get too narrow (`content-min`), with no media queries, so it works in any container.",
+      "files": [
+        "sidebar-layout.zb"
+      ],
+      "dependencies": []
+    },
+    {
       "name": "spark-line",
       "category": "display",
       "description": "A small line of recent values, green when it ends higher than it started, red when lower.",
       "files": [
         "spark-line.zb"
+      ],
+      "dependencies": []
+    },
+    {
+      "name": "stack-layout",
+      "category": "layout",
+      "description": "Children one above the other with the same `gap` between them: the vertical rhythm of a page, a form or a card.",
+      "files": [
+        "stack-layout.zb"
       ],
       "dependencies": []
     },

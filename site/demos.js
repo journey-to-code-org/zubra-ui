@@ -103,6 +103,31 @@ export const demos = {
     // The page adds a button that sets `open`; the snippets show that too.
     opener: 'Delete project…',
   },
+  'stack-layout': {
+    attrs: { gap: '0.75rem' },
+    html: '<div class="demo-box">Your name</div>\n<div class="demo-box">Email address</div>\n<div class="demo-box">Message</div>',
+  },
+  'cluster-layout': {
+    attrs: { gap: '0.5rem' },
+    html: '<span class="demo-chip">Baking</span>\n<span class="demo-chip">Gardening</span>\n<span class="demo-chip">Choir</span>\n<span class="demo-chip">Book club</span>\n<span class="demo-chip">Walking group</span>\n<span class="demo-chip">Quilting</span>',
+  },
+  'auto-grid': {
+    attrs: { min: '9rem', gap: '0.75rem' },
+    html: '<div class="demo-box">Monday</div>\n<div class="demo-box">Tuesday</div>\n<div class="demo-box">Wednesday</div>\n<div class="demo-box">Thursday</div>\n<div class="demo-box">Friday</div>',
+  },
+  'sidebar-layout': {
+    attrs: { side: '10rem', 'content-min': '55%' },
+    html: '<nav slot="side" class="demo-box">Contents</nav>\n<article class="demo-box">The main content takes the rest of the width, and the contents move above it on a narrow screen.</article>',
+  },
+  'masonry-grid': {
+    attrs: { column: '12rem', gap: '0.75rem' },
+    html: '<article><h3>Groceries</h3><p>Oats, apples, coffee, the good bread from the market.</p></article>\n<article><h3>Ideas for the bake sale</h3><p>Lemon bars. Name cards for each tray. A jar for change. Ask Sam about the folding tables and whether the church has an extension cord.</p></article>\n<article><h3>Call back</h3><p>The plumber, before Thursday.</p></article>\n<article><h3>Reading</h3><p>Finish chapter six. Write down the two quotes about gardens before returning it to the library.</p></article>\n<article><h3>Birthday</h3><p>Order the cake on Monday.</p></article>\n<article><h3>Trip checklist</h3><p>Chargers, rain jacket, the map, snacks for the drive, tickets printed, and a book for the train in case the signal drops.</p></article>',
+  },
+  'image-gallery': {
+    attrs: { label: 'Sample illustrations', src: 'gallery/gallery.json' },
+    previewAttrs: { src: '../../gallery/gallery.json' },
+    events: ['indexchange'],
+  },
   'flip-card': {
     attrs: { hint: 'Click or press Space to flip' },
     props: {},

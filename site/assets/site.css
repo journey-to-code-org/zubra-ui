@@ -76,13 +76,13 @@ code { font-family: var(--mono); font-size: 0.86em; }
 
 /* ---- layout */
 .layout { display: grid; grid-template-columns: var(--side-width) minmax(0, 1fr); }
-.side { position: sticky; top: var(--bar-height); align-self: start; height: calc(100dvh - var(--bar-height)); overflow-y: auto; padding: 1.25rem 0.75rem 2rem 1rem; border-right: 1px solid var(--border); font-size: 0.92rem; }
-.side h2 { margin: 1.25rem 0 0.35rem; padding-left: 0.5rem; color: var(--muted-foreground); font-size: 0.8rem; font-weight: 600; }
-.side ul { margin: 0; padding: 0; list-style: none; }
-.side a { display: block; padding: 0.28rem 0.5rem; border-radius: calc(var(--radius) - 4px); color: var(--foreground); text-decoration: none; }
-.side a:hover { background: var(--accent); }
-.side a[aria-current=page] { background: var(--secondary); font-weight: 600; box-shadow: inset 2px 0 0 var(--primary); }
-.side-home { font-weight: 600; }
+.site-nav { position: sticky; top: var(--bar-height); align-self: start; height: calc(100dvh - var(--bar-height)); overflow-y: auto; padding: 1.25rem 0.75rem 2rem 1rem; border-right: 1px solid var(--border); font-size: 0.92rem; }
+.site-nav h2 { margin: 1.25rem 0 0.35rem; padding-left: 0.5rem; color: var(--muted-foreground); font-size: 0.8rem; font-weight: 600; }
+.site-nav ul { margin: 0; padding: 0; list-style: none; }
+.site-nav a { display: block; padding: 0.28rem 0.5rem; border-radius: calc(var(--radius) - 4px); color: var(--foreground); text-decoration: none; }
+.site-nav a:hover { background: var(--accent); }
+.site-nav a[aria-current=page] { background: var(--secondary); font-weight: 600; box-shadow: inset 2px 0 0 var(--primary); }
+.site-nav-home { font-weight: 600; }
 main { min-width: 0; padding: 2.5rem clamp(1rem, 4vw, 3.5rem) 5rem; outline: none; }
 main > * { max-width: 48rem; }
 
@@ -159,11 +159,11 @@ a.button { display: inline-block; text-decoration: none; }
 @media (max-width: 52rem) {
   .layout { grid-template-columns: minmax(0, 1fr); }
   /* The nav becomes one scrolling row under the bar. */
-  .side { position: static; display: flex; min-width: 0; gap: 0.25rem; height: auto; padding: 0.5rem 1rem; overflow-x: auto; border-right: 0; border-bottom: 1px solid var(--border); scrollbar-width: thin; }
-  .side section, .side ul { display: contents; }
-  .side h2 { display: none; }
-  .side a { white-space: nowrap; font-size: 0.85rem; }
-  .side a[aria-current=page] { box-shadow: inset 0 -2px 0 var(--primary); }
+  .site-nav { position: static; display: flex; min-width: 0; gap: 0.25rem; height: auto; padding: 0.5rem 1rem; overflow-x: auto; border-right: 0; border-bottom: 1px solid var(--border); scrollbar-width: thin; }
+  .site-nav section, .site-nav ul { display: contents; }
+  .site-nav h2 { display: none; }
+  .site-nav a { white-space: nowrap; font-size: 0.85rem; }
+  .site-nav a[aria-current=page] { box-shadow: inset 0 -2px 0 var(--primary); }
   .stack-switch > span { display: none; }
   /* The bar wraps: brand and tools on top, the stack switch across the full width below. */
   .bar { flex-wrap: wrap; height: auto; min-height: var(--bar-height); gap: 0.25rem 0.5rem; padding: 0.5rem 0.75rem; }
@@ -193,3 +193,12 @@ td small { color: var(--muted-foreground); }
 modal-dialog [slot=actions] { padding: 0.5rem 0.9rem; border: 1px solid var(--border); border-radius: calc(var(--radius) - 2px); background: var(--background); color: var(--foreground); font: inherit; font-size: 0.92rem; font-weight: 500; cursor: pointer; }
 modal-dialog [slot=actions]:last-child { border-color: var(--destructive); background: var(--destructive); color: #fff; }
 modal-dialog p { margin: 0; }
+/* The demo's notes in the masonry grid. */
+.stage masonry-grid { inline-size: 100%; }
+masonry-grid article { padding: 0.75rem 0.9rem; border: 1px solid var(--border); border-radius: calc(var(--radius) - 2px); background: var(--card); color: var(--card-foreground); }
+masonry-grid article h3 { margin: 0 0 0.3rem; font-size: 0.95rem; }
+masonry-grid article p { margin: 0; color: var(--muted-foreground); font-size: 0.9rem; line-height: 1.45; }
+/* Placeholder content for the layout demos. */
+.demo-box { padding: 0.75rem 0.9rem; border: 1px dashed color-mix(in oklab, var(--primary) 45%, var(--border)); border-radius: calc(var(--radius) - 2px); background: color-mix(in oklab, var(--primary) 6%, var(--card)); color: var(--foreground); font-size: 0.9rem; }
+.demo-chip { padding: 0.3rem 0.75rem; border-radius: 999px; background: var(--secondary); color: var(--secondary-foreground); font-size: 0.875rem; font-weight: 500; }
+.stage :is(stack-layout, cluster-layout, auto-grid, sidebar-layout) { inline-size: 100%; }
