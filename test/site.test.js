@@ -3,7 +3,7 @@
 // mode, theme presets and a pasted shadcn theme all work and are remembered.
 import { after, before, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { chromium } from 'playwright';
 import { serve } from '../scripts/serve.mjs';
@@ -15,8 +15,18 @@ before(async () => { site = await serve(join(root, 'dist')); browser = await chr
 after(async () => { await browser?.close(); site?.close(); });
 
 /** A page that records page errors, console errors and failed requests. */
+// ZUBRA_UI_EMIT=vanilla: the L5 spike's plain elements in place of the previews that have one.
+const VANILLA = process.env.ZUBRA_UI_EMIT === 'vanilla'
+  ? new Set(readdirSync(join(root, 'dist/vanilla')).filter((file) => file.endsWith('.js')).map((file) => file.slice(0, -3)))
+  : new Set();
 async function open(path, { context } = {}) {
   const page = await (context ?? browser).newPage();
+  if (VANILLA.size) {
+    await page.route(/\/preview\/([\w-]+)\.js$/, (route) => {
+      const component = route.request().url().match(/\/preview\/([\w-]+)\.js$/)[1];
+      return VANILLA.has(component) ? route.fulfill({ contentType: 'text/javascript', body: readFileSync(join(root, 'dist/vanilla', `${component}.js`)) }) : route.continue();
+    });
+  }
   const problems = [];
   page.on('pageerror', (error) => problems.push(`error: ${error.message}`));
   page.on('console', (message) => message.type() === 'error' && problems.push(`console: ${message.text()}`));

@@ -65,7 +65,8 @@ for (const component of components) {
   };
   const item = {
     ...common,
-    registryDependencies: [`${baseUrl}/r/theme.json`],
+    // A block brings the components it's made of (and they bring the theme).
+    registryDependencies: [`${baseUrl}/r/theme.json`, ...(component.dependencies ?? []).map((child) => `${baseUrl}/r/${child}.json`)],
     files: [{ path: `components/${component.name}.js`, type: 'registry:file', target: TARGET.component(component.name), content: compiled.output }],
   };
   write(`r/${component.name}.json`, item);
@@ -73,6 +74,8 @@ for (const component of components) {
     ...common,
     name: `${component.name}-source`,
     title: `${title(component.name)} (.zb source)`,
+    // Its imports (`./toggle-switch.zb`) need those files beside it: their source items.
+    ...(component.dependencies?.length ? { registryDependencies: component.dependencies.map((child) => `${baseUrl}/r/src/${child}.json`) } : {}),
     files: [{ path: `components/${component.files[0]}`, type: 'registry:file', target: TARGET.source(component.name), content: source }],
   });
   items.push(item);

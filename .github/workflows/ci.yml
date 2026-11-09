@@ -15,3 +15,5 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - run: npm test
+      - name: The same tests on the plain custom elements (L5 spike)
+        run: npm run test:vanilla

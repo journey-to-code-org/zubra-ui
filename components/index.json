@@ -68,6 +68,17 @@
       ]
     },
     {
+      "name": "dashboard-shell",
+      "category": "block",
+      "description": "An app's frame: a sidebar of sections, a top bar with the page title and a user menu, and the page in the middle. In a narrow space it folds the sidebar behind a Menu button, measuring itself rather than the screen.",
+      "files": [
+        "dashboard-shell.zb"
+      ],
+      "dependencies": [
+        "dropdown-menu"
+      ]
+    },
+    {
       "name": "date-range",
       "category": "input",
       "description": "A check-in and check-out date, as one value `{ start, end }` (\"YYYY-MM-DD\" strings). A form control: invalid until both are set and `end` is after `start`.",
@@ -167,6 +178,17 @@
       "dependencies": []
     },
     {
+      "name": "pricing-block",
+      "category": "block",
+      "description": "Pricing plans side by side, with a monthly or yearly switch, a featured plan, and what each includes. Choosing a plan fires `choose` with the plan and period.",
+      "files": [
+        "pricing-block.zb"
+      ],
+      "dependencies": [
+        "segmented-control"
+      ]
+    },
+    {
       "name": "progress-ring",
       "category": "display",
       "description": "A ring that fills to `value` of `max`, with what's in the middle from the default slot (the percentage if empty).",
@@ -194,6 +216,19 @@
       "dependencies": []
     },
     {
+      "name": "settings-block",
+      "category": "block",
+      "description": "An account settings page: profile, notification switches, light or dark appearance, and a delete that asks first. `value` holds it all and is two-way; Save fires `save`.",
+      "files": [
+        "settings-block.zb"
+      ],
+      "dependencies": [
+        "toggle-switch",
+        "segmented-control",
+        "modal-dialog"
+      ]
+    },
+    {
       "name": "sidebar-layout",
       "category": "layout",
       "description": "A sidebar beside the main content that moves above it when the content would get too narrow (`content-min`), with no media queries, so it works in any container.",
@@ -201,6 +236,17 @@
         "sidebar-layout.zb"
       ],
       "dependencies": []
+    },
+    {
+      "name": "signin-block",
+      "category": "block",
+      "description": "A sign-in form: email, password with show and hide, keep me signed in, reset and sign-up links, and an error that's announced. Submitting fires `signin`; with an `action` it also posts as a plain form.",
+      "files": [
+        "signin-block.zb"
+      ],
+      "dependencies": [
+        "toggle-switch"
+      ]
     },
     {
       "name": "spark-line",

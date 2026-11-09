@@ -1,0 +1,74 @@
+<!--
+  Pricing plans side by side, with a monthly or yearly switch. `plans` is `[{ id, name,
+  description, monthly, yearly, features: [], cta?, href?, featured? }]`: prices are numbers, in
+  `currency` (an ISO code) for `locale`, and `yearly` is the price for the year. A plan with an
+  `href` (a checkout link) is a link; one without is a button that fires `choose`. `period`
+  ("monthly" or "yearly") is two-way.
+  @fires periodchange - The billing period changed; `detail` is "monthly" or "yearly".
+  @fires choose - A plan was chosen; `detail` is `{ plan, period }` (the plan's id).
+-->
+<script>
+  import { emit, id } from '@zubra/runtime'
+  import './segmented-control.zb'
+
+  const PERIODS = [{ value: "monthly", label: "Monthly" }, { value: "yearly", label: "Yearly" }]
+  const prefix = id()
+  const money = (amount) => new Intl.NumberFormat(locale || undefined, { style: "currency", currency, maximumFractionDigits: amount % 1 ? 2 : 0 }).format(amount)
+  // Yearly plans show their price a month, so they compare at a glance; the year's total is below.
+  const perMonth = (plan) => (period === "yearly" && plan.yearly != null ? plan.yearly / 12 : plan.monthly)
+  const saving = (plan) => plan.monthly > 0 && plan.yearly != null ? Math.round((1 - plan.yearly / (plan.monthly * 12)) * 100) : 0
+</script>
+<style>
+  :host { display: block; }
+  header { display: grid; justify-items: center; gap: 0.75rem; margin-bottom: 1.75rem; text-align: center; }
+  h2 { margin: 0; font-size: clamp(1.5rem, 1.2rem + 1.5vw, 2.1rem); line-height: 1.2; letter-spacing: -0.02em; }
+  .pricing-intro { max-width: 34rem; margin: 0; color: var(--muted-foreground, #71717a); }
+  .pricing-plans { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr)); gap: 1rem; align-items: stretch; }
+  article { display: flex; flex-direction: column; gap: 1rem; min-width: 0; padding: 1.5rem; border: 1px solid var(--border, #e4e4e7); border-radius: calc(var(--radius, 0.625rem) + 4px); background: var(--card, #fff); color: var(--card-foreground, #09090b); }
+  article.pricing-featured { border-color: var(--primary, #18181b); box-shadow: 0 0 0 1px var(--primary, #18181b); }
+  .pricing-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem; }
+  h3 { margin: 0; font-size: 1.1rem; overflow-wrap: anywhere; }
+  .pricing-badge { flex-shrink: 0; padding: 0.15rem 0.55rem; border-radius: 999px; background: var(--primary, #18181b); color: var(--primary-foreground, #fafafa); font-size: 0.75rem; font-weight: 700; white-space: nowrap; }
+  .pricing-description { margin: -0.5rem 0 0; color: var(--muted-foreground, #71717a); font-size: 0.9rem; overflow-wrap: anywhere; }
+  .pricing-price { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.35rem; margin: 0; }
+  .pricing-amount { font-size: 2.1rem; font-weight: 750; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+  .pricing-per, .pricing-note { color: var(--muted-foreground, #71717a); font-size: 0.875rem; }
+  .pricing-note { margin: -0.7rem 0 0; }
+  ul { display: grid; align-content: start; gap: 0.5rem; flex: 1; margin: 0; padding: 0; list-style: none; font-size: 0.925rem; }
+  li { display: grid; grid-template-columns: 1.1rem 1fr; gap: 0.4rem; overflow-wrap: anywhere; }
+  li::before { content: "✓" / ""; color: var(--primary, #18181b); font-weight: 700; }
+  .pricing-choose { display: block; box-sizing: border-box; padding: 0.6rem 1rem; border: 1px solid var(--border, #e4e4e7); border-radius: calc(var(--radius, 0.625rem) - 2px); background: var(--background, #fff); color: var(--foreground, #09090b); font: inherit; font-weight: 600; text-align: center; text-decoration: none; cursor: pointer; }
+  .pricing-choose:hover { background: var(--accent, #f4f4f5); }
+  .pricing-featured .pricing-choose { border-color: var(--primary, #18181b); background: var(--primary, #18181b); color: var(--primary-foreground, #fafafa); }
+  .pricing-featured .pricing-choose:hover { opacity: 0.92; }
+  .pricing-choose:focus-visible { outline: 2px solid var(--ring, #18181b); outline-offset: 2px; }
+</style>
+<pricing-block plans={[]} period:model="monthly" currency="USD" locale="" heading="Pricing" intro="">
+  <header>
+    <h2>{heading}</h2>
+    <p zb-if={intro} class="pricing-intro">{intro}</p>
+    <segmented-control zb-if={plans.length} label="Billing period" options={PERIODS} value={period} onvaluechange={(event) => (period = event.detail)}></segmented-control>
+  </header>
+  <div class="pricing-plans">
+    <zb-each items={plans} as="plan" key={plan.id}>
+      <article class:pricing-featured={plan.featured ?? false} aria-labelledby={`${prefix}-${plan.id}`}>
+        <div class="pricing-top">
+          <h3 id={`${prefix}-${plan.id}`}>{plan.name}</h3>
+          <span zb-if={plan.featured} class="pricing-badge">Most popular</span>
+        </div>
+        <p zb-if={plan.description} class="pricing-description">{plan.description}</p>
+        <p class="pricing-price"><span class="pricing-amount">{money(perMonth(plan))}</span><span class="pricing-per">a month</span></p>
+        <p zb-if={period === "yearly" && plan.yearly > 0} class="pricing-note">{money(plan.yearly)} billed yearly{saving(plan) > 0 ? `, save ${saving(plan)}%` : ""}</p>
+        <ul aria-label={`${plan.name} includes`}>
+          <zb-each items={plan.features ?? []} as="feature" key={feature}><li>{feature}</li></zb-each>
+        </ul>
+        <zb-if test={plan.href}>
+          <a class="pricing-choose" href={plan.href}>{plan.cta ?? "Choose plan"}</a>
+          <zb-else>
+            <button type="button" class="pricing-choose" onclick={() => emit('choose', { plan: plan.id, period })}>{plan.cta ?? "Choose plan"}</button>
+          </zb-else>
+        </zb-if>
+      </article>
+    </zb-each>
+  </div>
+</pricing-block>
