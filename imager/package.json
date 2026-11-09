@@ -1,0 +1,38 @@
+{
+  "name": "zubra-imager",
+  "version": "0.1.0",
+  "description": "A folder of photos in, web-ready images (AVIF, WebP, JPEG at several widths) and a gallery.json out, for Zubra UI's image-gallery.",
+  "type": "module",
+  "bin": {
+    "zubra-imager": "cli.js"
+  },
+  "exports": "./index.js",
+  "files": [
+    "index.js",
+    "cli.js",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "exif-reader": "2.0.3",
+    "sharp": "0.35.5"
+  },
+  "keywords": [
+    "images",
+    "gallery",
+    "avif",
+    "webp",
+    "responsive-images",
+    "web-components",
+    "zubra"
+  ],
+  "author": "Mikey Nichols",
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/journey-to-code-org/zubra-ui.git",
+    "directory": "imager"
+  }
+}

@@ -13,7 +13,7 @@ const PRESETS = [
 export async function start({ stacks, stackKey }) {
   const html = document.documentElement;
   // On a phone the nav is one scrolling row: bring the current page into it.
-  const current = document.querySelector('.side [aria-current=page]');
+  const current = document.querySelector('.site-nav [aria-current=page]');
   if (current && matchMedia('(max-width: 52rem)').matches) current.scrollIntoView({ block: 'nearest', inline: 'center' });
   // The theme dialog moves its children into its own layout when it first renders: wait for that.
   await document.querySelector('#theme').updateComplete;

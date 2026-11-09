@@ -1,0 +1,20 @@
+<!--
+  A sidebar beside the main content, `side` wide, that moves above it when the content would be
+  narrower than `content-min` (a percentage of the whole): no media queries, so it works in any
+  container. `end` puts the sidebar on the right.
+  @slot side - The sidebar.
+  @slot - The main content.
+-->
+<style>
+  :host { display: block; }
+  .layout { display: flex; flex-wrap: wrap; gap: var(--gap); }
+  .layout-side { flex-basis: var(--side); flex-grow: 1; }
+  .layout-main { flex-basis: 0; flex-grow: 999; min-inline-size: var(--content-min); }
+  .end .layout-side { order: 2; }
+</style>
+<sidebar-layout side="16rem" content-min="55%" gap="1.5rem" end={false}>
+  <div class="layout" class:end={end} style:--side={side} style:--content-min={contentMin} style:--gap={gap}>
+    <div class="layout-side"><zb-slot name="side"></zb-slot></div>
+    <div class="layout-main"><zb-slot></zb-slot></div>
+  </div>
+</sidebar-layout>

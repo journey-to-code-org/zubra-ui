@@ -102,6 +102,8 @@ bootstrapApplication(App).catch((error) => console.error(error));
   // The components as `npx shadcn add` writes them (test/shadcn.test.js covers the CLI itself).
   cpSync(join(root, 'dist/modules'), join(dir, 'src/components/zubra'), { recursive: true });
   cpSync(join(root, 'themes/default.css'), join(dir, 'src/components/zubra/theme.css'));
+  // The image-gallery snippet reads gallery/gallery.json, as `npx zubra-imager` writes it.
+  cpSync(join(root, 'dist/gallery'), join(dir, 'public/gallery'), { recursive: true });
   await run(npm, ['install', '--no-audit', '--no-fund', ...Object.entries(VERSIONS).map(([name, version]) => `${name}@${version}`)], dir);
   await run(process.execPath, [join(dir, 'node_modules/vite/bin/vite.js'), 'build', '--logLevel', 'error'], dir);
   site = await serve(join(dir, 'dist'));

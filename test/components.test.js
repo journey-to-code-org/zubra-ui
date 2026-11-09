@@ -171,3 +171,121 @@ test('kanban-column: a dragged card reports its id on drop', async () => {
   assert.deepEqual(problems, []);
   await page.close();
 });
+
+// ---- L3: the gallery, masonry and layouts
+
+/** Items' boxes; true when none overlap and each sits a gap below the one above it in its column. */
+const packed = (page, selector) => page.$$eval(selector, (items) => {
+  const boxes = items.map((item) => item.getBoundingClientRect()).map(({ left, top, bottom, width }) => ({ left: Math.round(left), top, bottom, width }));
+  const overlap = boxes.some((a, i) => boxes.some((b, j) => i !== j && a.left === b.left && a.top < b.bottom - 1 && b.top < a.bottom - 1));
+  const columns = [...new Set(boxes.map((box) => box.left))].length;
+  const gaps = boxes.map((box) => {
+    const above = boxes.filter((other) => other.left === box.left && other.bottom <= box.top + 1).sort((a, b) => b.bottom - a.bottom)[0];
+    return above ? box.top - above.bottom : null;
+  }).filter((gap) => gap !== null);
+  return { overlap, columns, count: boxes.length, widestGap: Math.max(0, ...gaps), firstRowInOrder: boxes.slice(0, columns).every((box, i, row) => i === 0 || box.left > row[i - 1].left) };
+});
+
+test('image-gallery: the manifest\'s photos, packed in reading order, with sizes and resolved URLs', async () => {
+  const { page, element, problems } = await open('image-gallery');
+  await element.locator('li').nth(7).waitFor();
+  const manifest = await (await page.request.get(`${site.url}/gallery/gallery.json`)).json();
+  const images = await element.locator('.grid img').evaluateAll((list) => list.map((img) => ({ alt: img.alt, width: img.getAttribute('width'), height: img.getAttribute('height'), src: img.src, srcset: img.getAttribute('srcset') })));
+  assert.deepEqual(images.map((img) => img.alt), manifest.items.map((item) => item.alt), 'DOM order is the manifest\'s order');
+  for (const img of images) {
+    assert.ok(img.width && img.height, `${img.alt}: width and height, so nothing jumps`);
+    assert.match(img.src, /\/gallery\/[\w-]+\.jpg$/, 'relative to the manifest');
+    for (const candidate of img.srcset.split(', ')) assert.match(candidate, /^http:\/\/127\.0\.0\.1:\d+\/gallery\/[\w-]+\.webp \d+w$/);
+  }
+  await page.waitForFunction(() => [...document.querySelectorAll('image-gallery .grid img')].every((img) => img.complete));
+  const layout = await packed(page, 'image-gallery .grid > li');
+  assert.equal(layout.overlap, false);
+  assert.ok(layout.columns >= 2, `${layout.columns} columns`);
+  assert.ok(layout.firstRowInOrder, 'the first items run left to right');
+  assert.ok(layout.widestGap < 24, `items pack up to the one above (largest gap ${layout.widestGap}px)`);
+  assert.deepEqual(problems, []);
+  await page.close();
+});
+
+test('image-gallery: the lightbox opens on a photo, steps with the arrows, and closes back to it', async () => {
+  const { page, element, problems } = await open('image-gallery');
+  const thumb = element.locator('.thumb').nth(1);
+  await thumb.focus();
+  await page.keyboard.press('Enter');
+  const count = element.locator('.lightbox .count');
+  await count.waitFor();
+  assert.equal(await count.textContent(), '2 of 8');
+  assert.equal(await prop(element, 'index'), 1);
+  assert.match(await element.locator('.lightbox picture source').first().getAttribute('type'), /image\/avif/);
+  await page.keyboard.press('ArrowRight');
+  assert.equal(await count.textContent(), '3 of 8');
+  await page.keyboard.press('ArrowLeft');
+  await page.keyboard.press('ArrowLeft');
+  await page.keyboard.press('ArrowLeft');
+  assert.equal(await count.textContent(), '8 of 8', 'it wraps around');
+  await page.keyboard.press('Escape');
+  assert.equal(await prop(element, 'index'), -1);
+  assert.equal(await element.locator('.lightbox').evaluate((dialog) => dialog.open), false);
+  assert.equal(await thumb.evaluate((button) => button === document.activeElement), true, 'focus is back on the photo it opened from');
+  await element.evaluate((el) => { el.index = 4; });
+  await element.getByRole('button', { name: 'Close' }).click();
+  assert.equal(await prop(element, 'index'), -1);
+  assert.deepEqual(problems, []);
+  await page.close();
+});
+
+test('image-gallery: a manifest that won\'t load says so', async () => {
+  const { page, element } = await open('image-gallery');
+  await element.evaluate((el) => { el.src = '../../gallery/missing.json'; });
+  await element.locator('.status').waitFor();
+  assert.match(await element.locator('.status').textContent(), /Couldn't load the photos/);
+  await page.close();
+});
+
+test('masonry-grid: items of different heights pack in reading order, and a new one joins in', async () => {
+  const { page, element, problems } = await open('masonry-grid');
+  let layout = await packed(page, 'masonry-grid article');
+  assert.equal(layout.overlap, false);
+  assert.ok(layout.columns >= 2 && layout.firstRowInOrder);
+  assert.ok(layout.widestGap < 20, `largest gap ${layout.widestGap}px`);
+  await element.locator('.grid').evaluate((grid) => {
+    const note = document.createElement('article');
+    note.innerHTML = '<h3>Added later</h3><p>One more line of text, then another, then another to make it tall.</p>';
+    grid.append(note);
+  });
+  await page.waitForTimeout(100);
+  layout = await packed(page, 'masonry-grid article');
+  assert.equal(layout.count, 7);
+  assert.equal(layout.overlap, false);
+  assert.deepEqual(problems, []);
+  await page.close();
+});
+
+test('sidebar-layout and auto-grid follow the space they have, with no media queries', async () => {
+  for (const [width, beside, columns] of [[1280, true, 4], [360, false, 1]]) {
+    const page = await browser.newPage({ viewport: { width, height: 800 } });
+    await page.goto(`${site.url}/components/sidebar-layout/`, { waitUntil: 'networkidle' });
+    const [side, main] = await page.$$eval('[data-preview] sidebar-layout > div > div', (parts) => parts.map((part) => part.getBoundingClientRect().toJSON()));
+    assert.equal(side.right <= main.left, beside, `${width}px: sidebar ${beside ? 'beside' : 'above'} the content`);
+    if (!beside) assert.ok(side.bottom <= main.top);
+    await page.goto(`${site.url}/components/auto-grid/`, { waitUntil: 'networkidle' });
+    const lefts = await page.$$eval('[data-preview] auto-grid .demo-box', (cells) => new Set(cells.map((cell) => Math.round(cell.getBoundingClientRect().left))).size);
+    assert.equal(lefts, columns, `${width}px: ${columns} columns`);
+    await page.close();
+  }
+});
+
+test('image-gallery: a photo whose srcset has an unsafe URL doesn\'t get one (Zubra 5.1\'s check)', async () => {
+  const { page, element } = await open('image-gallery');
+  const messages = [];
+  page.on('console', (message) => messages.push(message.text()));
+  await element.evaluate((el) => {
+    el.src = '';
+    el.items = [{ src: '/a.jpg', alt: 'Safe', width: 4, height: 3, srcset: '/a-480.webp 480w, /a-960.webp 960w' }, { src: '/b.jpg', alt: 'Unsafe', width: 4, height: 3, srcset: '/b.webp 480w, javascript:alert(1) 960w' }];
+  });
+  await element.locator('.grid img').nth(1).waitFor({ state: 'attached' });
+  const sets = await element.locator('.grid img').evaluateAll((list) => list.map((img) => img.getAttribute('srcset')));
+  assert.deepEqual(sets, ['/a-480.webp 480w, /a-960.webp 960w', null]);
+  assert.ok(messages.some((message) => message.includes('blocked an unsafe URL')));
+  await page.close();
+});

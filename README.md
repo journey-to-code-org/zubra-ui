@@ -48,13 +48,30 @@ So:
 
 ## The components
 
-25 to start, each tested for its roles, accessible names and keyboard behaviour (in the Zubra repository, in Chromium, Firefox and WebKit). They include:
+31, each tested for its roles, accessible names and keyboard behaviour. They include:
 - form controls: toggle switch, star rating, choice cards, colour swatches, money input, quantity stepper, tag input, date range, segmented control;
 - widgets: tabs, dropdown menu, combobox (with Zag.js), tooltip, accordion, modal dialog, flip card, step indicator;
-- charts: line, donut, spark line, progress ring, streak grid;
+- display: line, donut and spark line charts, progress ring, streak grid, an image gallery with a lightbox, and a masonry grid;
+- layout: stack, cluster, sidebar and auto grid, which adapt to their space with no media queries;
 - app pieces: chat message, message composer, kanban column.
 
-`dist/r/registry.json` lists them all. The `legacy/` folder holds the original wcl components (layouts, the photo gallery and its image pipeline, masonry), which are being rebuilt in Zubra.
+`dist/r/registry.json` lists them all. The `legacy/` folder holds the original wcl, which these replace.
+
+## Photos: zubra-imager
+
+`imager/` is a separate package, `zubra-imager`, for the image gallery. It turns a folder of photos into web-ready images and a `gallery.json`:
+
+```sh
+npx zubra-imager photos/          # writes gallery/: AVIF, WebP and JPEG at 480, 960 and 1600px, and gallery.json
+```
+
+```html
+<image-gallery src="gallery/gallery.json"></image-gallery>
+```
+
+- It turns each photo upright and strips its metadata, so no location or camera details are published.
+- Alt text comes from `alt.json` beside the photos, then the photo's own description, then its file name.
+- Each photo gets a tiny blurred placeholder, and unchanged photos are skipped next time.
 
 ## Developing
 
@@ -65,7 +82,12 @@ npm run serve     # http://127.0.0.1:4174/r/registry.json
 npm test          # builds, then installs components with the real shadcn CLI into fresh projects
 ```
 
-- **The tests** make throwaway projects: plain HTML with Vite, and React 19. They run `npx shadcn add` against the local registry, build with Vite, and use the components in Chromium.
+- **The tests:**
+  - `npx shadcn add` into throwaway plain-HTML and React projects;
+  - every page in Chromium, including contrast, axe, and phone widths;
+  - every page's code built into React, Vue, Svelte, Angular and HTML apps;
+  - each component's edge cases;
+  - zubra-imager on photos made in the test.
 - **`ZUBRA_UI_URL`** (or `--base-url`) sets the URL the registry items point at. The Pages workflow sets it to the published site.
 
 ISC licence. By Mikey Nichols.

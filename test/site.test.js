@@ -154,7 +154,7 @@ test('on a phone nothing scrolls sideways, and the nav lists every component', a
   const failures = [];
   await Promise.all(['/', ...components.map(({ name }) => `/components/${name}/`)].map(async (path) => {
     const { page } = await open(path, { context });
-    const { scroll, width, nav } = await page.evaluate(() => ({ scroll: document.documentElement.scrollWidth, width: innerWidth, nav: document.querySelectorAll('.side a[href*="components/"]').length }));
+    const { scroll, width, nav } = await page.evaluate(() => ({ scroll: document.documentElement.scrollWidth, width: innerWidth, nav: document.querySelectorAll('.site-nav a[href*="components/"]').length }));
     if (scroll > width) failures.push(`${path}: ${scroll}px wide in ${width}px`);
     if (nav !== components.length) failures.push(`${path}: nav lists ${nav} of ${components.length}`);
     await page.close();
