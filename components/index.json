@@ -144,7 +144,7 @@
     {
       "name": "masonry-grid",
       "category": "display",
-      "description": "A masonry layout for items of different heights (cards, notes, photos): packed into columns at least `column` wide, while the order stays the reading order for Tab, screen readers and search.",
+      "description": "A masonry layout for any items of different heights (cards, notes, photos): packed into columns as wide as `column` allows, while the order stays the reading order, so Tab, screen readers and search see the items left to right, top to bottom, as written. Browsers with native masonry (CSS grid lanes) lay it out themselves; the others get a small script that measures each item.",
       "files": [
         "masonry-grid.zb"
       ],
@@ -443,6 +443,24 @@
       "description": "A decorative background behind its content: a grid, dots, a soft gradient mesh, film grain, or an aurora. Drawn in CSS from the theme's colours, so it follows light, dark and any theme. It's hidden from screen readers and never takes clicks or focus; with `animated` the mesh and aurora drift slowly, and stay still for visitors who asked for less motion. `fade` softens the edges toward the page. `size` is the grid or dot spacing.",
       "files": [
         "backdrop-pattern.zb"
+      ],
+      "dependencies": []
+    },
+    {
+      "name": "switcher-layout",
+      "category": "layout",
+      "description": "Children side by side in equal columns while the container is wide enough, and stacked one above the other below `threshold` (the container's width, not the screen's, so it works in a sidebar as well as the page). More than `limit` children always stack. Every child switches at once: no awkward row of two over one.",
+      "files": [
+        "switcher-layout.zb"
+      ],
+      "dependencies": []
+    },
+    {
+      "name": "reel-layout",
+      "category": "layout",
+      "description": "A row that scrolls sideways: cards, photos, episodes. Each child is `item` wide and snaps into place. The row is a labelled region that takes focus, so arrow keys scroll it; `controls` adds previous and next buttons that move one item at a time, and are disabled at either end.",
+      "files": [
+        "reel-layout.zb"
       ],
       "dependencies": []
     }

@@ -633,3 +633,40 @@ test('backdrop-pattern: decorative only (hidden, never hit), and still under red
   assert.deepEqual(problems, []);
   await page.close();
 });
+
+test('switcher-layout: side by side when there is room, all stacked at once below the threshold', async () => {
+  const { page, element, problems } = await open('switcher-layout');
+  const tops = () => element.locator('.demo-box').evaluateAll((boxes) => boxes.map((box) => Math.round(box.getBoundingClientRect().top)));
+  await element.evaluate((el) => (el.style.width = '40rem'));
+  await page.waitForTimeout(100);
+  assert.equal(new Set(await tops()).size, 1, 'one row');
+  await element.evaluate((el) => (el.style.width = '20rem'));
+  await page.waitForTimeout(100);
+  assert.equal(new Set(await tops()).size, 3, 'three rows, not two and one');
+  await element.evaluate((el) => { el.style.width = '40rem'; el.limit = 2; });
+  await page.waitForTimeout(100);
+  assert.equal(new Set(await tops()).size, 3, 'more children than the limit stack anyway');
+  assert.deepEqual(problems, []);
+  await page.close();
+});
+
+test('reel-layout: a focusable, labelled region; next and previous move one item and stop at the ends', async () => {
+  const { page, element, problems } = await open('reel-layout');
+  const reel = element.getByRole('region', { name: 'Upcoming events' });
+  assert.equal(await reel.getAttribute('tabindex'), '0');
+  await element.evaluate((el) => (el.style.width = '24rem'));
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  const previous = element.getByRole('button', { name: 'Previous' });
+  const next = element.getByRole('button', { name: 'Next' });
+  await page.waitForTimeout(100);
+  assert.equal(await previous.isDisabled(), true, 'at the start');
+  await next.click();
+  await page.waitForTimeout(150);
+  assert.ok((await reel.evaluate((el) => el.scrollLeft)) > 100, 'scrolled by an item');
+  assert.equal(await previous.isDisabled(), false);
+  await reel.evaluate((el) => el.scrollTo({ left: el.scrollWidth }));
+  await page.waitForTimeout(150);
+  assert.equal(await next.isDisabled(), true, 'at the end');
+  assert.deepEqual(problems, []);
+  await page.close();
+});

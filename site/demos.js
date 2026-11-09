@@ -307,4 +307,13 @@ export const demos = {
     props: { animated: true },
     html: '<div style="padding: 3rem 1.5rem; text-align: center">\n  <h2 style="margin: 0">Ship components, not frameworks</h2>\n  <p>One file each, in any stack.</p>\n</div>',
   },
+  'switcher-layout': {
+    attrs: { threshold: '28rem', gap: '0.75rem' },
+    html: '<div class="demo-box">Plan</div>\n<div class="demo-box">Build</div>\n<div class="demo-box">Ship</div>',
+  },
+  'reel-layout': {
+    attrs: { item: '11rem', gap: '0.75rem', label: 'Upcoming events' },
+    props: { controls: true },
+    html: ['Bake sale', 'Choir night', 'Plant swap', 'Book club', 'Quiz night', 'Litter pick'].map((name) => `<div class="demo-box">${name}</div>`).join('\n'),
+  },
 };
