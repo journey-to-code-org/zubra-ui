@@ -1,0 +1,139 @@
+// The promise on the box: a project installs Zubra UI components with the shadcn CLI, builds them
+// with its own tooling, and they work. Each test makes a fresh project, runs the real
+// `npx shadcn add <url>` against dist/r/ (served on 4174, the URL the build writes), installs, builds
+// with Vite and uses the components in Chromium.
+//
+// Slow (npm installs): about a minute per project.
+import { test, before, after } from 'node:test';
+import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { chromium } from 'playwright';
+import { serve } from '../scripts/serve.mjs';
+
+const root = join(dirname(fileURLToPath(import.meta.url)), '..');
+const SHADCN = 'shadcn@4.23.0';
+const VERSIONS = { vite: '8.3.6', react: '19.3.1', 'react-dom': '19.3.1', '@vitejs/plugin-react': '6.2.1' };
+const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+const npx = process.platform === 'win32' ? 'npx.cmd' : 'npx';
+
+let registry;
+let browser;
+const projects = [];
+before(async () => {
+  assert.ok(existsSync(join(root, 'dist/r/registry.json')), 'run node scripts/build.mjs first (npm test does)');
+  registry = await serve(join(root, 'dist'), 4174);
+  browser = await chromium.launch();
+});
+after(async () => {
+  await browser?.close();
+  registry?.close();
+  for (const dir of projects) rmSync(dir, { recursive: true, force: true });
+});
+
+function project(name, files) {
+  const dir = mkdtempSync(join(tmpdir(), `zubra-ui-${name}-`));
+  projects.push(dir);
+  for (const [path, text] of Object.entries(files)) {
+    mkdirSync(dirname(join(dir, path)), { recursive: true });
+    writeFileSync(join(dir, path), text);
+  }
+  return dir;
+}
+const run = (command, args, cwd) => execFileSync(command, args, { cwd, encoding: 'utf8', stdio: 'pipe', shell: process.platform === 'win32' });
+const add = (dir, ...names) => run(npx, ['-y', SHADCN, 'add', ...names.map((name) => `${registry.url}/r/${name}.json`), '--yes'], dir);
+
+async function open(dir) {
+  run(npx, ['vite', 'build', '--logLevel', 'error'], dir);
+  const site = await serve(join(dir, 'dist'));
+  const page = await browser.newPage();
+  const problems = [];
+  page.on('pageerror', (error) => problems.push(error.message));
+  page.on('console', (message) => { if (message.type() === 'error') problems.push(message.text()); });
+  await page.goto(`${site.url}/`, { waitUntil: 'networkidle' });
+  return { page, problems, close: async () => { await page.close(); site.close(); } };
+}
+
+const color = (page, selector, property) => page.locator(selector).first().evaluate((el, property) => getComputedStyle(el)[property], property);
+
+test('plain HTML and Vite: shadcn installs the components, their runtime and the theme', async () => {
+  const dir = project('plain', {
+    'package.json': JSON.stringify({ name: 'plain', private: true, type: 'module' }),
+    'index.html': `<!doctype html><html lang="en"><body>
+      <toggle-switch label="Email me" name="email"></toggle-switch>
+      <tab-list id="tabs"></tab-list>
+      <script type="module" src="/main.js"></script></body></html>`,
+    'main.js': `import './src/components/zubra/theme.css';
+      import './src/components/zubra/toggle-switch.js';
+      import './src/components/zubra/tab-list.js';
+      document.querySelector('#tabs').tabs = [{ value: 'one', label: 'One' }, { value: 'two', label: 'Two' }];`,
+  });
+  add(dir, 'toggle-switch', 'tab-list');
+  for (const file of ['src/components/zubra/toggle-switch.js', 'src/components/zubra/tab-list.js', 'src/components/zubra/theme.css']) {
+    assert.ok(existsSync(join(dir, file)), `${file} written`);
+  }
+  const pkg = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'));
+  assert.match(pkg.dependencies['@zubra/runtime'], /^\^5\./, 'the runtime is a dependency');
+  run(npm, ['install', '--no-audit', '--no-fund', `vite@${VERSIONS.vite}`], dir);
+
+  const { page, problems, close } = await open(dir);
+  await page.waitForSelector('toggle-switch [role=switch]');
+  const toggle = 'toggle-switch [role=switch]';
+  assert.equal(await page.getAttribute(toggle, 'aria-checked'), 'false');
+  await page.click(toggle);
+  assert.equal(await page.getAttribute(toggle, 'aria-checked'), 'true');
+  // The theme's --primary (shadcn's zinc, oklch(0.21 0.006 285.885)) colours the checked track.
+  const primary = await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--primary').trim());
+  assert.equal(primary, 'oklch(0.21 0.006 285.885)');
+  assert.equal(await color(page, 'toggle-switch [aria-checked=true] .track', 'backgroundColor'), 'oklch(0.21 0.006 285.885)');
+  // Tabs: arrow keys move between them (the component's own keyboard handling).
+  await page.waitForSelector('tab-list [role=tab]');
+  await page.focus('tab-list [role=tab][aria-selected=true]');
+  await page.keyboard.press('ArrowRight');
+  assert.equal(await page.getAttribute('tab-list [role=tab][data-value=two]', 'aria-selected'), 'true');
+  assert.deepEqual(problems, []);
+  await close();
+});
+
+test('React 19 and Vite: the same install, used as custom elements in JSX', async () => {
+  const dir = project('react', {
+    'package.json': JSON.stringify({ name: 'react-app', private: true, type: 'module' }),
+    'vite.config.js': `import react from '@vitejs/plugin-react';\nexport default { plugins: [react()] };\n`,
+    'index.html': `<!doctype html><html lang="en" class="dark"><body><div id="root"></div><script type="module" src="/main.jsx"></script></body></html>`,
+    'main.jsx': `import { useState } from 'react';
+      import { createRoot } from 'react-dom/client';
+      import './src/components/zubra/theme.css';
+      import './src/components/zubra/star-rating.js';
+      function App() {
+        const [stars, setStars] = useState(2);
+        return <main>
+          <star-rating label="Rating" value={stars} onvaluechange={(event) => setStars(event.detail)}></star-rating>
+          <p id="stars">{stars} stars</p>
+        </main>;
+      }
+      createRoot(document.getElementById('root')).render(<App />);`,
+  });
+  add(dir, 'star-rating');
+  run(npm, ['install', '--no-audit', '--no-fund', ...Object.entries(VERSIONS).map(([name, version]) => `${name}@${version}`)], dir);
+
+  const { page, problems, close } = await open(dir);
+  await page.waitForSelector('star-rating button');
+  assert.equal(await page.textContent('#stars'), '2 stars');
+  await page.click('star-rating button[aria-label="4 of 5"]');
+  assert.equal(await page.textContent('#stars'), '4 stars', 'the component\'s event reaches React state');
+  // class="dark" on <html>: the theme's dark values.
+  assert.equal(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--background').trim()), 'oklch(0.141 0.005 285.823)');
+  assert.deepEqual(problems, []);
+  await close();
+});
+
+test('the .zb source item installs the component for editing', () => {
+  const dir = project('source', { 'package.json': JSON.stringify({ name: 'source', private: true, type: 'module' }) });
+  add(dir, 'src/toggle-switch');
+  const source = readFileSync(join(dir, 'src/components/toggle-switch.zb'), 'utf8');
+  assert.match(source, /<toggle-switch/);
+  assert.match(source, /var\(--primary/, 'on shadcn\'s variable names');
+});
