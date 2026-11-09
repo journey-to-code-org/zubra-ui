@@ -18,7 +18,10 @@ export function serve(dir, port = 0) {
     response.writeHead(200, { 'content-type': TYPES[extname(path)] ?? 'application/octet-stream', 'access-control-allow-origin': '*' });
     createReadStream(path).pipe(response);
   });
-  return new Promise((done) => server.listen(port, '127.0.0.1', () => done({ url: `http://127.0.0.1:${server.address().port}`, close: () => server.close() })));
+  return new Promise((done, fail) => {
+    server.once('error', (error) => fail(error.code === 'EADDRINUSE' ? new Error(`port ${port} is in use (another \`npm run serve\`?)`) : error));
+    server.listen(port, '127.0.0.1', () => done({ url: `http://127.0.0.1:${server.address().port}`, close: () => server.close() }));
+  });
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
