@@ -1,0 +1,37 @@
+<!--
+  Children side by side in equal columns while the container is wide enough, and stacked one
+  above the other below `threshold` (the container's width, not the screen's, so it works in a
+  sidebar as well as the page). More than `limit` children always stack. Every child switches at
+  once: no awkward row of two over one.
+  @slot - The children.
+-->
+<script>
+  import { onMount } from '@zubra/runtime'
+
+  let box = null
+  let probe = null
+  let stacked = false
+
+  // CSS can't compare a container's width with a custom property, so this measures both.
+  onMount(() => {
+    const check = () => {
+      stacked = box.children.length > limit || box.clientWidth < probe.offsetWidth
+    }
+    const sizes = new ResizeObserver(check)
+    sizes.observe(box)
+    const children = new MutationObserver(check)
+    children.observe(box, { childList: true })
+    check()
+    return () => { sizes.disconnect(); children.disconnect() }
+  })
+</script>
+<style>
+  :host { display: block; }
+  .switcher-grid { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: var(--gap); align-items: var(--align); }
+  .switcher-stacked { grid-auto-flow: row; grid-auto-columns: auto; }
+  .switcher-probe { position: absolute; width: var(--threshold); height: 0; visibility: hidden; pointer-events: none; }
+</style>
+<switcher-layout threshold="30rem" gap="1rem" limit={4} align="stretch">
+  <span class="switcher-probe" ref={probe} style:--threshold={threshold} aria-hidden="true"></span>
+  <div class="switcher-grid" class:switcher-stacked={stacked} ref={box} style:--gap={gap} style:--align={align}><zb-slot></zb-slot></div>
+</switcher-layout>

@@ -22,21 +22,22 @@
   :host { display: grid; grid-template-columns: 11rem 1fr; gap: 1.25rem; align-items: center; }
   .chart { position: relative; }
   svg { display: block; width: 100%; transform: rotate(-90deg); }
-  circle { fill: none; stroke-width: 5; cursor: pointer; transition: stroke-width 0.15s, opacity 0.15s; }
+  circle { fill: none; stroke-width: 5; cursor: pointer; transition: stroke-width var(--duration-fast, 150ms), opacity var(--duration-fast, 150ms); }
   circle.track { stroke: var(--muted, #f3f4f7); cursor: default; }
   circle.dim { opacity: 0.3; }
   circle.on { stroke-width: 6.5; }
   .middle { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; pointer-events: none; }
   ul { display: grid; gap: 0.25rem; margin: 0; padding: 0; list-style: none; }
-  button { display: grid; grid-template-columns: 0.75rem 1fr auto; gap: 0.5rem; align-items: center; width: 100%; padding: 0.3rem 0.45rem; border: 0; border-radius: 0.45rem; background: none; color: inherit; font: inherit; font-size: 0.875rem; text-align: left; cursor: pointer; }
+  button { display: grid; grid-template-columns: 0.75rem 1fr auto; gap: 0.5rem; align-items: center; width: 100%; padding: 0.3rem 0.45rem; border: 0; border-radius: calc(var(--radius, 0.625rem) * 0.72); background: none; color: inherit; font: inherit; font-size: 0.875rem; text-align: left; cursor: pointer; }
   button:hover, button[aria-pressed=true] { background: var(--muted, #f3f4f7); }
-  .swatch { width: 0.75rem; height: 0.75rem; border-radius: 0.2rem; }
+  .swatch { width: 0.75rem; height: 0.75rem; border-radius: calc(var(--radius, 0.625rem) * 0.32); }
   .pct { color: var(--muted-foreground, #667085); font-variant-numeric: tabular-nums; }
   .t0 { stroke: var(--chart-1, #4f46e5); background: var(--chart-1, #4f46e5); } .t1 { stroke: var(--chart-2, #0891b2); background: var(--chart-2, #0891b2); }
   .t2 { stroke: var(--chart-3, #16a34a); background: var(--chart-3, #16a34a); } .t3 { stroke: var(--chart-4, #ca8a04); background: var(--chart-4, #ca8a04); }
   .t4 { stroke: var(--chart-5, #ea580c); background: var(--chart-5, #ea580c); } .t5 { stroke: #db2777; background: #db2777; }
   .t6 { stroke: #7c3aed; background: #7c3aed; } .t7 { stroke: #64748b; background: #64748b; }
   @media (max-width: 34rem) { :host { grid-template-columns: 1fr; } .chart { max-width: 12rem; margin: 0 auto; } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: 0s !important; animation-duration: 0s !important; animation-iteration-count: 1 !important; } }
 </style>
 <donut-chart segments={[]} value:model="" label="Chart">
   <div class="chart">

@@ -1,0 +1,44 @@
+<!--
+  A set of options where one is chosen, on native radio buttons in a <fieldset>: arrow keys move
+  between them, the choice submits under `name`, and `required` validates. `options` is
+  `[{ value, label, description? }]`; `value` is two-way. `orientation="horizontal"` puts them in a row.
+  @fires valuechange - The choice changed; `detail` is the chosen value.
+-->
+<script>
+  import { id } from '@zubra/runtime'
+
+  // The radios need a shared name to act as one group; a fallback keeps two unnamed groups apart.
+  const fallback = id()
+  const group = name || fallback
+</script>
+<style>
+  :host { display: block; }
+  fieldset { margin: 0; padding: 0; border: 0; min-width: 0; }
+  legend { padding: 0; margin-bottom: 0.6rem; font-weight: 600; font-size: 0.925rem; }
+  .radios-options { display: grid; gap: 0.6rem; }
+  .radios-horizontal { display: flex; flex-wrap: wrap; gap: 0.6rem 1.25rem; }
+  label { display: grid; grid-template-columns: auto 1fr; column-gap: 0.65rem; align-items: start; cursor: pointer; }
+  input { appearance: none; display: grid; place-content: center; width: 1.15rem; height: 1.15rem; margin: 0.15rem 0 0; border: 1px solid var(--input, #a1a1aa); border-radius: 50%; background: var(--background, #fff); cursor: pointer; }
+  input::before { content: ""; width: 0.55rem; height: 0.55rem; border-radius: 50%; background: var(--primary, #18181b); transform: scale(0); transition: transform var(--duration-fast, 150ms); }
+  input:checked { border-color: var(--primary, #18181b); }
+  input:checked::before { transform: scale(1); }
+  input:focus-visible { outline: 2px solid var(--ring, #a1a1aa); outline-offset: 2px; }
+  input:disabled { opacity: 0.55; cursor: not-allowed; }
+  .radios-label { font-weight: 500; }
+  small { grid-column: 2; color: color-mix(in oklab, var(--muted-foreground, #71717a) 75%, var(--foreground, #18181b)); }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: 0s !important; animation-duration: 0s !important; animation-iteration-count: 1 !important; } }
+</style>
+<radio-group value:model="" options={[]} label="" name="" orientation="vertical" required={false} disabled={false}>
+  <fieldset disabled={disabled}>
+    <legend>{label}</legend>
+    <div class="radios-options" class:radios-horizontal={orientation === "horizontal"}>
+      <zb-each items={options} as="option" key={option.value}>
+        <label>
+          <input type="radio" name={group} value={option.value} required={required} checked={option.value === value} onchange={() => (value = option.value)}>
+          <span class="radios-label">{option.label}</span>
+          <small zb-if={option.description}>{option.description}</small>
+        </label>
+      </zb-each>
+    </div>
+  </fieldset>
+</radio-group>

@@ -45,7 +45,7 @@
   [role=tablist] { display: flex; gap: 0.25rem; border-bottom: 1px solid var(--border, #dde); }
   [role=tab] { padding: 0.55rem 0.9rem; border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px; background: none; color: var(--muted-foreground, #667085); font: inherit; font-weight: 600; cursor: pointer; }
   [role=tab][aria-selected=true] { color: var(--foreground, #1d2130); border-bottom-color: var(--primary, #36c); }
-  [role=tab]:focus-visible { outline: 2px solid var(--primary, #36c); outline-offset: -2px; border-radius: 0.3rem; }
+  [role=tab]:focus-visible { outline: 2px solid var(--primary, #36c); outline-offset: -2px; border-radius: calc(var(--radius, 0.625rem) * 0.48); }
   [role=tabpanel] { padding: 1rem 0.25rem; }
   [role=tabpanel]:focus-visible { outline: 2px solid var(--primary, #36c); outline-offset: 2px; }
 </style>

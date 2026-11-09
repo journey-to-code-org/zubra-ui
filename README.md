@@ -54,6 +54,21 @@ So:
 - **In a shadcn/ui app,** the components already match: skip `theme.css`, or keep yours.
 - **Any shadcn theme works,** including those from theme generators. Replace the variables and every component follows, including the ones with a shadow root, because CSS variables inherit into it.
 
+**Themes with character, on a whole page or one section.** A theme here is more than a colour: it sets the colours for light and dark, the fonts, the corners (everything rounds from `--radius`) and the motion (`--duration-fast`, `--duration-normal`, `--duration-slow`, `--ease-out`). Five come with it: Zinc (shadcn's default), Paper, Terminal, Candy and Midnight. Each applies wherever `data-theme` is set, so one page can hold several:
+
+```sh
+npx shadcn add https://journey-to-code-org.github.io/zubra-ui/r/themes/paper.json
+```
+
+```html
+<html data-theme="paper">           <!-- the whole page -->
+<section data-theme="terminal">     <!-- or just this part -->
+```
+
+A theme is a JSON file in `themes/sets/` that `extends` another and lists only what differs; the build compiles it to scoped CSS. The site's Themes page shows each one on the same small app, and has an editor that makes your own and gives you its JSON and CSS.
+
+**Motion:** every component that moves takes its timing from the theme, and stops moving for visitors who have asked their system for less motion.
+
 ## The components
 
 35, each tested for its roles, accessible names and keyboard behaviour. They include:
@@ -86,7 +101,7 @@ npx zubra-imager photos/          # writes gallery/: AVIF, WebP and JPEG at 480,
 
 ```sh
 npm install
-npm run build     # dist/: compiled components, plain elements, registry items, themes
+npm run build     # dist/: compiled components, plain elements, registry items, themes (and scoped themes from themes/sets/)
 npm run serve     # http://127.0.0.1:4174/r/registry.json
 npm test          # builds, then installs components with the real shadcn CLI into fresh projects
 ```

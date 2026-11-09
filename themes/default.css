@@ -3,6 +3,11 @@
    `class="dark"` on <html> (as shadcn does it), or follow the system with `themes/system.css`. */
 :root {
   --radius: 0.625rem;
+  /* Motion: every component's transitions use these, and stop under prefers-reduced-motion. */
+  --duration-fast: 150ms;
+  --duration-normal: 200ms;
+  --duration-slow: 400ms;
+  --ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
   --background: oklch(1 0 0);
   --foreground: oklch(0.141 0.005 285.823);
   --card: oklch(1 0 0);

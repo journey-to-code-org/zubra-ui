@@ -34,6 +34,8 @@ const camel = (name) => name.replace(/-(\w)/g, (_, c) => c.toUpperCase());
 const pascal = (name) => camel(name).replace(/^\w/, (c) => c.toUpperCase());
 const handlerName = (event) => `on${event[0].toUpperCase()}${event.slice(1)}`;
 const importLine = (name) => `import './components/zubra/${name}.js';`;
+// A component driven by a document event (toast-region): its demo's button dispatches the event.
+const dispatch = (trigger, pad = '') => `document.dispatchEvent(new CustomEvent('${trigger.event}', { detail: ${js(trigger.detail, pad)} }))`;
 
 /** The element, with children, for markup-like stacks; `bind(prop)` and `on(event)` give each stack's syntax. */
 function element(name, demo, { bind, on, pad = '' }) {
@@ -58,7 +60,8 @@ export function html(name, demo) {
     for (const event of demo.events ?? []) lines.push(`element.addEventListener('${event}', (event) => console.log('${event}', event.detail));`);
     if (demo.opener) lines.push(`document.querySelector('#open-${name}').addEventListener('click', () => { element.open = true; });`);
   }
-  const markup = [demo.opener && `<button type="button" id="open-${name}">${demo.opener}</button>`, element(name, { ...demo, props: {}, events: [] }, { bind: () => '', on: () => '' })].filter(Boolean).join('\n');
+  if (demo.trigger) lines.push('', `document.querySelector('#show-${name}').addEventListener('click', () => {`, `  ${dispatch(demo.trigger, '  ')};`, '});');
+  const markup = [demo.opener && `<button type="button" id="open-${name}">${demo.opener}</button>`, demo.trigger && `<button type="button" id="show-${name}">${demo.trigger.label}</button>`, element(name, { ...demo, props: {}, events: [] }, { bind: () => '', on: () => '' })].filter(Boolean).join('\n');
   return `${markup}\n\n<script type="module">\n${indent(lines.join('\n'), '  ')}\n</script>`;
 }
 
@@ -68,7 +71,7 @@ export function react(name, demo) {
   const body = element(name, { ...demo, html: demo.html && toJsx(demo.html) }, {
     bind: (prop) => `${prop}={${prop}}`,
     on: (event) => `on${event}={(event) => console.log('${event}', event.detail)}`,
-    pad: demo.opener ? '      ' : '    ',
+    pad: demo.opener || demo.trigger ? '      ' : '    ',
   });
   const values = Object.entries(demo.props ?? {}).filter(([prop]) => !(demo.opener && prop === 'open'));
   const lines = [importLine(name), demo.opener ? "import { useState } from 'react';" : null, ''].filter((line) => line !== null);
@@ -79,6 +82,8 @@ export function react(name, demo) {
     lines.push('  const [open, setOpen] = useState(false);');
     const withOpen = body.replace(`on${'openchange'}={(event) => console.log('openchange', event.detail)}`, 'onopenchange={(event) => setOpen(event.detail)}');
     lines.push('  return (', '    <>', `      <button type="button" onClick={() => setOpen(true)}>${demo.opener}</button>`, withOpen, '    </>', '  );');
+  } else if (demo.trigger) {
+    lines.push('  return (', '    <>', `      <button type="button" onClick={() => ${dispatch(demo.trigger, '      ')}}>${demo.trigger.label}</button>`, body, '    </>', '  );');
   } else {
     lines.push('  return (', body, '  );');
   }
@@ -97,7 +102,9 @@ export function vue(name, demo) {
     on: (event) => (demo.opener && event === 'openchange' ? '@openchange="open = $event.detail"' : `@${event}="${handlerName(event)}"`),
     pad: '  ',
   });
-  const opener = demo.opener ? `  <button type="button" @click="open = true">${demo.opener}</button>\n` : '';
+  if (demo.trigger) script.push(`const show = () => ${dispatch(demo.trigger)};`);
+  const opener = demo.opener ? `  <button type="button" @click="open = true">${demo.opener}</button>\n`
+    : demo.trigger ? `  <button type="button" @click="show">${demo.trigger.label}</button>\n` : '';
   return `<script setup>\n${script.join('\n')}\n</script>\n\n<template>\n${opener}${body}\n</template>\n\n<!-- vite.config.js: vue({ template: { compilerOptions: { isCustomElement: (tag) => tag.includes('-') } } }) -->`;
 }
 
@@ -108,7 +115,9 @@ export function svelte(name, demo) {
     bind: (prop) => `{${prop}}`,
     on: (event) => (demo.opener && event === 'openchange' ? 'onopenchange={(event) => (open = event.detail)}' : `on${event}={(event) => console.log('${event}', event.detail)}`),
   });
-  const opener = demo.opener ? `<button type="button" onclick={() => (open = true)}>${demo.opener}</button>\n` : '';
+  if (demo.trigger) script.push(`const show = () => ${dispatch(demo.trigger)};`);
+  const opener = demo.opener ? `<button type="button" onclick={() => (open = true)}>${demo.opener}</button>\n`
+    : demo.trigger ? `<button type="button" onclick={show}>${demo.trigger.label}</button>\n` : '';
   return `<script>\n${indent(script.join('\n'), '  ')}\n</script>\n\n${opener}${body}`;
 }
 
@@ -122,7 +131,9 @@ export function angular(name, demo) {
     on: (event) => (demo.opener && event === 'openchange' ? '(openchange)="open = $any($event).detail"' : `(${event})="${handlerName(event)}($event)"`),
     pad: '    ',
   });
-  const opener = demo.opener ? `    <button type="button" (click)="open = true">${demo.opener}</button>\n` : '';
+  const opener = demo.opener ? `    <button type="button" (click)="open = true">${demo.opener}</button>\n`
+    : demo.trigger ? `    <button type="button" (click)="show()">${demo.trigger.label}</button>\n` : '';
+  if (demo.trigger) handlers.push(`  show() {\n    ${dispatch(demo.trigger, '    ')};\n  }`);
   return [
     "import { Component, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';",
     importLine(name),

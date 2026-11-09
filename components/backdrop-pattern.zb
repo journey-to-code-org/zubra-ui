@@ -1,0 +1,33 @@
+<!--
+  A decorative background behind its content: a grid, dots, a soft gradient mesh, film grain, or
+  an aurora. Drawn in CSS from the theme's colours, so it follows light, dark and any theme. It's
+  hidden from screen readers and never takes clicks or focus; with `animated` the mesh and aurora
+  drift slowly, and stay still for visitors who asked for less motion. `fade` softens the edges
+  toward the page. `size` is the grid or dot spacing.
+  @slot - What sits on the background.
+-->
+<style>
+  :host { display: block; }
+  .backdrop-frame { position: relative; isolation: isolate; overflow: hidden; border-radius: inherit; }
+  .backdrop-layer { position: absolute; inset: 0; z-index: -1; pointer-events: none; --line: color-mix(in oklab, var(--foreground, #18181b) 9%, transparent); --a: var(--chart-1, oklch(0.65 0.2 40)); --b: var(--chart-2, oklch(0.6 0.12 185)); --c: var(--chart-3, oklch(0.4 0.07 227)); }
+  .backdrop-fade .backdrop-layer { mask-image: radial-gradient(ellipse at center, #000 35%, transparent 78%); }
+  .backdrop-content { position: relative; }
+  .backdrop-grid .backdrop-layer { background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px); background-size: var(--size) var(--size); background-position: center; }
+  .backdrop-dots .backdrop-layer { background-image: radial-gradient(color-mix(in oklab, var(--foreground, #18181b) 22%, transparent) 1px, transparent 1.6px); background-size: var(--size) var(--size); background-position: center; }
+  .backdrop-mesh .backdrop-layer, .backdrop-aurora .backdrop-layer { background:
+      radial-gradient(40% 50% at 15% 20%, color-mix(in oklab, var(--a) 38%, transparent), transparent 70%),
+      radial-gradient(45% 55% at 85% 25%, color-mix(in oklab, var(--b) 34%, transparent), transparent 70%),
+      radial-gradient(50% 60% at 50% 100%, color-mix(in oklab, var(--c) 30%, transparent), transparent 70%);
+    background-size: 140% 140%; background-position: 0% 0%; }
+  .backdrop-aurora .backdrop-layer { filter: blur(40px) saturate(1.3); inset: -10%; }
+  .backdrop-grain .backdrop-layer { background-image: linear-gradient(160deg, color-mix(in oklab, var(--a) 20%, transparent), color-mix(in oklab, var(--b) 18%, transparent)), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E"); background-size: auto, 160px 160px; }
+  .backdrop-animated.backdrop-mesh .backdrop-layer, .backdrop-animated.backdrop-aurora .backdrop-layer { animation: drift 24s ease-in-out infinite alternate; }
+  @keyframes drift { to { background-position: 100% 100%; } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: 0s !important; animation-duration: 0s !important; animation-iteration-count: 1 !important; } }
+</style>
+<backdrop-pattern pattern="grid" size="24px" fade={true} animated={false}>
+  <div class="backdrop-frame backdrop-{pattern}" class:backdrop-fade={fade} class:backdrop-animated={animated} style:--size={size}>
+    <div class="backdrop-layer" aria-hidden="true"></div>
+    <div class="backdrop-content"><zb-slot></zb-slot></div>
+  </div>
+</backdrop-pattern>

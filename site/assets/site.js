@@ -10,7 +10,7 @@ const PRESETS = [
   { value: 'green', label: 'Green' }, { value: 'orange', label: 'Orange' },
 ];
 
-export async function start({ stacks, stackKey }) {
+export async function start({ stacks, stackKey, looks = [] }) {
   const html = document.documentElement;
   // On a phone the nav is one scrolling row: bring the current page into it.
   const current = document.querySelector('.site-nav [aria-current=page]');
@@ -29,14 +29,16 @@ export async function start({ stacks, stackKey }) {
 
   // Dark mode: shadcn's `.dark` class, which the theme's variables switch on.
   const mode = document.querySelector('#mode');
-  const showMode = () => {
-    const dark = html.classList.contains('dark');
-    mode.setAttribute('aria-pressed', String(dark));
-  };
+  // Pressed means the page is dark, whatever made it so: `.dark`, or a look that is dark first.
+  // Pressing it switches to the other, with `.light` to turn a dark-first look light.
+  const isDark = () => getComputedStyle(html).colorScheme.includes('dark');
+  const showMode = () => mode.setAttribute('aria-pressed', String(isDark()));
   showMode();
   mode.addEventListener('click', () => {
-    html.classList.toggle('dark');
-    store.set('zubra-ui:mode', html.classList.contains('dark') ? 'dark' : 'light');
+    const dark = !isDark();
+    html.classList.toggle('dark', dark);
+    html.classList.toggle('light', !dark);
+    store.set('zubra-ui:mode', dark ? 'dark' : 'light');
     showMode();
   });
 
@@ -46,6 +48,16 @@ export async function start({ stacks, stackKey }) {
   const paste = document.querySelector('#paste');
   const status = document.querySelector('#paste-status');
   const userTheme = document.querySelector('#user-theme');
+  // A look: one of the scoped themes (data-theme on <html>), with its fonts, corners and motion.
+  const look = document.querySelector('#look');
+  look.options = looks;
+  look.value = html.dataset.theme ?? 'zinc';
+  look.addEventListener('valuechange', (event) => {
+    if (event.detail === 'zinc') delete html.dataset.theme;
+    else html.dataset.theme = event.detail;
+    showMode();
+    store.set('zubra-ui:look', event.detail === 'zinc' ? null : event.detail);
+  });
   preset.options = PRESETS;
   preset.value = store.get('zubra-ui:preset') ?? 'zinc';
   paste.value = store.get('zubra-ui:theme') ?? '';
@@ -73,7 +85,80 @@ export async function start({ stacks, stackKey }) {
     store.set('zubra-ui:theme', null);
     preset.value = 'zinc';
     applyPreset('zinc');
+    look.value = 'zinc';
+    delete html.dataset.theme;
+    store.set('zubra-ui:look', null);
+    showMode();
     status.textContent = 'Back to the default theme.';
+  });
+
+  // Search: filters the nav by name, section and what each component is; "/" jumps to it, and
+  // Enter opens the first match.
+  const search = document.querySelector('#nav-search');
+  const none = document.querySelector('#nav-none');
+  // The best match (a name that starts with the search, then one that contains it) is marked, and
+  // Enter opens it.
+  let best = null;
+  const filter = () => {
+    const words = search.value.toLowerCase().split(/\s+/).filter(Boolean);
+    let shown = 0;
+    best?.classList.remove('nav-best');
+    best = null;
+    let bestScore = 0;
+    for (const section of document.querySelectorAll('.site-nav section')) {
+      let any = false;
+      for (const item of section.querySelectorAll('li')) {
+        const match = words.every((word) => item.dataset.search.includes(word));
+        item.hidden = !match;
+        any ||= match;
+        shown += match ? 1 : 0;
+        const name = item.textContent.toLowerCase();
+        const score = !match || !words.length ? 0 : name.startsWith(words[0]) ? 3 : name.includes(words[0]) ? 2 : 1;
+        if (score > bestScore) { best = item; bestScore = score; }
+      }
+      section.hidden = !any;
+    }
+    none.textContent = words.length && !shown ? 'No component matches.' : '';
+    if (words.length) best?.classList.add('nav-best');
+  };
+  search.addEventListener('input', filter);
+  search.addEventListener('keydown', (event) => {
+    if (event.key !== 'Enter') return;
+    const first = best?.querySelector('a') ?? document.querySelector('.site-nav li:not([hidden]) a');
+    if (first) location.href = first.href;
+  });
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== '/' || event.ctrlKey || event.metaKey || event.altKey) return;
+    if (event.target.closest('input, textarea, select, [contenteditable]')) return;
+    event.preventDefault();
+    search.focus();
+  });
+
+  // Package manager tabs on install commands: one choice for every command on the site.
+  // One Tab stop per row (the chosen one); the arrow keys move between them.
+  const showPm = () => document.querySelectorAll('[data-pm-tab]').forEach((tab) => {
+    const chosen = tab.dataset.pmTab === html.dataset.pm;
+    tab.setAttribute('aria-pressed', String(chosen));
+    tab.tabIndex = chosen ? 0 : -1;
+  });
+  document.addEventListener('keydown', (event) => {
+    const tab = event.target.closest?.('[data-pm-tab]');
+    if (!tab || !['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+    const tabs = [...tab.parentElement.querySelectorAll('[data-pm-tab]')];
+    const at = tabs.indexOf(tab);
+    const next = { ArrowLeft: at - 1, ArrowRight: at + 1, Home: 0, End: tabs.length - 1 }[event.key];
+    const target = tabs[(next + tabs.length) % tabs.length];
+    event.preventDefault();
+    target.click();
+    target.focus();
+  });
+  showPm();
+  document.addEventListener('click', (event) => {
+    const tab = event.target.closest('[data-pm-tab]');
+    if (!tab) return;
+    html.dataset.pm = tab.dataset.pmTab;
+    store.set('zubra-ui:pm', tab.dataset.pmTab);
+    showPm();
   });
 
   // Copy buttons on every code block.
@@ -112,7 +197,7 @@ export function themeCss(css) {
 const countVariables = (css) => new Set([...css.matchAll(/(--[\w-]+)\s*:/g)].map(([, name]) => name)).size;
 
 /** Set a preview's props, show its events, and open it from its button (a dialog). */
-export function wire(name, { props, events, opener }) {
+export function wire(name, { props, events, opener, trigger }) {
   const stage = document.querySelector(`[data-preview="${name}"]`);
   const element = stage.querySelector(name);
   Object.assign(element, props);
@@ -125,4 +210,6 @@ export function wire(name, { props, events, opener }) {
     });
   }
   if (opener) stage.querySelector('[data-open]').addEventListener('click', () => { element.open = true; });
+  // A component driven by a document event (toast-region): the button dispatches it.
+  if (trigger) stage.querySelector('[data-trigger]').addEventListener('click', () => document.dispatchEvent(new CustomEvent(trigger.event, { detail: trigger.detail })));
 }

@@ -34,7 +34,7 @@
 </script>
 <style>
   :host { display: block; }
-  .box { display: flex; align-items: center; border: 1px solid var(--border, #d9dce3); border-radius: 0.6rem; background: var(--card, #ffffff); }
+  .box { display: flex; align-items: center; border: 1px solid var(--border, #d9dce3); border-radius: calc(var(--radius, 0.625rem) * 0.96); background: var(--card, #ffffff); }
   .box:focus-within { outline: 2px solid var(--primary, #4f5df5); outline-offset: 1px; }
   span { padding-left: 0.7rem; color: var(--muted-foreground, #667085); font-weight: 600; }
   .error { margin: 0.35rem 0 0; color: var(--destructive, #d92d20); font-size: 0.875rem; }
