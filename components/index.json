@@ -436,6 +436,15 @@
         "toast-region.zb"
       ],
       "dependencies": []
+    },
+    {
+      "name": "backdrop-pattern",
+      "category": "display",
+      "description": "A decorative background behind its content: a grid, dots, a soft gradient mesh, film grain, or an aurora. Drawn in CSS from the theme's colours, so it follows light, dark and any theme. It's hidden from screen readers and never takes clicks or focus; with `animated` the mesh and aurora drift slowly, and stay still for visitors who asked for less motion. `fade` softens the edges toward the page. `size` is the grid or dot spacing.",
+      "files": [
+        "backdrop-pattern.zb"
+      ],
+      "dependencies": []
     }
   ]
 }

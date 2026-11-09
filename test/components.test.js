@@ -620,3 +620,16 @@ test('content-card: one link, named by the heading, covering the card', async ()
   assert.deepEqual(problems, []);
   await page.close();
 });
+
+test('backdrop-pattern: decorative only (hidden, never hit), and still under reduced motion', async () => {
+  const { page, element, problems } = await open('backdrop-pattern');
+  const layer = element.locator('.backdrop-layer');
+  assert.equal(await layer.getAttribute('aria-hidden'), 'true');
+  const box = await element.boundingBox();
+  assert.equal(await page.evaluate(({ x, y }) => document.elementFromPoint(x, y)?.classList.contains('backdrop-layer'), { x: box.x + 4, y: box.y + 4 }), false, 'clicks go through it');
+  assert.notEqual(await layer.evaluate((el) => getComputedStyle(el).animationName), 'none', 'the aurora drifts');
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  assert.equal(await layer.evaluate((el) => getComputedStyle(el).animationDuration), '0s');
+  assert.deepEqual(problems, []);
+  await page.close();
+});

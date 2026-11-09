@@ -302,4 +302,9 @@ export const demos = {
     attrs: { shape: 'text', width: '20rem' },
     props: { lines: 3 },
   },
+  'backdrop-pattern': {
+    attrs: { pattern: 'aurora' },
+    props: { animated: true },
+    html: '<div style="padding: 3rem 1.5rem; text-align: center">\n  <h2 style="margin: 0">Ship components, not frameworks</h2>\n  <p>One file each, in any stack.</p>\n</div>',
+  },
 };
