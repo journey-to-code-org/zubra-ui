@@ -24,6 +24,7 @@ const npx = process.platform === 'win32' ? 'npx.cmd' : 'npx';
 let registry;
 let browser;
 const projects = [];
+const sites = []; // closed in after(), so a failed test can't keep the process alive
 before(async () => {
   assert.ok(existsSync(join(root, 'dist/r/registry.json')), 'run node scripts/build.mjs first (npm test does)');
   registry = await serve(join(root, 'dist'), 4174);
@@ -32,6 +33,7 @@ before(async () => {
 after(async () => {
   await browser?.close();
   registry?.close();
+  for (const site of sites) site.close();
   for (const dir of projects) rmSync(dir, { recursive: true, force: true });
 });
 
@@ -57,11 +59,21 @@ async function open(dir) {
   const problems = [];
   page.on('pageerror', (error) => problems.push(error.message));
   page.on('console', (message) => { if (message.type() === 'error') problems.push(message.text()); });
+  sites.push(site);
   await page.goto(`${site.url}/`, { waitUntil: 'networkidle' });
   return { page, problems, close: async () => { await page.close(); site.close(); } };
 }
 
 const color = (page, selector, property) => page.locator(selector).first().evaluate((el, property) => getComputedStyle(el)[property], property);
+/** A CSS colour as the browser resolves it (a minifier may rewrite `oklch(0.21 …)` as `oklch(21% …)`). */
+const resolved = (page, css) => page.evaluate((css) => {
+  const probe = document.createElement('i');
+  probe.style.color = css;
+  document.body.append(probe);
+  const value = getComputedStyle(probe).color;
+  probe.remove();
+  return value;
+}, css);
 
 test('plain HTML and Vite: shadcn installs the components, their runtime and the theme', async () => {
   const dir = project('plain', {
@@ -90,9 +102,9 @@ test('plain HTML and Vite: shadcn installs the components, their runtime and the
   await page.click(toggle);
   assert.equal(await page.getAttribute(toggle, 'aria-checked'), 'true');
   // The theme's --primary (shadcn's zinc, oklch(0.21 0.006 285.885)) colours the checked track.
-  const primary = await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--primary').trim());
-  assert.equal(primary, 'oklch(0.21 0.006 285.885)');
-  assert.equal(await color(page, 'toggle-switch [aria-checked=true] .track', 'backgroundColor'), 'oklch(0.21 0.006 285.885)');
+  const zinc = await resolved(page, 'oklch(0.21 0.006 285.885)');
+  assert.equal(await resolved(page, 'var(--primary)'), zinc);
+  assert.equal(await color(page, 'toggle-switch [aria-checked=true] .track', 'backgroundColor'), zinc);
   // Tabs: arrow keys move between them (the component's own keyboard handling).
   await page.waitForSelector('tab-list [role=tab]');
   await page.focus('tab-list [role=tab][aria-selected=true]');
@@ -127,9 +139,11 @@ test('React 19 and Vite: the same install, used as custom elements in JSX', asyn
   await page.waitForSelector('star-rating button');
   assert.equal(await page.textContent('#stars'), '2 stars');
   await page.click('star-rating button[aria-label="4 of 5"]');
+  // React re-renders after the event's state update, so wait for it.
+  await page.waitForFunction(() => document.querySelector('#stars').textContent === '4 stars', null, { timeout: 5000 }).catch(() => {});
   assert.equal(await page.textContent('#stars'), '4 stars', 'the component\'s event reaches React state');
   // class="dark" on <html>: the theme's dark values.
-  assert.equal(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--background').trim()), 'oklch(0.141 0.005 285.823)');
+  assert.equal(await resolved(page, 'var(--background)'), await resolved(page, 'oklch(0.141 0.005 285.823)'));
   assert.deepEqual(problems, []);
   await close();
 });
