@@ -76,6 +76,10 @@ npx shadcn add https://journey-to-code-org.github.io/zubra-ui/r/themes/paper.jso
 
 A theme is a JSON file in `themes/sets/` that `extends` another and lists only what differs; the build compiles it to scoped CSS. The site's Themes page shows each one on the same small app, and has an editor that makes your own and gives you its JSON and CSS.
 
+**Design your own.** The site's **theme studio** builds a theme on real components: every colour for light and dark (with dark made from light if you like), fonts, corners and motion, with contrast checked against WCAG AA as you go. Copy it as a theme file or CSS, share it as a link, or use it on the site.
+
+**Put a page together.** The **page composer** adds components and sections to a page, arranges them (drag, or the keyboard), edits their text and settings, and previews the page in any theme at desktop, tablet and phone widths. It exports a page that runs as it is (script tags, nothing to install), React or Vue, and the install commands for everything on it.
+
 **Motion:** every component that moves takes its timing from the theme, and stops moving for visitors who have asked their system for less motion.
 
 ## The components

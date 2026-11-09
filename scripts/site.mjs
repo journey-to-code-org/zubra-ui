@@ -420,6 +420,68 @@ ${STUDIO_COMPONENTS.map((name) => `    import '../preview/${name}.js';`).join('\
   </script>`],
 }));
 
+// ---- the page composer: put components and sections together into a page, then take it home
+
+const catalog = components.map((component) => {
+  const { props, slots } = api(component);
+  return {
+    name: component.name,
+    category: component.category,
+    section: CATEGORIES[component.category],
+    summary: component.description.split(/(?<=\.)\s/)[0],
+    props: props.map((prop) => ({ name: prop.name, attribute: prop.attribute ?? null, type: prop.type?.text ?? '', default: prop.default ?? '' })),
+    slots: slots.map((slot) => slot.name || 'default'),
+    demo: demos[component.name] ?? {},
+    plain: Boolean(sizes[component.name].plain),
+  };
+});
+write('compose/catalog.json', JSON.stringify({ baseUrl, importMap: JSON.parse(importMap(`${baseUrl}/`)), categories: CATEGORIES, themes: themeIndex.map(({ name, label }) => ({ name, label })), components: catalog }));
+const composeBody = `      <section class="composer">
+        <h1>Page composer</h1>
+        <p class="lead">Put a page together from the components and sections: add them, arrange them, change their text and settings, pick a theme, and see it at desktop, tablet and phone widths. Then copy it as a page that runs as it is, as React or Vue, or as the install commands.</p>
+        <div class="composer-bar" role="toolbar" aria-label="Page">
+          <select-field id="compose-template" label="Start from"></select-field>
+          <select-field id="compose-theme" label="Theme"></select-field>
+          <segmented-control id="compose-mode" label="Mode"></segmented-control>
+          <segmented-control id="compose-width" label="Width"></segmented-control>
+        </div>
+        <div class="composer-layout">
+          <aside class="composer-library" aria-labelledby="library-heading">
+            <h2 id="library-heading">Add</h2>
+            <input type="search" id="compose-search" placeholder="Find a component" aria-label="Find a component" autocomplete="off">
+            <div id="compose-library"></div>
+          </aside>
+          <div class="composer-canvas-wrap">
+            <h2 class="composer-hidden" id="canvas-heading">The page</h2>
+            <div class="composer-frame" id="compose-frame">
+              <div class="composer-canvas" id="compose-canvas" data-theme="compose-canvas" aria-labelledby="canvas-heading"></div>
+            </div>
+          </div>
+          <aside class="composer-inspector" aria-labelledby="inspector-heading">
+            <h2 id="inspector-heading">Settings</h2>
+            <div id="compose-inspector"><p class="hint">Choose something on the page to change it.</p></div>
+          </aside>
+        </div>
+        <p class="hint" id="compose-status" role="status"></p>
+        <h2 id="take">Take it home</h2>
+        <p class="studio-actions"><button type="button" class="button primary" id="compose-download">Download the page</button><button type="button" class="button" id="compose-share">Copy a link to this page</button><button type="button" class="button" id="compose-clear">Clear the page</button></p>
+        <segmented-control id="compose-format" label="Code for"></segmented-control>
+        <div class="code"><div class="code-head"><span id="compose-file">index.html</span><button type="button" class="copy" data-copy>Copy</button></div><pre tabindex="0"><code id="compose-code"></code></pre></div>
+        <div class="code"><div class="code-head"><span>Terminal</span><button type="button" class="copy" data-copy>Copy</button></div><pre tabindex="0"><code id="compose-install"></code></pre></div>
+      </section>`;
+write('compose/index.html', frame({
+  prefix: '../',
+  title: 'Page composer · Zubra UI',
+  description: 'Put a page together from Zubra UI components and sections, theme it, and copy it as HTML, React or Vue.',
+  current: 'compose',
+  body: composeBody,
+  scripts: [`  <script type="module">
+    import '../preview/select-field.js';
+    import { startComposer } from '../assets/compose.js';
+    startComposer();
+  </script>`],
+}));
+
 // ---- the home page: live components first, then how to install, then the list
 
 const showcase = ['toggle-switch', 'segmented-control', 'star-rating', 'progress-ring', 'quantity-stepper', 'tag-input'];

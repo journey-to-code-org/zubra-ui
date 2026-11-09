@@ -3,7 +3,7 @@
 // mode, theme presets and a pasted shadcn theme all work and are remembered.
 import { after, before, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readdirSync, readFileSync } from 'node:fs';
+import { mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { chromium } from 'playwright';
 import { serve } from '../scripts/serve.mjs';
@@ -20,7 +20,7 @@ const ELEMENTS = process.env.ZUBRA_UI_EMIT === 'element'
   ? new Set(readdirSync(join(root, 'dist/elements')).filter((file) => file.endsWith('.js')).map((file) => file.slice(0, -3)))
   : new Set();
 // The pages that are tools rather than a component: no component preview of their own.
-const TOOL_PAGES = ['/themes/', '/studio/'];
+const TOOL_PAGES = ['/themes/', '/studio/', '/compose/'];
 async function open(path, { context } = {}) {
   const page = await (context ?? browser).newPage();
   if (ELEMENTS.size) {
@@ -317,6 +317,83 @@ test('theme studio: colours change the light and dark previews, contrast is chec
   await next.goto(`${site.url}/components/action-button/`, { waitUntil: 'networkidle' });
   assert.equal(await next.evaluate(() => document.documentElement.dataset.theme), 'custom');
   assert.equal(await next.locator('[data-preview] action-button button').evaluate((el) => getComputedStyle(el).backgroundColor), 'rgb(15, 118, 110)');
+  assert.deepEqual(problems, []);
+  await context.close();
+});
+
+test('page composer: add, change, move and remove; the theme and mode apply; the exported page runs as it is', async () => {
+  const context = await browser.newContext({ reducedMotion: 'reduce', viewport: { width: 1500, height: 1000 } });
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  const { page, problems } = await open('/compose/', { context });
+  await page.waitForSelector('.composer[data-ready]');
+  // Each change redraws the canvas (loading a component first if it's new): wait for that.
+  const settled = () => page.waitForFunction(() => !document.querySelector('.composer').dataset.busy);
+  const names = async () => { await settled(); return page.locator('#compose-canvas .composer-item').evaluateAll((items) => items.map((item) => item.querySelector('.composer-name').textContent)); };
+  assert.deepEqual((await names()).slice(0, 3), ['nav-bar', 'hero-section', 'logo-cloud'], 'starts from the landing page');
+  // Add after the selected item, then change it in the inspector.
+  await page.locator('#compose-canvas [data-uid]').first().click({ position: { x: 5, y: 5 } });
+  await page.getByRole('button', { name: 'Add stat-card' }).click();
+  assert.equal((await names())[1], 'stat-card');
+  await page.locator('#compose-inspector input[data-attribute=label]').fill('Loaves sold');
+  await page.locator('#compose-inspector input[data-attribute=label]').press('Tab');
+  await settled();
+  assert.match(await page.locator('#compose-canvas stat-card').textContent(), /Loaves sold/);
+  await page.locator('#compose-inspector [data-prop=change]').fill('8');
+  await page.locator('#compose-inspector [data-prop=change]').press('Tab');
+  await settled();
+  assert.match(await page.locator('#compose-canvas stat-card').textContent(), /up 8%/);
+  // Bad JSON keeps the last good value and says so.
+  await page.locator('#compose-canvas [data-uid]').nth(0).focus();
+  await page.keyboard.press('Enter');
+  await page.locator('#compose-inspector [data-prop=links]').fill('[not json');
+  await page.locator('#compose-inspector [data-prop=links]').press('Tab');
+  assert.match(await page.textContent('#inspector-problem'), /isn't valid JSON/);
+  // Keyboard: Alt+Down moves the focused item; Delete removes it.
+  const statCard = page.locator('#compose-canvas .composer-item', { has: page.locator('stat-card') });
+  await statCard.focus();
+  await page.keyboard.press('Alt+ArrowDown');
+  assert.equal((await names())[2], 'stat-card');
+  assert.match(await page.textContent('#compose-status'), /Moved stat-card down/);
+  await page.locator('#compose-canvas .composer-item', { has: page.locator('stat-card') }).focus();
+  await page.keyboard.press('Delete');
+  assert.ok(!(await names()).includes('stat-card'));
+  // Theme and mode reach the canvas only.
+  await page.locator('#compose-theme select').selectOption('terminal');
+  await page.locator('#compose-mode').getByText('Dark', { exact: true }).click();
+  await settled();
+  const canvasFont = await page.locator('#compose-canvas').evaluate((el) => getComputedStyle(el).fontFamily);
+  assert.match(canvasFont, /monospace/);
+  assert.notEqual(await page.evaluate(() => getComputedStyle(document.body).fontFamily), canvasFont, 'the site itself is untouched');
+  // The exported page: script tags for every component used (and ones used inside others), and it runs.
+  const html = await page.textContent('#compose-code');
+  assert.match(html, /data-theme="terminal"/);
+  assert.match(html, /\/cdn\/action-button\.js/, 'an action-button inside the hero is loaded too');
+  assert.match(await page.textContent('#compose-install'), /r\/themes\/terminal\.json/);
+  const exported = html.replaceAll('http://127.0.0.1:4174', site.url);
+  mkdirSync(join(root, 'dist/test-compose'), { recursive: true });
+  writeFileSync(join(root, 'dist/test-compose/index.html'), exported);
+  const run = await context.newPage();
+  const runProblems = [];
+  run.on('pageerror', (error) => runProblems.push(error.message));
+  run.on('console', (message) => message.type() === 'error' && runProblems.push(message.text()));
+  await run.goto(`${site.url}/test-compose/`, { waitUntil: 'networkidle' });
+  const names2 = await run.evaluate(() => [...document.querySelectorAll('main > *')].map((el) => el.localName));
+  const undefinedOnes = await run.evaluate((list) => list.filter((name) => !customElements.get(name)), names2);
+  assert.deepEqual(undefinedOnes, [], 'every component in the exported page is defined');
+  assert.match(await run.locator('nav-bar').textContent(), /Recipes/, 'its properties were set');
+  assert.deepEqual(runProblems, []);
+  // A shared link brings the page back, with anything that could run removed from its HTML.
+  await page.click('#compose-share');
+  const shared = new URL(page.url());
+  const evil = { theme: 'zinc', mode: 'light', items: [{ name: 'alert-banner', width: 'full', attrs: { heading: 'Hi' }, props: {}, html: '<img src=x onerror="window.pwned=1"><script>window.pwned=2</script><a href="javascript:window.pwned=3">x</a>Safe text' }] };
+  const encoded = Buffer.from(JSON.stringify(evil)).toString('base64url');
+  const other = await context.newPage();
+  await other.goto(`${site.url}/compose/#page=${encoded}`, { waitUntil: 'networkidle' });
+  await other.waitForSelector('.composer[data-ready]');
+  assert.match(await other.locator('#compose-canvas alert-banner').textContent(), /Safe text/);
+  assert.equal(await other.evaluate(() => window.pwned), undefined);
+  assert.equal(await other.locator('#compose-canvas a').first().getAttribute('href'), null);
+  assert.ok(shared.hash.startsWith('#page='));
   assert.deepEqual(problems, []);
   await context.close();
 });
