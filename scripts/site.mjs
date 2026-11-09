@@ -281,6 +281,7 @@ for (const component of components) {
         <p class="source">Source: <a href="${REPO}/blob/master/components/${component.files[0]}"><code>${component.files[0]}</code></a>, and its <a href="${prefix}r/${name}.json">registry item</a>.</p>
         <h2 id="install">Install</h2>
         ${installs(name).map(([label, command]) => `<div class="install"><span>${escape(label)}</span>${code(command, 'sh', 'Terminal')}</div>`).join('')}
+        ${sizes[name].plain ? `<div class="install"><span>No build: a script tag, straight from this site</span>${code(`<link rel="stylesheet" href="${baseUrl}/themes/default.css">\n<script type="module" src="${baseUrl}/cdn/${name}.js"></script>`, 'html', 'HTML')}</div>` : ''}
         <p class="note">The compiled install writes <code>src/components/zubra/${name}.js</code> and the theme, and adds <code>@zubra/runtime</code> to your dependencies${component.packages?.length ? `, with ${component.packages.map((pkg) => `<code>${pkg}</code>`).join(' and ')} (Zag.js runs its keyboard and focus behaviour)` : ''}.${sizes[name].plain ? ` The one-file install writes the same path as a plain custom element that needs nothing installed ${component.dependencies?.length ? `, with the plain elements of the components it's made of` : ` (or <a href="${prefix}elements/${name}.js" download>download it</a> and load it with a <code>&lt;script type="module"&gt;</code>)`}; it's smaller on a page with one to three components, the shared runtime with more.` : ''}</p>
         <h2 id="usage">Usage</h2>
         ${stackCode(name, demo)}

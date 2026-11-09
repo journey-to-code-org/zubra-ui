@@ -5,6 +5,8 @@
 //   dist/r/src/<name>.json      the same component as .zb source, for Zubra projects
 //   dist/elements/<name>.js     the component as one plain custom element, with no runtime (`--emit element`)
 //   dist/r/element/<name>.json  that file as a registry item, with no dependencies
+//   dist/cdn/<name>.js          the plain element for a <script> tag straight from the site, no build:
+//                               its one possible package import points at the site's copy of the runtime
 //   dist/r/theme.json           the default theme (shadcn/ui's variables) as a CSS file
 //   dist/r/registry.json        the registry's index, in shadcn's registry.json format
 //   dist/themes/*.css           the themes, for a <link>
@@ -34,7 +36,7 @@ const SCHEMA = { item: 'https://ui.shadcn.com/schema/registry-item.json', regist
 
 const { components } = JSON.parse(readFileSync(join(root, 'components/index.json'), 'utf8'));
 rmSync(out, { recursive: true, force: true });
-for (const dir of ['modules', 'elements', 'r/src', 'r/element', 'r/themes', 'themes']) mkdirSync(join(out, dir), { recursive: true });
+for (const dir of ['modules', 'elements', 'cdn', 'r/src', 'r/element', 'r/themes', 'themes']) mkdirSync(join(out, dir), { recursive: true });
 const write = (path, text) => writeFileSync(join(out, path), typeof text === 'string' ? text : `${JSON.stringify(text, null, 2)}\n`);
 const title = (name) => name.split('-').map((word) => word[0].toUpperCase() + word.slice(1)).join(' ');
 
@@ -123,6 +125,7 @@ for (const component of components) {
   const plain = plainElements.get(component.name);
   if (plain) {
     write(`elements/${component.name}.js`, plain);
+    write(`cdn/${component.name}.js`, plain.replace(/(from\s*)(['"])@zubra\/runtime\/primitives\2/g, '$1$2../runtime/primitives.js$2'));
     write(`r/element/${component.name}.json`, {
       ...common,
       name: `${component.name}-element`,
