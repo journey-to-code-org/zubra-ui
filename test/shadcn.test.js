@@ -64,7 +64,11 @@ async function open(dir) {
   return { page, problems, close: async () => { await page.close(); site.close(); } };
 }
 
-const color = (page, selector, property) => page.locator(selector).first().evaluate((el, property) => getComputedStyle(el)[property], property);
+// Once the component's transitions have finished (the toggle's track fades to its new colour).
+const color = (page, selector, property) => page.locator(selector).first().evaluate(async (el, property) => {
+  await Promise.all(el.getAnimations().map((animation) => animation.finished));
+  return getComputedStyle(el)[property];
+}, property);
 /** A CSS colour as the browser resolves it (a minifier may rewrite `oklch(0.21 …)` as `oklch(21% …)`). */
 const resolved = (page, css) => page.evaluate((css) => {
   const probe = document.createElement('i');
