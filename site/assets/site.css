@@ -49,7 +49,7 @@ html.dark { color-scheme: dark; }
 body { margin: 0; background: var(--background); color: var(--foreground); font: 400 1rem/1.6 var(--font); -webkit-font-smoothing: antialiased; }
 a { color: inherit; text-underline-offset: 0.18em; text-decoration-color: color-mix(in oklch, currentColor 40%, transparent); }
 a:hover { text-decoration-color: currentColor; }
-:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 code { font-family: var(--mono); font-size: 0.86em; }
 :not(pre) > code { padding: 0.1em 0.35em; border-radius: calc(var(--radius) - 6px); background: var(--muted); }
 .skip { position: absolute; left: -999px; top: 0.5rem; z-index: 20; padding: 0.5rem 0.75rem; background: var(--background); color: var(--foreground); }
@@ -67,7 +67,7 @@ code { font-family: var(--mono); font-size: 0.86em; }
 .stack-switch { display: flex; align-items: center; gap: 0.6rem; margin-left: auto; font-size: 0.88rem; color: #b9bdd0; }
 /* The stack switch is a Zubra UI segmented-control on the brand's colours. */
 .stack-switch segmented-control {
-  --muted: #232738; --background: #353a52; --foreground: #f2f3f8; --muted-foreground: #b9bdd0; --border: #2c3040; --card: #232738; --primary: #8b95ff; --accent: #2c3040;
+  --muted: #232738; --background: #353a52; --foreground: #f2f3f8; --muted-foreground: #b9bdd0; --border: #2c3040; --card: #444b6e; --primary: #8b95ff; --accent: #2c3040;
 }
 .bar-tools { display: flex; align-items: center; gap: 0.25rem; }
 .tool { padding: 0.35rem 0.6rem; border: 1px solid transparent; border-radius: 0.45rem; background: none; color: inherit; font: inherit; font-size: 0.88rem; text-decoration: none; cursor: pointer; }
@@ -106,12 +106,13 @@ h2 { margin: 2.75rem 0 0.75rem; font-size: 1.25rem; font-weight: 650; letter-spa
 .event output { color: var(--foreground); font-family: var(--mono); font-size: 0.85em; }
 
 /* ---- code */
-.code { overflow: hidden; margin: 0.75rem 0; border: 1px solid var(--border); border-radius: var(--radius); background: var(--muted); }
-.code-head { display: flex; align-items: center; justify-content: space-between; padding: 0.35rem 0.5rem 0.35rem 0.9rem; border-bottom: 1px solid var(--border); color: var(--muted-foreground); font-size: 0.8rem; }
-.code pre { overflow-x: auto; margin: 0; padding: 0.9rem 1rem; font-size: 0.85rem; line-height: 1.6; tab-size: 2; }
+.code { --code-dim: color-mix(in oklab, var(--muted-foreground) 72%, var(--foreground)); overflow: hidden; margin: 0.75rem 0; border: 1px solid var(--border); border-radius: var(--radius); background: var(--muted); }
+.code-head { display: flex; align-items: center; justify-content: space-between; padding: 0.35rem 0.5rem 0.35rem 0.9rem; border-bottom: 1px solid var(--border); color: var(--code-dim); font-size: 0.8rem; }
+.code pre { overflow-x: auto; margin: 0; padding: 0.9rem 1rem; font-size: 0.8125rem; line-height: 1.6; tab-size: 2; }
 .copy { padding: 0.2rem 0.55rem; border: 1px solid var(--border); border-radius: calc(var(--radius) - 4px); background: var(--background); color: var(--foreground); font: inherit; font-size: 0.78rem; cursor: pointer; }
 .copy:hover { border-color: var(--ring); }
-.tok-c { color: var(--tok-c); font-style: italic; } .tok-s { color: var(--tok-s); } .tok-k { color: var(--tok-k); } .tok-n { color: var(--tok-n); }
+.code pre code { font-size: inherit; }
+.tok-c { color: var(--code-dim); font-style: italic; } .tok-s { color: var(--tok-s); } .tok-k { color: var(--tok-k); } .tok-n { color: var(--tok-n); }
 .tok-t { color: var(--tok-t); } .tok-a { color: var(--tok-a); } .tok-p { color: var(--tok-p); }
 /* One stack's code at a time: the one chosen in the bar. */
 .stack-only { display: none; }
@@ -147,6 +148,7 @@ tr:last-child td { border-bottom: 0; }
 /* ---- buttons and the theme dialog */
 .button { padding: 0.5rem 0.9rem; border: 1px solid var(--border); border-radius: calc(var(--radius) - 2px); background: var(--background); color: var(--foreground); font: inherit; font-size: 0.92rem; font-weight: 500; cursor: pointer; }
 .button:hover { background: var(--accent); }
+a.button { display: inline-block; text-decoration: none; }
 .button.primary { border-color: var(--primary); background: var(--primary); color: var(--primary-foreground); }
 .button.primary:hover { opacity: 0.9; }
 #theme textarea { display: block; width: 100%; margin: 0.35rem 0 0; padding: 0.6rem 0.75rem; border: 1px solid var(--border); border-radius: calc(var(--radius) - 2px); background: var(--background); color: var(--foreground); font: 0.82rem/1.5 var(--mono); resize: vertical; }
@@ -157,7 +159,7 @@ tr:last-child td { border-bottom: 0; }
 @media (max-width: 52rem) {
   .layout { grid-template-columns: minmax(0, 1fr); }
   /* The nav becomes one scrolling row under the bar. */
-  .side { position: static; display: flex; gap: 0.25rem; height: auto; padding: 0.5rem 1rem; overflow-x: auto; border-right: 0; border-bottom: 1px solid var(--border); scrollbar-width: thin; }
+  .side { position: static; display: flex; min-width: 0; gap: 0.25rem; height: auto; padding: 0.5rem 1rem; overflow-x: auto; border-right: 0; border-bottom: 1px solid var(--border); scrollbar-width: thin; }
   .side section, .side ul { display: contents; }
   .side h2 { display: none; }
   .side a { white-space: nowrap; font-size: 0.85rem; }
@@ -168,6 +170,13 @@ tr:last-child td { border-bottom: 0; }
   .bar-tools { margin-left: auto; }
   .stack-switch { order: 3; flex: 1 0 100%; margin-left: 0; }
   .stack-switch segmented-control { flex: 1; }
+  .bar { position: static; }
   .all li { grid-template-columns: minmax(0, 1fr); gap: 0.1rem; }
 }
 
+
+/* The demo's kanban cards (any elements the reader puts in a column). */
+kanban-column article { padding: 0.6rem 0.75rem; border: 1px solid var(--border); border-radius: calc(var(--radius) - 2px); background: var(--card); color: var(--card-foreground); font-size: 0.9rem; cursor: grab; }
+.cta { display: flex; flex-wrap: wrap; gap: 0.6rem; margin: -0.5rem 0 1rem; }
+caption small { color: var(--muted-foreground); font-weight: 400; }
+td small { color: var(--muted-foreground); }

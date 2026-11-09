@@ -98,6 +98,71 @@ test('dark mode, presets and a pasted theme change the components', async () => 
   await context.close();
 });
 
+// Text in every preview against what's really behind it (backgrounds composited up through shadow
+// roots), in light and dark. 3:1 is the floor: below it, text can't be read (WCAG large text).
+async function lowContrast(page) {
+  return page.evaluate(() => {
+    const canvas = document.createElement('canvas').getContext('2d', { willReadFrequently: true });
+    const rgba = (css) => { canvas.clearRect(0, 0, 1, 1); canvas.fillStyle = '#000'; canvas.fillStyle = css; canvas.fillRect(0, 0, 1, 1); const [r, g, b, a] = canvas.getImageData(0, 0, 1, 1).data; return [r, g, b, a / 255]; };
+    const over = ([r, g, b, a], [R, G, B]) => [r * a + R * (1 - a), g * a + G * (1 - a), b * a + B * (1 - a), 1];
+    const parent = (node) => node.parentElement ?? node.parentNode?.host ?? null;
+    const behind = (element) => {
+      const layers = [];
+      for (let node = element; node; node = parent(node)) {
+        if (node.nodeType !== 1) continue;
+        const color = rgba(getComputedStyle(node).backgroundColor);
+        if (color[3] > 0) { layers.push(color); if (color[3] === 1) break; }
+      }
+      return layers.reverse().reduce((base, layer) => over(layer, base), [255, 255, 255, 1]);
+    };
+    const luminance = ([r, g, b]) => { const c = [r, g, b].map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }); return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]; };
+    const ratio = (a, b) => { const [x, y] = [luminance(a), luminance(b)].sort((m, n) => n - m); return (x + 0.05) / (y + 0.05); };
+    const failures = [];
+    const visit = (root) => {
+      for (const element of root.querySelectorAll('*')) {
+        if (element.shadowRoot) visit(element.shadowRoot);
+        const text = [...element.childNodes].filter((node) => node.nodeType === 3 && node.textContent.trim()).map((node) => node.textContent.trim()).join(' ');
+        if (!text || !element.checkVisibility({ opacityProperty: true, visibilityProperty: true })) continue;
+        const style = getComputedStyle(element);
+        const background = behind(element);
+        const value = ratio(over(rgba(style.color), background), background);
+        if (value < 3) failures.push(`"${text.slice(0, 30)}" ${value.toFixed(2)}:1`);
+      }
+    };
+    for (const stage of document.querySelectorAll('[data-preview]')) visit(stage);
+    return failures;
+  });
+}
+
+test('preview text is readable in light and dark', async () => {
+  const context = await browser.newContext({ reducedMotion: 'reduce' });
+  const failures = [];
+  await Promise.all(components.map(async ({ name }) => {
+    const { page } = await open(`/components/${name}/`, { context });
+    for (const mode of ['light', 'dark']) {
+      if (mode === 'dark') await page.click('#mode');
+      for (const failure of await lowContrast(page)) failures.push(`${name} (${mode}): ${failure}`);
+    }
+    await page.close();
+  }));
+  await context.close();
+  assert.deepEqual(failures, [], failures.join('\n'));
+});
+
+test('on a phone nothing scrolls sideways, and the nav lists every component', async () => {
+  const context = await browser.newContext({ viewport: { width: 360, height: 740 } });
+  const failures = [];
+  await Promise.all(['/', ...components.map(({ name }) => `/components/${name}/`)].map(async (path) => {
+    const { page } = await open(path, { context });
+    const { scroll, width, nav } = await page.evaluate(() => ({ scroll: document.documentElement.scrollWidth, width: innerWidth, nav: document.querySelectorAll('.side a[href*="components/"]').length }));
+    if (scroll > width) failures.push(`${path}: ${scroll}px wide in ${width}px`);
+    if (nav !== components.length) failures.push(`${path}: nav lists ${nav} of ${components.length}`);
+    await page.close();
+  }));
+  await context.close();
+  assert.deepEqual(failures, [], failures.join('\n'));
+});
+
 test('previews report their events', async () => {
   const { page, problems } = await open('/components/quantity-stepper/');
   await page.locator('quantity-stepper').getByRole('button', { name: /increase|more|\+/i }).first().click();

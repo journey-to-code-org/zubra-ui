@@ -1,8 +1,8 @@
-# The registry on GitHub Pages: https://<owner>.github.io/<repo>/r/<name>.json
+# The site and registry on GitHub Pages: https://<owner>.github.io/<repo>/ (items at /r/<name>.json)
 name: Pages
 on:
   push:
-    branches: [main]
+    branches: [master]
   workflow_dispatch:
 permissions:
   contents: read
@@ -20,8 +20,12 @@ jobs:
         with:
           node-version: 22
       - run: npm ci
-      - name: Build, with registry URLs on the Pages site
-        run: node scripts/build.mjs --base-url "https://${GITHUB_REPOSITORY_OWNER}.github.io/${GITHUB_REPOSITORY#*/}"
+      - name: Build the registry and site, with URLs on the Pages site
+        env:
+          ZUBRA_UI_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
+        run: npm run build
+      - name: Check no local URL slipped into the build
+        run: "! grep -rl '127.0.0.1' dist"
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

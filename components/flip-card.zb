@@ -15,8 +15,8 @@
   .card { position: relative; display: grid; min-height: 15rem; transform-style: preserve-3d; transition: transform 0.5s cubic-bezier(0.2, 0.7, 0.2, 1); cursor: pointer; border-radius: 1.25rem; outline: none; }
   .card:focus-visible { box-shadow: 0 0 0 3px var(--primary, #36c); }
   .flipped { transform: rotateY(180deg); }
-  .face { grid-area: 1 / 1; display: grid; place-items: center; padding: 2rem; border-radius: 1.25rem; backface-visibility: hidden; background: var(--card-front, #fff); box-shadow: 0 2px 4px #0001, 0 16px 40px #00000014; text-align: center; }
-  .back { transform: rotateY(180deg); background: var(--card-back, #fdf8ee); }
+  .face { grid-area: 1 / 1; display: grid; place-items: center; padding: 2rem; border-radius: 1.25rem; backface-visibility: hidden; background: var(--card-front, var(--card, #ffffff)); color: var(--card-foreground, inherit); box-shadow: 0 2px 4px #0001, 0 16px 40px #00000014; text-align: center; }
+  .back { transform: rotateY(180deg); background: var(--card-back, var(--muted, #f4f4f5)); }
   .hint { position: absolute; bottom: 0.75rem; left: 0; right: 0; text-align: center; font-size: 0.75rem; color: var(--muted-foreground, #888); backface-visibility: hidden; }
   @media (prefers-reduced-motion: reduce) { .card { transition: none; } }
 </style>

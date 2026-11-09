@@ -53,11 +53,17 @@ const importMap = (prefix) => JSON.stringify({
 });
 
 const sizes = {};
-const runtimeSize = gzipSync(readFileSync(join(runtimeDir, 'index.js'))).length;
+// The runtime as a page really loads it: the component's imports bundled and minified (the
+// package's index only re-exports, so its own size would mislead). Zag's packages are left out.
+const bundledSize = async (contents) => {
+  const result = await build({ stdin: { contents, resolveDir: root }, bundle: true, minify: true, write: false, format: 'esm', external: ['@zag-js/*'], logLevel: 'error' });
+  return gzipSync(result.outputFiles[0].contents).length;
+};
+const runtimeSize = await bundledSize(RUNTIME.map((entry) => `export * from '@zubra/runtime${entry === 'index' ? '' : `/${entry}`}';`).join('\n'));
 for (const component of components) {
   const source = join(out, 'modules', `${component.name}.js`);
   const minified = await build({ entryPoints: [source], bundle: false, minify: true, write: false, format: 'esm', logLevel: 'error' });
-  sizes[component.name] = gzipSync(minified.outputFiles[0].contents).length;
+  sizes[component.name] = { own: gzipSync(minified.outputFiles[0].contents).length, total: await bundledSize(`import ${JSON.stringify(source)};`) };
   if (component.packages?.length) {
     // The previews can't resolve npm packages: bundle them in, keeping the runtime shared.
     await build({
@@ -84,9 +90,19 @@ function api(component) {
   return { props, events: declaration.events ?? [], slots: declaration.slots ?? [], parts: declaration.cssParts ?? [] };
 }
 
+/** Slot descriptions from the component's doc comment (`@slot name - text`), which the manifest leaves out. */
+function slotDocs(component) {
+  const source = readFileSync(join(root, 'components', component.files[0]), 'utf8');
+  const comment = source.match(/^<!--([\s\S]*?)-->/)?.[1] ?? '';
+  return Object.fromEntries([...comment.matchAll(/@slot\s+([\w-]*)\s*-\s*(.+)/g)].map(([, name, text]) => [name, text.trim()]));
+}
+
 // ---- the page frame
 
-const CATEGORIES = { input: 'Form controls', widget: 'Widgets', chart: 'Charts', app: 'App pieces' };
+const CATEGORIES = { input: 'Form controls', widget: 'Widgets', display: 'Display', app: 'App pieces' };
+for (const component of components) {
+  if (!CATEGORIES[component.category]) throw new Error(`${component.name}: no nav section for category "${component.category}"`);
+}
 const STACK_KEY = 'zubra-ui:stack';
 
 function frame({ prefix, title, description, current, body, scripts = [] }) {
@@ -207,24 +223,33 @@ for (const component of components) {
   const demo = demos[name];
   const { props, events, slots } = api(component);
   const prefix = '../../';
-  const propRows = props.map((prop) => `<tr><td><code>${escape(prop.name)}</code></td><td>${prop.attribute ? `<code>${escape(prop.attribute)}</code>` : '<span class="none">property only</span>'}</td><td><code>${escape(prop.type?.text ?? '')}</code></td><td><code>${escape(prop.default ?? '')}</code></td></tr>`).join('');
-  const eventRows = events.map((event) => `<tr><td><code>${escape(event.name)}</code></td><td>${prose(event.description ?? '')}</td></tr>`).join('');
-  const slotRows = slots.map((slot) => `<tr><td><code>${escape(slot.name || '(default)')}</code></td><td>${prose(slot.description ?? '')}</td></tr>`).join('');
+  const propRows = props.map((prop) => {
+    // Arrays and objects are set as properties; their item shape comes from the demo.
+    const sample = demo.props?.[prop.name];
+    const structured = Array.isArray(sample) || (sample && typeof sample === 'object');
+    const type = Array.isArray(sample) && sample[0] && typeof sample[0] === 'object' ? `{ ${Object.keys(sample[0]).join(', ')} }[]`
+      : sample && typeof sample === 'object' && !Array.isArray(sample) ? `{ ${Object.keys(sample).join(', ')} }` : prop.type?.text ?? '';
+    const attribute = structured ? '<span class="none">property only</span>'
+      : prop.attribute && prop.attribute !== prop.name ? `attribute <code>${escape(prop.attribute)}</code>` : prop.attribute ? '' : '<span class="none">property only</span>';
+    return `<tr id="prop-${escape(prop.name)}"><td><code>${escape(prop.name)}</code>${attribute ? `<br><small>${attribute}</small>` : ''}</td><td><code>${escape(type)}</code></td><td><code>${escape(prop.default ?? '')}</code></td></tr>`;
+  }).join('');
+  const eventRows = events.map((event) => `<tr id="event-${escape(event.name)}"><td><code>${escape(event.name)}</code></td><td>${prose(event.description ?? '')}</td></tr>`).join('');
+  const slotRows = slots.map((slot) => `<tr id="slot-${escape(slot.name || 'default')}"><td><code>${escape(slot.name || '(default)')}</code></td><td>${prose(slot.description ?? slotDocs(component)[slot.name] ?? '')}</td></tr>`).join('');
   const body = `      <article class="component">
         <h1>${escape(name)}</h1>
         <p class="lead">${prose(component.description)}</p>
         ${preview(name, demo)}
         <h2 id="install">Install</h2>
         ${installs(name).map(([label, command]) => `<div class="install"><span>${escape(label)}</span>${code(command, 'sh', 'Terminal')}</div>`).join('')}
-        <p class="note">The compiled install writes <code>src/components/zubra/${name}.js</code> and the theme, and adds <code>@zubra/runtime</code> to your dependencies${component.packages?.length ? `, with ${component.packages.map((pkg) => `<code>${pkg}</code>`).join(' and ')}` : ''}.</p>
+        <p class="note">The compiled install writes <code>src/components/zubra/${name}.js</code> and the theme, and adds <code>@zubra/runtime</code> to your dependencies${component.packages?.length ? `, with ${component.packages.map((pkg) => `<code>${pkg}</code>`).join(' and ')} (Zag.js runs its keyboard and focus behaviour)` : ''}.</p>
         <h2 id="usage">Usage</h2>
         ${stackCode(name, demo)}
         <h2 id="api">API</h2>
-        ${propRows ? `<div class="table"><table><caption>Properties</caption><thead><tr><th scope="col">Property</th><th scope="col">Attribute</th><th scope="col">Type</th><th scope="col">Default</th></tr></thead><tbody>${propRows}</tbody></table></div>` : ''}
+        ${propRows ? `<div class="table"><table><caption>Properties <small>(each is also an HTML attribute of the same name, unless marked)</small></caption><thead><tr><th scope="col">Property</th><th scope="col">Type</th><th scope="col">Default</th></tr></thead><tbody>${propRows}</tbody></table></div>` : ''}
         ${eventRows ? `<div class="table"><table><caption>Events</caption><thead><tr><th scope="col">Event</th><th scope="col">When</th></tr></thead><tbody>${eventRows}</tbody></table></div>` : ''}
         ${slotRows ? `<div class="table"><table><caption>Slots</caption><thead><tr><th scope="col">Slot</th><th scope="col">For</th></tr></thead><tbody>${slotRows}</tbody></table></div>` : ''}
         <h2 id="size">Size</h2>
-        <p><strong>${kb(sizes[name])}</strong> gzipped${component.packages?.length ? `, plus ${component.packages.join(' and ')}` : ''}, and the runtime once per page (${kb(runtimeSize)}, shared by every component).</p>
+        <p><strong>${kb(sizes[name].own)}</strong> gzipped for the component, plus <strong>${kb(runtimeSize)}</strong> for the runtime, which every Zubra component on a page shares. On its own, with the parts of the runtime it uses, it's ${kb(sizes[name].total)}${component.packages?.length ? `, plus ${component.packages.join(' and ')}` : ''}.</p>
       </article>`;
   write(`components/${name}/index.html`, frame({ prefix, title: `${name} · Zubra UI`, description: component.description, current: name, body, scripts: [previewScript(prefix, name, demo)] }));
 }
@@ -235,18 +260,19 @@ const showcase = ['toggle-switch', 'segmented-control', 'star-rating', 'progress
 const homeBody = `      <section class="home">
         <h1>Web components you copy in and own.</h1>
         <p class="lead">Accessible components for any project: plain HTML, React, Vue, Svelte or Angular. Install them with the shadcn CLI, theme them with shadcn's variables, and read every line.</p>
+        <p class="cta"><a class="button primary" href="#start">Get started</a><a class="button" href="#all">Browse all ${components.length} components</a></p>
         <div class="showcase">
           ${showcase.map((name) => `<div class="tile"><a class="tile-name" href="components/${name}/">${name}</a>${preview(name, demos[name])}</div>`).join('\n          ')}
         </div>
-        <h2>Start</h2>
+        <h2 id="start">Start</h2>
         <ol class="steps">
           <li><p>Add a component. No setup first: no <code>components.json</code>, no Tailwind, no framework.</p>${code(`npx shadcn@latest add ${baseUrl}/r/toggle-switch.json`, 'sh', 'Terminal')}</li>
           <li><p>Import it and the theme once, then use the tag.</p>${stackCode('toggle-switch', demos['toggle-switch'])}</li>
           <li><p>Change it. The file is yours. For the readable source, add <code>/r/src/toggle-switch.json</code> instead and edit the <code>.zb</code> file with <a href="https://github.com/journey-to-code-org/zubra">Zubra</a>.</p></li>
         </ol>
-        <h2>Already on shadcn/ui?</h2>
+        <h2 id="shadcn">Already on shadcn/ui?</h2>
         <p>The components use your theme as it is: <code>--primary</code>, <code>--border</code>, <code>--muted-foreground</code>, <code>--radius</code> and the rest. Skip the theme file, and they match your app.</p>
-        <h2>All ${components.length} components</h2>
+        <h2 id="all">All ${components.length} components</h2>
         <ul class="all">${components.map((component) => `<li><a href="components/${component.name}/">${component.name}</a><span>${prose(component.description.split(/(?<=\.)\s/)[0])}</span></li>`).join('')}</ul>
       </section>`;
 write('index.html', frame({

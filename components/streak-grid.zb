@@ -37,11 +37,11 @@
 <style>
   :host { display: block; overflow-x: auto; }
   .grid { display: grid; grid-auto-flow: column; grid-template-rows: repeat(7, var(--cell, 0.85rem)); grid-auto-columns: var(--cell, 0.85rem); gap: 3px; width: max-content; }
-  button { width: 100%; height: 100%; padding: 0; border: 0; border-radius: 3px; background: var(--level-0, #ebedf0); cursor: pointer; }
+  button { width: 100%; height: 100%; padding: 0; border: 0; border-radius: 3px; background: var(--level-0, var(--muted, #ebedf0)); cursor: pointer; }
   button:focus-visible { outline: 2px solid var(--foreground, #1d2130); outline-offset: 1px; }
-  button[data-level="1"] { background: color-mix(in srgb, var(--habit, #16a34a) 30%, var(--level-0, #ebedf0)); }
-  button[data-level="2"] { background: color-mix(in srgb, var(--habit, #16a34a) 55%, var(--level-0, #ebedf0)); }
-  button[data-level="3"] { background: color-mix(in srgb, var(--habit, #16a34a) 78%, var(--level-0, #ebedf0)); }
+  button[data-level="1"] { background: color-mix(in srgb, var(--habit, #16a34a) 30%, var(--level-0, var(--muted, #ebedf0))); }
+  button[data-level="2"] { background: color-mix(in srgb, var(--habit, #16a34a) 55%, var(--level-0, var(--muted, #ebedf0))); }
+  button[data-level="3"] { background: color-mix(in srgb, var(--habit, #16a34a) 78%, var(--level-0, var(--muted, #ebedf0))); }
   button[data-level="4"] { background: var(--habit, #16a34a); }
   button[data-today] { box-shadow: 0 0 0 1.5px var(--foreground, #1d2130); }
   button:disabled { visibility: hidden; }
