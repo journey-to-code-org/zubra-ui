@@ -232,7 +232,7 @@ export const demos = {
     events: ['send'],
   },
   'action-button': {
-    variants: { label: 'Every variant and size', html: '<action-button variant="primary">Primary</action-button><action-button variant="secondary">Secondary</action-button><action-button variant="outline">Outline</action-button><action-button variant="ghost">Ghost</action-button><action-button variant="destructive">Destructive</action-button><action-button variant="link">Link</action-button><action-button size="sm">Small</action-button><action-button size="lg">Large</action-button><action-button loading>Saving</action-button><action-button disabled>Disabled</action-button>' },
+    variants: { label: 'Every variant and size', html: '<action-button variant="primary">Primary</action-button><action-button variant="secondary">Secondary</action-button><action-button variant="outline">Outline</action-button><action-button variant="ghost">Ghost</action-button><action-button variant="destructive">Destructive</action-button><action-button variant="link">Link</action-button><action-button size="sm">Small</action-button><action-button size="lg">Large</action-button><action-button loading>Saving</action-button><action-button disabled>Disabled</action-button><action-button variant="outline" href="#install">A link (href)</action-button>' },
     attrs: { variant: 'primary' },
     events: ['click'],
     html: 'Save changes',
@@ -358,7 +358,7 @@ export const demos = {
   'nav-bar': {
     attrs: { brand: 'Bakehouse', href: '#home' },
     props: { links: [{ label: 'Recipes', href: '#recipes', current: true }, { label: 'Classes', href: '#classes' }, { label: 'Shop', href: '#shop' }, { label: 'About', href: '#about' }] },
-    html: '<a slot="actions" href="#signin">Sign in</a>',
+    html: '<action-button slot="actions" variant="outline" href="#signin">Sign in</action-button>',
   },
   'data-table': {
     attrs: { label: 'Invoices', currency: 'USD' },
@@ -417,7 +417,7 @@ export const demos = {
   },
   'hero-section': {
     attrs: { eyebrow: 'New: spring classes', heading: 'Bake bread you are proud of', align: 'start' },
-    html: 'Small classes, real ovens, and a starter to take home. Weekends in Portland and online.\n<action-button slot="actions" size="lg">Book a class</action-button>\n<a slot="actions" href="#menu">See the schedule</a>',
+    html: 'Small classes, real ovens, and a starter to take home. Weekends in Portland and online.\n<action-button slot="actions" size="lg" href="#book">Book a class</action-button>\n<action-button slot="actions" size="lg" variant="ghost" href="#schedule">See the schedule</action-button>',
   },
   'feature-grid': {
     attrs: { heading: 'Everything for your bakery' },

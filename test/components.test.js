@@ -509,6 +509,25 @@ test('action-button: submits its form, and while loading it is busy and does not
   await page.close();
 });
 
+test('action-button: with href it is a link with the same text; without, a button again', async () => {
+  const { page, problems } = await open('action-button');
+  await page.evaluate(() => document.body.insertAdjacentHTML('beforeend', '<div id="links"><action-button href="/docs/" variant="outline">Read the docs</action-button></div>'));
+  const box = page.locator('#links');
+  const link = box.getByRole('link', { name: 'Read the docs' });
+  assert.equal(await link.getAttribute('href'), '/docs/');
+  assert.equal(await box.getByRole('button').count(), 0);
+  // Disabled: no href, so it goes nowhere, and it says it's disabled.
+  await page.evaluate(() => { document.querySelector('#links action-button').disabled = true; });
+  assert.equal(await box.locator('a').getAttribute('href'), null);
+  assert.equal(await box.locator('a').getAttribute('aria-disabled'), 'true');
+  // Without href it's a button, keeping its text.
+  await page.evaluate(() => { const b = document.querySelector('#links action-button'); b.disabled = false; b.href = ''; });
+  assert.equal(await box.getByRole('button', { name: 'Read the docs' }).count(), 1);
+  assert.equal(await box.locator('a').count(), 0);
+  assert.deepEqual(problems, []);
+  await page.close();
+});
+
 test('text-field: label, two-way value, the browser\'s validation shown after leaving, and form data', async () => {
   const { page, element, problems } = await open('text-field');
   const input = element.getByLabel('Email');

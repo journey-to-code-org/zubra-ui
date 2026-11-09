@@ -47,10 +47,13 @@
 html { color-scheme: light; scroll-padding-top: calc(var(--bar-height) + 1rem); }
 html.dark { color-scheme: dark; }
 body { margin: 0; background: var(--background); color: var(--foreground); font: 400 1rem/1.6 var(--font-body, var(--font)); -webkit-font-smoothing: antialiased; }
-a { color: inherit; text-underline-offset: 0.18em; text-decoration-color: color-mix(in oklch, currentColor 40%, transparent); }
-a:hover { text-decoration-color: currentColor; }
-/* In the base layer, so a component that draws its own focus (in the components layer) wins. */
-@layer base { :focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; } }
+/* Element defaults in the base layer, so a component's own styles (the components layer) win:
+   an action-button with href is an <a>, and draws its own colour and focus. */
+@layer base {
+  a { color: inherit; text-underline-offset: 0.18em; text-decoration-color: color-mix(in oklch, currentColor 40%, transparent); }
+  a:hover { text-decoration-color: currentColor; }
+  :focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+}
 code { font-family: var(--mono); font-size: 0.86em; }
 :not(pre) > code { padding: 0.1em 0.35em; border-radius: calc(var(--radius) - 6px); background: var(--muted); color: var(--foreground); }
 .skip { position: absolute; left: -999px; top: 0.5rem; z-index: 20; padding: 0.5rem 0.75rem; background: var(--background); color: var(--foreground); }

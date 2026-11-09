@@ -1,8 +1,9 @@
 <!--
   A button in six variants and three sizes, on a native <button>, so it submits forms, takes
   `type`, and works with the keyboard and screen readers as the browser's own. `loading` keeps its
-  size, shows a spinner, marks it busy and stops it being pressed again. (For navigation, use a
-  link: a button that goes somewhere tells screen readers the wrong thing.)
+  size, shows a spinner, marks it busy and stops it being pressed again. With `href` it's a link
+  that looks like a button (an <a>, so it goes somewhere, opens in a new tab and reads as a link to
+  screen readers); `target` is passed on, and `disabled` takes its `href` away.
   @slot - The button's text, and an icon if you want one.
 -->
 <style>
@@ -30,8 +31,9 @@
   @keyframes spin { to { transform: rotate(1turn); } }
   @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: 0s !important; animation-duration: 0s !important; animation-iteration-count: 1 !important; } }
 </style>
-<action-button variant="primary" size="md" type="button" disabled={false} loading={false} name="" value="" label="">
-  <button class="action-button action-{variant} action-{size}" type={type} name={name || null} value={value || null} disabled={disabled} aria-disabled={loading ? "true" : null} aria-busy={loading ? "true" : null} aria-label={label || null} onclick={(event) => loading && (event.preventDefault(), event.stopPropagation())}>
+<action-button variant="primary" size="md" type="button" disabled={false} loading={false} name="" value="" label="" href="" target="">
+  <a zb-if={href} class="action-button action-{variant} action-{size}" href={disabled ? null : href} target={target || null} aria-disabled={disabled ? "true" : null} aria-label={label || null}><zb-slot></zb-slot></a>
+  <button zb-else class="action-button action-{variant} action-{size}" type={type} name={name || null} value={value || null} disabled={disabled} aria-disabled={loading ? "true" : null} aria-busy={loading ? "true" : null} aria-label={label || null} onclick={(event) => loading && (event.preventDefault(), event.stopPropagation())}>
     <span zb-if={loading} class="action-spinner" aria-hidden="true"></span>
     <zb-slot></zb-slot>
   </button>
