@@ -31,7 +31,16 @@ It's a standard custom element:
 npx shadcn add https://journey-to-code-org.github.io/zubra-ui/r/element/toggle-switch.json
 ```
 
-It writes the same file, compiled with Zubra's `--emit element`, and adds no dependencies; load it with a `<script type="module">`. On a page with one to three components it's the smaller choice (about 5–7 KB gzipped each); past that, the shared runtime is. flip-card (shadow DOM) and combo-box (Zag) are runtime-only.
+It writes the same file, compiled with Zubra's `--emit element`, and adds no dependencies; load it with a `<script type="module">`.
+
+**No build at all.** The site serves the same plain elements for a script tag, so a page with no bundler and nothing installed can use them:
+
+```html
+<link rel="stylesheet" href="https://journey-to-code-org.github.io/zubra-ui/themes/default.css">
+<script type="module" src="https://journey-to-code-org.github.io/zubra-ui/cdn/toggle-switch.js"></script>
+```
+
+A block's file loads the components it's made of; tab-list and dropdown-menu load the small runtime piece they use from the site too. On a page with one to three components it's the smaller choice (about 5–7 KB gzipped each); past that, the shared runtime is. flip-card (shadow DOM) and combo-box (Zag) are runtime-only.
 
 ## Why
 
