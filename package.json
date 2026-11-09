@@ -13,7 +13,8 @@
   "scripts": {
     "build": "node scripts/build.mjs && node scripts/site.mjs",
     "serve": "node scripts/serve.mjs",
-    "test": "npm run build && node --test \"test/*.test.js\" \"imager/test/*.test.js\""
+    "test": "npm run build && node --test \"test/*.test.js\" \"imager/test/*.test.js\"",
+    "test:vanilla": "node scripts/vanilla.mjs toggle-switch quantity-stepper tag-input && node scripts/run-vanilla.mjs"
   },
   "devDependencies": {
     "@fontsource-variable/instrument-sans": "5.2.8",

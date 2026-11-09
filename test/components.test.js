@@ -2,6 +2,7 @@
 // reviewer reproduced (keyboard focus lost, input silently changed, a dialog closing by accident).
 import { after, before, test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { chromium } from 'playwright';
 import { serve } from '../scripts/serve.mjs';
@@ -11,10 +12,22 @@ let site, browser;
 before(async () => { site = await serve(join(root, 'dist')); browser = await chromium.launch(); });
 after(async () => { await browser?.close(); site?.close(); });
 
+// ZUBRA_UI_EMIT=vanilla runs the same tests on the plain custom elements of the L5 spike
+// (scripts/vanilla.mjs writes dist/vanilla/): each preview module that has one is swapped for it.
+const VANILLA = process.env.ZUBRA_UI_EMIT === 'vanilla'
+  ? new Set(readdirSync(join(root, 'dist/vanilla')).filter((file) => file.endsWith('.js')).map((file) => file.slice(0, -3)))
+  : new Set();
 async function open(name) {
   const page = await browser.newPage();
   const problems = [];
   page.on('pageerror', (error) => problems.push(error.message));
+  if (VANILLA.size) {
+    await page.route(/\/preview\/([\w-]+)\.js$/, (route) => {
+      const component = route.request().url().match(/\/preview\/([\w-]+)\.js$/)[1];
+      if (!VANILLA.has(component)) return route.continue();
+      return route.fulfill({ contentType: 'text/javascript', body: readFileSync(join(root, 'dist/vanilla', `${component}.js`)) });
+    });
+  }
   await page.goto(`${site.url}/components/${name}/`, { waitUntil: 'networkidle' });
   return { page, problems, element: page.locator(`[data-preview="${name}"] ${name}`) };
 }
@@ -305,18 +318,25 @@ test('signin-block: submits what was typed, shows the password on request, and a
   await element.getByLabel('Email').fill('maya@example.com');
   const password = element.locator('input[name=password]');
   await password.fill('correct horse');
-  await element.getByRole('button', { name: 'Show' }).click();
+  assert.equal(await element.getByLabel('Password', { exact: true }).getAttribute('name'), 'password', 'the label is the field\'s alone');
+  await element.getByRole('button', { name: 'Show password' }).click();
   assert.equal(await password.getAttribute('type'), 'text');
-  await element.getByRole('button', { name: 'Hide' }).click();
+  await element.getByRole('button', { name: 'Hide password' }).click();
   assert.equal(await password.getAttribute('type'), 'password');
   await element.getByRole('switch', { name: 'Keep me signed in' }).click();
   await element.getByRole('button', { name: 'Sign in' }).click();
   assert.deepEqual(await events(page), [['signin', { email: 'maya@example.com', password: 'correct horse', remember: false }]]);
   assert.match(page.url(), /\/components\/signin-block\/$/, 'no action: the page stays');
-  await element.evaluate((el) => { el.error = 'That password doesn\'t match.'; el.busy = true; });
+  await element.evaluate((el) => { el.error = 'That password doesn\'t match.'; el.errorField = 'password'; });
   assert.equal(await element.getByRole('alert').textContent(), 'That password doesn\'t match.');
   assert.equal(await password.getAttribute('aria-invalid'), 'true');
-  assert.equal(await element.locator('.submit').isDisabled(), true);
+  assert.equal(await element.getByLabel('Email').getAttribute('aria-invalid'), 'false', 'only the field that was wrong');
+  await password.fill('another try');
+  assert.equal(await password.getAttribute('aria-invalid'), 'false', 'editing it clears the mark');
+  await element.evaluate((el) => { el.busy = true; });
+  assert.deepEqual(await element.locator('input, .signin-submit').evaluateAll((controls) => controls.map((control) => control.matches(':disabled'))), [true, true, true], 'busy: nothing can be changed or sent');
+  assert.equal(await element.locator('form').getAttribute('aria-busy'), 'true');
+  assert.equal(await element.locator('toggle-switch').getAttribute('name'), 'remember', 'a posted form includes it');
   assert.deepEqual(problems, []);
   await page.close();
 });
@@ -331,6 +351,10 @@ test('settings-block: edits flow into value, Save sends it, and delete asks firs
   assert.deepEqual(value, { name: 'Maya C.', email: 'maya@example.com', notifications: { replies: true, digest: true }, theme: 'dark' });
   await element.getByRole('button', { name: 'Save changes' }).click();
   assert.equal(await element.getByRole('status').textContent(), 'Saved.');
+  await element.evaluate((el) => { el.busy = true; });
+  assert.equal(await element.getByRole('button', { name: 'Saving…' }).isDisabled(), true);
+  await element.evaluate((el) => { el.busy = false; el.status = 'Couldn\'t save: you\'re offline.'; });
+  assert.equal(await element.getByRole('status').textContent(), 'Couldn\'t save: you\'re offline.', 'the host says what happened');
   await element.getByRole('button', { name: 'Delete account…' }).click();
   const dialog = element.locator('modal-dialog');
   assert.equal(await prop(dialog, 'open'), true);
@@ -348,13 +372,26 @@ test('pricing-block: yearly prices and savings, and choosing reports the plan an
   const { page, element, problems } = await open('pricing-block');
   await record(element, ['choose', 'periodchange']);
   const team = element.locator('article').nth(1);
-  assert.equal(await team.locator('.amount').textContent(), '$12');
-  assert.equal(await element.locator('article').first().locator('.amount').textContent(), 'Free');
+  assert.equal(await team.locator('.pricing-amount').textContent(), '$12');
+  assert.equal(await element.locator('article').first().locator('.pricing-amount').textContent(), '$0');
   await element.getByRole('button', { name: 'Yearly' }).click();
-  assert.equal(await team.locator('.amount').textContent(), '$120');
-  assert.match(await team.locator('.save').textContent(), /Save 17%/);
-  await team.getByRole('button', { name: 'Choose Team' }).click();
+  assert.equal(await team.locator('.pricing-amount').textContent(), '$10', 'a month, billed yearly');
+  assert.equal(await team.locator('.pricing-note').textContent(), '$120 billed yearly, save 17%');
+  await team.getByRole('button', { name: 'Choose plan' }).click();
   assert.deepEqual(await events(page), [['periodchange', 'yearly'], ['choose', { plan: 'team', period: 'yearly' }]]);
+  // A plan with an href is a link (a checkout page); a long name wraps instead of overflowing.
+  await element.evaluate((el) => { el.plans = [{ id: 'x', name: 'Supercalifragilisticexpialidocious'.repeat(2), monthly: 5, href: '/checkout/x', features: ['A'.repeat(80)] }]; });
+  assert.equal(await element.getByRole('link', { name: 'Choose plan' }).getAttribute('href'), '/checkout/x');
+  const card = await element.locator('article').evaluate((article) => ({ scroll: article.scrollWidth, width: article.clientWidth }));
+  assert.ok(card.scroll <= card.width, `nothing overflows the card (${card.scroll} > ${card.width})`);
+  // Two blocks on a page: their ids don't collide.
+  const ids = await page.evaluate(() => {
+    const second = document.createElement('pricing-block');
+    second.plans = [{ id: 'x', name: 'Other', monthly: 1 }];
+    document.body.append(second);
+    return second.updateComplete.then(() => [...document.querySelectorAll('pricing-block article')].map((article) => article.getAttribute('aria-labelledby')));
+  });
+  assert.equal(new Set(ids).size, ids.length, ids.join(', '));
   assert.deepEqual(problems, []);
   await page.close();
 });
@@ -370,12 +407,53 @@ test('dashboard-shell: sections switch, the menu reports, and a narrow space fol
   assert.deepEqual(await events(page), [['currentchange', 'events'], ['menuselect', 'signout']]);
   await page.setViewportSize({ width: 390, height: 800 });
   const nav = element.locator('nav');
+  const menu = element.getByRole('button', { name: 'Menu' });
   assert.equal(await nav.isVisible(), false, 'folded away in a narrow space');
-  await element.getByRole('button', { name: 'Menu' }).click();
+  await menu.click();
   assert.equal(await nav.isVisible(), true);
   await element.getByRole('button', { name: 'People' }).click();
   assert.equal(await nav.isVisible(), false, 'choosing a section folds it again');
   assert.equal(await element.locator('h1').textContent(), 'People');
+  assert.equal(await menu.evaluate((button) => button === document.activeElement), true, 'focus goes back to Menu, not the page');
+  await menu.click();
+  await element.getByRole('button', { name: 'Events' }).focus();
+  await page.keyboard.press('Escape');
+  assert.equal(await nav.isVisible(), false, 'Escape folds it');
+  assert.equal(await menu.getAttribute('aria-expanded'), 'false');
+  assert.equal(await menu.evaluate((button) => button === document.activeElement), true);
+  const box = await element.locator('.shell').evaluate((shell) => ({ scroll: shell.scrollWidth, width: shell.clientWidth }));
+  assert.ok(box.scroll <= box.width, 'nothing overflows sideways');
   assert.deepEqual(problems, []);
+  await page.close();
+});
+
+test('the L5 spike\'s plain elements are the ones under test (with ZUBRA_UI_EMIT=vanilla)', { skip: !VANILLA.size }, async () => {
+  for (const name of VANILLA) {
+    const { page, element, problems } = await open(name === 'toggle-switch' ? 'signin-block' : name);
+    const definition = await page.evaluate((name) => ({ class: customElements.get(name).name, plain: !Object.getPrototypeOf(customElements.get(name)).name || Object.getPrototypeOf(customElements.get(name)) === HTMLElement }), name);
+    assert.deepEqual(definition, { class: name.replace(/(^|-)(\w)/g, (_, __, c) => c.toUpperCase()), plain: true }, `${name} is the generated class, straight on HTMLElement`);
+    assert.deepEqual(problems, []);
+    void element;
+    await page.close();
+  }
+});
+
+test('dashboard-shell: a long nav scrolls inside the shell, and no nav means no Menu button', async () => {
+  const { page, element, problems } = await open('dashboard-shell');
+  await element.evaluate((el) => { el.nav = Array.from({ length: 50 }, (_, i) => ({ id: `s${i}`, label: `Section ${i + 1}` })); });
+  const sizes = await element.evaluate((el) => ({ shell: el.querySelector('.shell').offsetHeight, nav: el.querySelector('nav').scrollHeight }));
+  assert.ok(sizes.shell < 600 && sizes.nav > sizes.shell, `the shell stays its height (${sizes.shell}px) and the nav scrolls`);
+  await element.evaluate((el) => { el.nav = []; });
+  await page.setViewportSize({ width: 390, height: 800 });
+  assert.equal(await element.getByRole('button', { name: 'Menu' }).count(), 0);
+  assert.deepEqual(problems, []);
+  await page.close();
+});
+
+test('blocks keep their look when the page has its own .button, .actions and .brand rules', async () => {
+  const { page, element } = await open('settings-block');
+  await page.addStyleTag({ content: '.button, .destructive, .primary, .actions, .brand, .badge, .error { background: lime !important; }' });
+  const colors = await element.evaluate((el) => [...el.querySelectorAll('button, [class]')].filter((node) => getComputedStyle(node).backgroundColor === 'rgb(0, 255, 0)').map((node) => node.className));
+  assert.deepEqual(colors, [], 'no generic class names a host could match');
   await page.close();
 });
