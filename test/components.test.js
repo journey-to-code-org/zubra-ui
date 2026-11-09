@@ -274,3 +274,18 @@ test('sidebar-layout and auto-grid follow the space they have, with no media que
     await page.close();
   }
 });
+
+test('image-gallery: a photo whose srcset has an unsafe URL doesn\'t get one (Zubra 5.1\'s check)', async () => {
+  const { page, element } = await open('image-gallery');
+  const messages = [];
+  page.on('console', (message) => messages.push(message.text()));
+  await element.evaluate((el) => {
+    el.src = '';
+    el.items = [{ src: '/a.jpg', alt: 'Safe', width: 4, height: 3, srcset: '/a-480.webp 480w, /a-960.webp 960w' }, { src: '/b.jpg', alt: 'Unsafe', width: 4, height: 3, srcset: '/b.webp 480w, javascript:alert(1) 960w' }];
+  });
+  await element.locator('.grid img').nth(1).waitFor({ state: 'attached' });
+  const sets = await element.locator('.grid img').evaluateAll((list) => list.map((img) => img.getAttribute('srcset')));
+  assert.deepEqual(sets, ['/a-480.webp 480w, /a-960.webp 960w', null]);
+  assert.ok(messages.some((message) => message.includes('blocked an unsafe URL')));
+  await page.close();
+});
