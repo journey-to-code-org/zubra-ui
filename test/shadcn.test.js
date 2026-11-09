@@ -6,7 +6,8 @@
 // Slow (npm installs): about a minute per project.
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
@@ -43,11 +44,14 @@ function project(name, files) {
   }
   return dir;
 }
-const run = (command, args, cwd) => execFileSync(command, args, { cwd, encoding: 'utf8', stdio: 'pipe', shell: process.platform === 'win32' });
+// Asynchronous on purpose: the registry is served from this process, so a synchronous child would
+// block the server it's downloading from.
+const exec = promisify(execFile);
+const run = async (command, args, cwd) => (await exec(command, args, { cwd, encoding: 'utf8', shell: process.platform === 'win32', maxBuffer: 1 << 26 })).stdout;
 const add = (dir, ...names) => run(npx, ['-y', SHADCN, 'add', ...names.map((name) => `${registry.url}/r/${name}.json`), '--yes'], dir);
 
 async function open(dir) {
-  run(npx, ['vite', 'build', '--logLevel', 'error'], dir);
+  await run(npx, ['vite', 'build', '--logLevel', 'error'], dir);
   const site = await serve(join(dir, 'dist'));
   const page = await browser.newPage();
   const problems = [];
@@ -71,13 +75,13 @@ test('plain HTML and Vite: shadcn installs the components, their runtime and the
       import './src/components/zubra/tab-list.js';
       document.querySelector('#tabs').tabs = [{ value: 'one', label: 'One' }, { value: 'two', label: 'Two' }];`,
   });
-  add(dir, 'toggle-switch', 'tab-list');
+  await add(dir, 'toggle-switch', 'tab-list');
   for (const file of ['src/components/zubra/toggle-switch.js', 'src/components/zubra/tab-list.js', 'src/components/zubra/theme.css']) {
     assert.ok(existsSync(join(dir, file)), `${file} written`);
   }
   const pkg = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'));
   assert.match(pkg.dependencies['@zubra/runtime'], /^\^5\./, 'the runtime is a dependency');
-  run(npm, ['install', '--no-audit', '--no-fund', `vite@${VERSIONS.vite}`], dir);
+  await run(npm, ['install', '--no-audit', '--no-fund', `vite@${VERSIONS.vite}`], dir);
 
   const { page, problems, close } = await open(dir);
   await page.waitForSelector('toggle-switch [role=switch]');
@@ -116,8 +120,8 @@ test('React 19 and Vite: the same install, used as custom elements in JSX', asyn
       }
       createRoot(document.getElementById('root')).render(<App />);`,
   });
-  add(dir, 'star-rating');
-  run(npm, ['install', '--no-audit', '--no-fund', ...Object.entries(VERSIONS).map(([name, version]) => `${name}@${version}`)], dir);
+  await add(dir, 'star-rating');
+  await run(npm, ['install', '--no-audit', '--no-fund', ...Object.entries(VERSIONS).map(([name, version]) => `${name}@${version}`)], dir);
 
   const { page, problems, close } = await open(dir);
   await page.waitForSelector('star-rating button');
@@ -130,9 +134,9 @@ test('React 19 and Vite: the same install, used as custom elements in JSX', asyn
   await close();
 });
 
-test('the .zb source item installs the component for editing', () => {
+test('the .zb source item installs the component for editing', async () => {
   const dir = project('source', { 'package.json': JSON.stringify({ name: 'source', private: true, type: 'module' }) });
-  add(dir, 'src/toggle-switch');
+  await add(dir, 'src/toggle-switch');
   const source = readFileSync(join(dir, 'src/components/toggle-switch.zb'), 'utf8');
   assert.match(source, /<toggle-switch/);
   assert.match(source, /var\(--primary/, 'on shadcn\'s variable names');
