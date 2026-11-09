@@ -232,3 +232,52 @@ test('a theme installs as one CSS file, scoped to its data-theme', async () => {
   assert.match(css, /^\[data-theme="paper"\] \{/m);
   assert.match(css, /--primary:/);
 });
+
+// An app that already uses shadcn/ui: Tailwind 4 (with its preflight reset), components.json, and
+// its own theme. Zubra UI installs beside it without touching any of that, takes the app's theme,
+// keeps its own look under the reset, and leaks nothing onto the app's own elements.
+// In a project with components.json the CLI fetches the base colour from ui.shadcn.com, so this one
+// needs the internet (CI has it; a sandbox may not).
+const shadcnReachable = await fetch('https://ui.shadcn.com/r/colors/neutral.json', { signal: AbortSignal.timeout(8000) }).then((response) => response.ok, () => false);
+test('in an existing shadcn/ui + Tailwind app: installs beside it, uses its theme, and keeps out of its way', { skip: !shadcnReachable && 'ui.shadcn.com is not reachable from here' }, async () => {
+  const blue = 'oklch(0.546 0.245 262.881)';
+  const components = JSON.stringify({ $schema: 'https://ui.shadcn.com/schema.json', style: 'new-york', rsc: false, tsx: true, tailwind: { config: '', css: 'src/index.css', baseColor: 'neutral', cssVariables: true }, aliases: { components: '@/components', utils: '@/lib/utils', ui: '@/components/ui' } }, null, 2);
+  const css = `@import "tailwindcss";\n\n:root {\n  --radius: 0.5rem;\n  --background: oklch(1 0 0);\n  --foreground: oklch(0.145 0 0);\n  --primary: ${blue};\n  --primary-foreground: oklch(0.985 0 0);\n  --border: oklch(0.922 0 0);\n  --input: oklch(0.922 0 0);\n  --ring: oklch(0.708 0 0);\n  --muted-foreground: oklch(0.556 0 0);\n}\n\n@theme inline {\n  --color-primary: var(--primary);\n  --color-primary-foreground: var(--primary-foreground);\n}\n`;
+  const dir = project('existing-shadcn', {
+    'package.json': JSON.stringify({ name: 'existing-shadcn', private: true, type: 'module' }),
+    'components.json': components,
+    'tsconfig.json': JSON.stringify({ compilerOptions: { baseUrl: '.', paths: { '@/*': ['./src/*'] }, jsx: 'react-jsx', module: 'esnext', moduleResolution: 'bundler', target: 'es2022' } }),
+    'vite.config.js': "import react from '@vitejs/plugin-react';\nimport tailwindcss from '@tailwindcss/vite';\nexport default { plugins: [react(), tailwindcss()] };\n",
+    'src/index.css': css,
+    'index.html': '<!doctype html><html lang="en"><body><div id="root"></div><script type="module" src="/src/main.jsx"></script></body></html>',
+    'src/main.jsx': `import { createRoot } from 'react-dom/client';
+import './index.css';
+import './components/zubra/toggle-switch.js';
+import './components/zubra/action-button.js';
+createRoot(document.getElementById('root')).render(<main className="p-8">
+  <button id="app-button" className="bg-primary text-primary-foreground rounded-md px-4 py-2">The app's own button</button>
+  <button id="plain-button">An unstyled app button</button>
+  <toggle-switch label="Email me" checked={true}></toggle-switch>
+  <action-button>Zubra button</action-button>
+</main>);
+`,
+  });
+  await add(dir, 'toggle-switch', 'action-button');
+  assert.equal(readFileSync(join(dir, 'components.json'), 'utf8'), components, 'components.json untouched');
+  assert.equal(readFileSync(join(dir, 'src/index.css'), 'utf8'), css, "the app's theme untouched");
+  for (const file of ['src/components/zubra/toggle-switch.js', 'src/components/zubra/action-button.js']) assert.ok(existsSync(join(dir, file)), `${file} written`);
+  assert.ok(!existsSync(join(dir, 'src/components/ui/toggle-switch.js')), "nothing in the app's ui folder");
+  await run(npm, ['install', '--no-audit', '--no-fund', `vite@${VERSIONS.vite}`, `react@${VERSIONS.react}`, `react-dom@${VERSIONS['react-dom']}`, `@vitejs/plugin-react@${VERSIONS['@vitejs/plugin-react']}`, 'tailwindcss@4.3.5', '@tailwindcss/vite@4.3.5'], dir);
+
+  const { page, problems, close } = await open(dir);
+  await page.waitForSelector('action-button button');
+  const primary = await resolved(page, blue);
+  assert.equal(await color(page, 'toggle-switch [aria-checked=true] .track', 'backgroundColor'), primary, "the toggle takes the app's --primary");
+  assert.equal(await color(page, 'action-button button', 'backgroundColor'), primary, 'and so does the button');
+  assert.equal(await color(page, '#app-button', 'backgroundColor'), primary, "the app's Tailwind classes still work");
+  // Tailwind's reset zeroes button padding; the component's own styles still apply.
+  assert.ok((await page.locator('action-button button').evaluate((button) => parseFloat(getComputedStyle(button).paddingLeft))) > 8, 'keeps its padding under the reset');
+  assert.equal(await color(page, '#plain-button', 'backgroundColor'), 'rgba(0, 0, 0, 0)', "the app's other buttons get none of the component's styles");
+  assert.deepEqual(problems, []);
+  await close();
+});
