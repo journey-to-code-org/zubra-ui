@@ -1,0 +1,68 @@
+{
+  "order": 4,
+  "label": "Candy",
+  "description": "Bright and round: big corners, a rounded face, and motion that bounces a little.",
+  "extends": "zinc",
+  "colorScheme": "light",
+  "backdrop": "mesh",
+  "colors": {
+    "light": {
+      "background": "oklch(0.985 0.012 330)",
+      "foreground": "oklch(0.24 0.06 300)",
+      "card": "oklch(1 0 0)",
+      "cardForeground": "oklch(0.24 0.06 300)",
+      "popover": "oklch(1 0 0)",
+      "popoverForeground": "oklch(0.24 0.06 300)",
+      "primary": "oklch(0.52 0.24 300)",
+      "primaryForeground": "oklch(0.99 0.01 300)",
+      "secondary": "oklch(0.93 0.05 200)",
+      "secondaryForeground": "oklch(0.3 0.08 220)",
+      "muted": "oklch(0.95 0.03 320)",
+      "mutedForeground": "oklch(0.45 0.07 310)",
+      "accent": "oklch(0.93 0.06 340)",
+      "accentForeground": "oklch(0.24 0.06 300)",
+      "destructive": "oklch(0.54 0.22 15)",
+      "border": "oklch(0.88 0.05 320)",
+      "input": "oklch(0.8 0.07 320)",
+      "ring": "oklch(0.65 0.2 300)",
+      "chart1": "oklch(0.68 0.22 350)",
+      "chart2": "oklch(0.7 0.13 190)",
+      "chart3": "oklch(0.82 0.16 95)"
+    },
+    "dark": {
+      "background": "oklch(0.21 0.05 300)",
+      "foreground": "oklch(0.96 0.02 320)",
+      "card": "oklch(0.26 0.06 300)",
+      "cardForeground": "oklch(0.96 0.02 320)",
+      "popover": "oklch(0.26 0.06 300)",
+      "popoverForeground": "oklch(0.96 0.02 320)",
+      "primary": "oklch(0.8 0.15 320)",
+      "primaryForeground": "oklch(0.22 0.06 300)",
+      "secondary": "oklch(0.32 0.06 220)",
+      "secondaryForeground": "oklch(0.93 0.04 200)",
+      "muted": "oklch(0.3 0.05 300)",
+      "mutedForeground": "oklch(0.8 0.05 310)",
+      "accent": "oklch(0.33 0.07 330)",
+      "accentForeground": "oklch(0.96 0.02 320)",
+      "destructive": "oklch(0.7 0.19 15)",
+      "border": "oklch(0.38 0.07 300)",
+      "input": "oklch(0.46 0.08 300)",
+      "ring": "oklch(0.8 0.15 320)",
+      "chart1": "oklch(0.75 0.2 350)",
+      "chart2": "oklch(0.78 0.12 190)",
+      "chart3": "oklch(0.86 0.15 95)"
+    }
+  },
+  "fonts": {
+    "body": "ui-rounded, \"SF Pro Rounded\", Nunito, Quicksand, \"Varela Round\", system-ui, sans-serif",
+    "heading": "ui-rounded, \"SF Pro Rounded\", Nunito, Quicksand, \"Varela Round\", system-ui, sans-serif"
+  },
+  "tokens": {
+    "radius": "1.1rem",
+    "durationFast": "140ms",
+    "durationNormal": "240ms",
+    "durationSlow": "420ms",
+    "easeOut": "cubic-bezier(0.34, 1.56, 0.64, 1)",
+    "headingWeight": "800"
+  }
+}

@@ -8,12 +8,15 @@
 //   dist/r/theme.json           the default theme (shadcn/ui's variables) as a CSS file
 //   dist/r/registry.json        the registry's index, in shadcn's registry.json format
 //   dist/themes/*.css           the themes, for a <link>
+//   dist/themes/sets/<name>.css a scoped theme (data-theme="<name>"), from themes/sets/<name>.json
+//   dist/r/themes/<name>.json   that theme as a registry item
 //
 //   node scripts/build.mjs [--base-url https://example.github.io/wcl] [--out dist]
 //
 // --base-url is where dist/ will be served: registry items name their dependencies (the theme, other
 // components) by URL. It defaults to $ZUBRA_UI_URL, then http://127.0.0.1:4174 (scripts/serve.mjs).
 import { compileFile } from '@zubra/compiler';
+import { compileTheme, loadThemes } from './themes.mjs';
 import { cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -31,7 +34,7 @@ const SCHEMA = { item: 'https://ui.shadcn.com/schema/registry-item.json', regist
 
 const { components } = JSON.parse(readFileSync(join(root, 'components/index.json'), 'utf8'));
 rmSync(out, { recursive: true, force: true });
-for (const dir of ['modules', 'elements', 'r/src', 'r/element', 'themes']) mkdirSync(join(out, dir), { recursive: true });
+for (const dir of ['modules', 'elements', 'r/src', 'r/element', 'r/themes', 'themes']) mkdirSync(join(out, dir), { recursive: true });
 const write = (path, text) => writeFileSync(join(out, path), typeof text === 'string' ? text : `${JSON.stringify(text, null, 2)}\n`);
 const title = (name) => name.split('-').map((word) => word[0].toUpperCase() + word.slice(1)).join(' ');
 
@@ -47,6 +50,27 @@ const themeItem = {
   files: [{ path: 'themes/default.css', type: 'registry:file', target: TARGET.theme, content: theme }],
 };
 write('r/theme.json', themeItem);
+
+// Scoped themes: each one's CSS, every one together, and a registry item per theme.
+const themeSets = loadThemes(join(root, 'themes/sets'));
+mkdirSync(join(out, 'themes/sets'), { recursive: true });
+const pendingThemeItems = [];
+const themeCss = Object.fromEntries(Object.keys(themeSets).map((name) => [name, compileTheme(themeSets, name)]));
+for (const [name, css] of Object.entries(themeCss)) {
+  write(`themes/sets/${name}.css`, css);
+  pendingThemeItems.push({
+    __path: `r/themes/${name}.json`,
+    $schema: SCHEMA.item,
+    name: `theme-${name}`,
+    type: 'registry:item',
+    title: `${themeSets[name].label ?? title(name)} theme`,
+    description: `${themeSets[name].description ?? ''} Scoped: add data-theme="${name}" to <html> for the whole page, or to any element for one section.`.trim(),
+    files: [{ path: `themes/sets/${name}.css`, type: 'registry:file', target: `~/src/components/zubra/themes/${name}.css`, content: css }],
+  });
+}
+for (const { __path, ...item } of pendingThemeItems) write(__path, item);
+write('themes/sets/all.css', Object.values(themeCss).join('\n'));
+write('themes/sets/index.json', Object.entries(themeSets).sort(([, a], [, b]) => (a.order ?? 99) - (b.order ?? 99)).map(([name, theme]) => ({ name, label: theme.label ?? title(name), description: theme.description ?? '', backdrop: theme.backdrop ?? 'dots', colorScheme: theme.colorScheme ?? 'light' })));
 
 const items = [themeItem];
 // Each component as a plain element, where --emit element covers it (it refuses shadow DOM and Zag:
@@ -110,6 +134,8 @@ for (const component of components) {
     });
   }
 }
+
+items.push(...pendingThemeItems.map(({ __path, ...item }) => item));
 
 // The index, in shadcn's registry.json format (items without their file contents).
 write('r/registry.json', {

@@ -38,6 +38,8 @@ const write = (path, text) => {
 
 cpSync(runtimeDir, join(out, 'runtime'), { recursive: true });
 cpSync(join(root, 'site/assets'), join(out, 'assets'), { recursive: true });
+// The theme compiler the build uses, for the themes page's editor.
+cpSync(join(root, 'site/theme-compiler.js'), join(out, 'assets/theme-compiler.js'));
 // The fonts, self-hosted (no third-party request): Instrument Sans (variable) and JetBrains Mono.
 const fonts = { 'instrument-sans.woff2': '@fontsource-variable/instrument-sans/files/instrument-sans-latin-wght-normal.woff2',
   'jetbrains-mono-400.woff2': '@fontsource/jetbrains-mono/files/jetbrains-mono-latin-400-normal.woff2',
@@ -110,6 +112,7 @@ function slotDocs(component) {
 
 // ---- the page frame
 
+const themeIndex = JSON.parse(readFileSync(join(out, 'themes/sets/index.json'), 'utf8'));
 const CATEGORIES = { input: 'Form controls', widget: 'Widgets', display: 'Display', layout: 'Layout', app: 'App pieces', block: 'Blocks' };
 for (const component of components) {
   if (!CATEGORIES[component.category]) throw new Error(`${component.name}: no nav section for category "${component.category}"`);
@@ -133,6 +136,7 @@ function frame({ prefix, title, description, current, body, scripts = [] }) {
   <link rel="icon" href="${prefix}assets/favicon.svg" type="image/svg+xml">
   <link rel="preload" href="${prefix}assets/fonts/instrument-sans.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="${prefix}themes/default.css">
+  <link rel="stylesheet" href="${prefix}themes/sets/all.css">
   <link rel="stylesheet" href="${prefix}assets/site.css">
   <style id="user-theme"></style>
   <script>
@@ -142,6 +146,8 @@ function frame({ prefix, title, description, current, body, scripts = [] }) {
       const stack = localStorage.getItem('${STACK_KEY}');
       html.dataset.stack = ${JSON.stringify(STACKS)}.includes(stack) ? stack : 'html';
       if (localStorage.getItem('zubra-ui:mode') === 'dark' || (!localStorage.getItem('zubra-ui:mode') && matchMedia('(prefers-color-scheme: dark)').matches)) html.classList.add('dark');
+      const look = localStorage.getItem('zubra-ui:look');
+      if (look && look !== 'zinc') html.dataset.theme = look;
       const preset = localStorage.getItem('zubra-ui:preset');
       if (preset && preset !== 'zinc') html.classList.add('theme-' + preset);
       document.getElementById('user-theme').textContent = localStorage.getItem('zubra-ui:theme') || '';
@@ -169,6 +175,7 @@ function frame({ prefix, title, description, current, body, scripts = [] }) {
   <div class="layout">
     <nav class="site-nav" aria-label="Components">
       <a class="side-home" href="${prefix}"${current ? '' : ' aria-current="page"'}>Getting started</a>
+      <a class="side-home" href="${prefix}themes/"${current === 'themes' ? ' aria-current="page"' : ''}>Themes</a>
       ${nav}
     </nav>
     <main id="main" tabindex="-1">
@@ -177,7 +184,8 @@ ${body}
   </div>
   <modal-dialog id="theme" label="Theme">
     <span slot="heading">Theme</span>
-    <p class="hint">Every component reads shadcn/ui's CSS variables, so any shadcn theme works. Pick a colour, or paste a theme's CSS.</p>
+    <p class="hint">Every component reads shadcn/ui's CSS variables, so any shadcn theme works. Pick a look or a colour, or paste a theme's CSS.</p>
+    <segmented-control id="look" label="Look"></segmented-control>
     <segmented-control id="preset" label="Colour"></segmented-control>
     <label class="paste-label" for="paste">Paste a shadcn theme (the <code>:root</code> and <code>.dark</code> blocks)</label>
     <textarea id="paste" rows="7" spellcheck="false" placeholder=":root {&#10;  --primary: oklch(0.546 0.245 262.881);&#10;  ...&#10;}"></textarea>
@@ -191,7 +199,7 @@ ${body}
     import '${prefix}preview/segmented-control.js';
     import '${prefix}preview/modal-dialog.js';
     import { start } from '${prefix}assets/site.js';
-    start(${JSON.stringify({ stacks: STACKS.map((value) => ({ value, label: STACK_NAMES[value] })), stackKey: STACK_KEY })});
+    start(${JSON.stringify({ stacks: STACKS.map((value) => ({ value, label: STACK_NAMES[value] })), stackKey: STACK_KEY, looks: themeIndex.map(({ name, label }) => ({ value: name, label })) })});
   </script>
 ${scripts.join('\n')}
 </body>
@@ -270,6 +278,80 @@ for (const component of components) {
       </article>`;
   write(`components/${name}/index.html`, frame({ prefix, title: `${name} · Zubra UI`, description: component.description, current: name, body, scripts: [previewScript(prefix, name, demo)] }));
 }
+
+// ---- the themes page: the same small app in every theme, then an editor for your own
+
+const LOOK_COMPONENTS = ['backdrop-pattern', 'content-card', 'text-field', 'toggle-switch', 'action-button', 'status-badge', 'alert-banner', 'user-avatar', 'check-box'];
+const lookApp = (label) => `<div class="look-grid">
+              <content-card heading="The weekly digest">
+                <p>One email on Monday: what changed, what's next, and nothing else.</p>
+                <text-field label="Email" type="email" placeholder="you@example.com" autocomplete="off" required></text-field>
+                <toggle-switch label="Include the changelog" description="A short list, at the end."></toggle-switch>
+                <span slot="footer"><action-button>Subscribe</action-button> <action-button variant="ghost">Not now</action-button></span>
+              </content-card>
+              <div class="look-side">
+                <alert-banner variant="success" heading="${escape(label)} is on">Every component inside this section reads its colours, corners, fonts and motion.</alert-banner>
+                <div class="look-people">
+                  <user-avatar name="Ada Lovelace" status="online"></user-avatar>
+                  <user-avatar name="Grace Hopper" status="away"></user-avatar>
+                  <user-avatar name="Alan Turing"></user-avatar>
+                  <status-badge variant="success" dot>2 online</status-badge>
+                </div>
+                <check-box label="Remember this device" description="For 30 days."></check-box>
+              </div>
+            </div>`;
+const themesBody = `      <section class="themes-page">
+        <h1>Themes</h1>
+        <p class="lead">A theme is more than a colour. Each one sets the colours for light and dark, the fonts, the corners and how things move, and it applies wherever you put <code>data-theme</code>: on <code>&lt;html&gt;</code> for the whole page, or on any element for one part of it. Here is the same small app in each.</p>
+        ${code('<html data-theme="paper">        <!-- the whole page -->\n<section data-theme="terminal">  <!-- or one part of it -->', 'html', 'HTML')}
+${themeIndex.map((theme) => `        <section class="look" data-theme="${theme.name}" aria-labelledby="look-${theme.name}">
+          <backdrop-pattern pattern="${theme.backdrop}" animated>
+            <div class="look-inner">
+              <div class="look-head"><h2 id="look-${theme.name}">${escape(theme.label)}</h2><status-badge variant="outline">${theme.colorScheme === 'dark' ? 'dark first' : 'light first'}</status-badge></div>
+              <p class="look-description">${escape(theme.description)}</p>
+              ${lookApp(theme.label)}
+            </div>
+          </backdrop-pattern>
+          <div class="install look-install"><span>Add the ${escape(theme.label)} theme</span>${code(`npx shadcn@latest add ${baseUrl}/r/themes/${theme.name}.json`, 'sh', 'Terminal')}</div>
+        </section>`).join('\n')}
+        <h2 id="make">Make your own</h2>
+        <p>Start from a theme, change what you like, and copy the result: the JSON to keep in <code>themes/sets/</code> (it compiles with the rest), or the CSS to use as it is.</p>
+        <form class="editor" id="editor">
+          <select-field id="editor-base" label="Start from" name="base"></select-field>
+          <label class="editor-colour">Accent <input type="color" id="editor-primary" name="primary" value="#7c3aed"></label>
+          <label class="editor-colour">Page <input type="color" id="editor-background" name="background" value="#ffffff"></label>
+          <label class="editor-colour">Text <input type="color" id="editor-foreground" name="foreground" value="#18181b"></label>
+          <label class="editor-range">Corners <input type="range" id="editor-radius" name="radius" min="0" max="1.5" step="0.05" value="0.6"> <output id="editor-radius-out">0.6rem</output></label>
+          <select-field id="editor-font" label="Font" name="font"></select-field>
+          <radio-group id="editor-motion" label="Motion" name="motion" orientation="horizontal"></radio-group>
+        </form>
+        <section class="look" data-theme="custom" aria-labelledby="look-custom">
+          <backdrop-pattern pattern="mesh">
+            <div class="look-inner">
+              <div class="look-head"><h2 id="look-custom">Yours</h2><status-badge variant="outline">live</status-badge></div>
+              ${lookApp('Your theme')}
+            </div>
+          </backdrop-pattern>
+        </section>
+        <style id="custom-theme"></style>
+        <p id="editor-status" class="hint" role="status"></p>
+        <div class="editor-out">
+          <div class="code"><div class="code-head"><span>themes/sets/custom.json</span><button type="button" class="copy" data-copy>Copy</button></div><pre tabindex="0"><code id="editor-json"></code></pre></div>
+          <div class="code"><div class="code-head"><span>custom.css</span><button type="button" class="copy" data-copy>Copy</button></div><pre tabindex="0"><code id="editor-css"></code></pre></div>
+        </div>
+      </section>`;
+write('themes/index.html', frame({
+  prefix: '../',
+  title: 'Themes · Zubra UI',
+  description: 'Scoped themes for Zubra UI: colours, fonts, corners and motion, on the whole page or one section.',
+  current: 'themes',
+  body: themesBody,
+  scripts: [`  <script type="module">
+${[...LOOK_COMPONENTS, 'select-field', 'radio-group'].map((name) => `    import '../preview/${name}.js';`).join('\n')}
+    import { startEditor } from '../assets/themes.js';
+    startEditor();
+  </script>`],
+}));
 
 // ---- the home page: live components first, then how to install, then the list
 

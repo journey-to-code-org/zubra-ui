@@ -1,0 +1,69 @@
+{
+  "order": 3,
+  "label": "Terminal",
+  "description": "Dark-first and monospaced: square corners, phosphor green, instant motion.",
+  "extends": "zinc",
+  "colorScheme": "dark",
+  "backdrop": "grid",
+  "colors": {
+    "dark": {
+      "background": "oklch(0.17 0.01 160)",
+      "foreground": "oklch(0.9 0.08 150)",
+      "card": "oklch(0.2 0.015 160)",
+      "cardForeground": "oklch(0.9 0.08 150)",
+      "popover": "oklch(0.2 0.015 160)",
+      "popoverForeground": "oklch(0.9 0.08 150)",
+      "primary": "oklch(0.82 0.18 150)",
+      "primaryForeground": "oklch(0.17 0.01 160)",
+      "secondary": "oklch(0.26 0.02 160)",
+      "secondaryForeground": "oklch(0.9 0.08 150)",
+      "muted": "oklch(0.26 0.02 160)",
+      "mutedForeground": "oklch(0.74 0.06 150)",
+      "accent": "oklch(0.28 0.03 160)",
+      "accentForeground": "oklch(0.9 0.08 150)",
+      "destructive": "oklch(0.7 0.19 25)",
+      "border": "oklch(0.36 0.04 155)",
+      "input": "oklch(0.42 0.05 155)",
+      "ring": "oklch(0.82 0.18 150)",
+      "chart1": "oklch(0.82 0.18 150)",
+      "chart2": "oklch(0.82 0.13 85)",
+      "chart3": "oklch(0.75 0.12 220)"
+    },
+    "light": {
+      "background": "oklch(0.97 0.01 150)",
+      "foreground": "oklch(0.22 0.04 155)",
+      "card": "oklch(0.99 0.005 150)",
+      "cardForeground": "oklch(0.22 0.04 155)",
+      "popover": "oklch(0.99 0.005 150)",
+      "popoverForeground": "oklch(0.22 0.04 155)",
+      "primary": "oklch(0.45 0.13 150)",
+      "primaryForeground": "oklch(0.98 0.01 150)",
+      "secondary": "oklch(0.92 0.02 150)",
+      "secondaryForeground": "oklch(0.22 0.04 155)",
+      "muted": "oklch(0.92 0.02 150)",
+      "mutedForeground": "oklch(0.42 0.05 155)",
+      "accent": "oklch(0.9 0.04 150)",
+      "accentForeground": "oklch(0.22 0.04 155)",
+      "destructive": "oklch(0.5 0.2 27)",
+      "border": "oklch(0.82 0.04 150)",
+      "input": "oklch(0.72 0.05 150)",
+      "ring": "oklch(0.45 0.13 150)",
+      "chart1": "oklch(0.5 0.14 150)",
+      "chart2": "oklch(0.6 0.13 85)",
+      "chart3": "oklch(0.5 0.12 220)"
+    }
+  },
+  "fonts": {
+    "body": "ui-monospace, \"Cascadia Code\", \"JetBrains Mono\", \"SF Mono\", Menlo, Consolas, monospace",
+    "heading": "ui-monospace, \"Cascadia Code\", \"JetBrains Mono\", \"SF Mono\", Menlo, Consolas, monospace",
+    "mono": "ui-monospace, \"Cascadia Code\", \"JetBrains Mono\", \"SF Mono\", Menlo, Consolas, monospace"
+  },
+  "tokens": {
+    "radius": "0px",
+    "durationFast": "60ms",
+    "durationNormal": "100ms",
+    "durationSlow": "180ms",
+    "easeOut": "cubic-bezier(0.3, 0, 0.2, 1)",
+    "headingWeight": "700"
+  }
+}

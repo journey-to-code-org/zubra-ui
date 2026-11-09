@@ -24,7 +24,7 @@
   })
 </script>
 <style>
-  dialog { padding: 0; border: 0; border-radius: 0.9rem; width: min(32rem, calc(100vw - 2rem)); background: var(--card, #ffffff); color: var(--foreground, #1d2130); box-shadow: 0 24px 64px #0d122040; }
+  dialog { padding: 0; border: 0; border-radius: calc(var(--radius, 0.625rem) * 1.44); width: min(32rem, calc(100vw - 2rem)); background: var(--card, #ffffff); color: var(--foreground, #1d2130); box-shadow: 0 24px 64px #0d122040; }
   dialog::backdrop { background: #0d122066; }
   .panel { display: grid; gap: 1rem; padding: 1.1rem 1.25rem 1.25rem; }
   header { display: flex; align-items: center; gap: 1rem; }

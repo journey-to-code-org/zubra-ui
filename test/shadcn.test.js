@@ -224,3 +224,11 @@ test('the one-file item installs a plain element that runs with nothing installe
   assert.deepEqual(problems, []);
   await page.close();
 });
+
+test('a theme installs as one CSS file, scoped to its data-theme', async () => {
+  const dir = project('theme', { 'package.json': JSON.stringify({ name: 'theme', private: true, type: 'module' }) });
+  await add(dir, 'themes/paper');
+  const css = readFileSync(join(dir, 'src/components/zubra/themes/paper.css'), 'utf8');
+  assert.match(css, /^\[data-theme="paper"\] \{/m);
+  assert.match(css, /--primary:/);
+});

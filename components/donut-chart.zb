@@ -28,9 +28,9 @@
   circle.on { stroke-width: 6.5; }
   .middle { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; pointer-events: none; }
   ul { display: grid; gap: 0.25rem; margin: 0; padding: 0; list-style: none; }
-  button { display: grid; grid-template-columns: 0.75rem 1fr auto; gap: 0.5rem; align-items: center; width: 100%; padding: 0.3rem 0.45rem; border: 0; border-radius: 0.45rem; background: none; color: inherit; font: inherit; font-size: 0.875rem; text-align: left; cursor: pointer; }
+  button { display: grid; grid-template-columns: 0.75rem 1fr auto; gap: 0.5rem; align-items: center; width: 100%; padding: 0.3rem 0.45rem; border: 0; border-radius: calc(var(--radius, 0.625rem) * 0.72); background: none; color: inherit; font: inherit; font-size: 0.875rem; text-align: left; cursor: pointer; }
   button:hover, button[aria-pressed=true] { background: var(--muted, #f3f4f7); }
-  .swatch { width: 0.75rem; height: 0.75rem; border-radius: 0.2rem; }
+  .swatch { width: 0.75rem; height: 0.75rem; border-radius: calc(var(--radius, 0.625rem) * 0.32); }
   .pct { color: var(--muted-foreground, #667085); font-variant-numeric: tabular-nums; }
   .t0 { stroke: var(--chart-1, #4f46e5); background: var(--chart-1, #4f46e5); } .t1 { stroke: var(--chart-2, #0891b2); background: var(--chart-2, #0891b2); }
   .t2 { stroke: var(--chart-3, #16a34a); background: var(--chart-3, #16a34a); } .t3 { stroke: var(--chart-4, #ca8a04); background: var(--chart-4, #ca8a04); }

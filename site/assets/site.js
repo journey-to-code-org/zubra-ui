@@ -10,7 +10,7 @@ const PRESETS = [
   { value: 'green', label: 'Green' }, { value: 'orange', label: 'Orange' },
 ];
 
-export async function start({ stacks, stackKey }) {
+export async function start({ stacks, stackKey, looks = [] }) {
   const html = document.documentElement;
   // On a phone the nav is one scrolling row: bring the current page into it.
   const current = document.querySelector('.site-nav [aria-current=page]');
@@ -46,6 +46,15 @@ export async function start({ stacks, stackKey }) {
   const paste = document.querySelector('#paste');
   const status = document.querySelector('#paste-status');
   const userTheme = document.querySelector('#user-theme');
+  // A look: one of the scoped themes (data-theme on <html>), with its fonts, corners and motion.
+  const look = document.querySelector('#look');
+  look.options = looks;
+  look.value = html.dataset.theme ?? 'zinc';
+  look.addEventListener('valuechange', (event) => {
+    if (event.detail === 'zinc') delete html.dataset.theme;
+    else html.dataset.theme = event.detail;
+    store.set('zubra-ui:look', event.detail === 'zinc' ? null : event.detail);
+  });
   preset.options = PRESETS;
   preset.value = store.get('zubra-ui:preset') ?? 'zinc';
   paste.value = store.get('zubra-ui:theme') ?? '';
@@ -73,6 +82,9 @@ export async function start({ stacks, stackKey }) {
     store.set('zubra-ui:theme', null);
     preset.value = 'zinc';
     applyPreset('zinc');
+    look.value = 'zinc';
+    delete html.dataset.theme;
+    store.set('zubra-ui:look', null);
     status.textContent = 'Back to the default theme.';
   });
 

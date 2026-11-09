@@ -63,13 +63,13 @@
 </script>
 <style>
   :host { display: inline-block; }
-  .trigger { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.45rem 0.8rem; border: 1px solid var(--border, #dde); border-radius: 0.5rem; background: var(--card, #fff); color: inherit; font: inherit; cursor: pointer; }
+  .trigger { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.45rem 0.8rem; border: 1px solid var(--border, #dde); border-radius: calc(var(--radius, 0.625rem) * 0.8); background: var(--card, #fff); color: inherit; font: inherit; cursor: pointer; }
   .trigger::after { content: ""; width: 0.35rem; height: 0.35rem; border: solid currentColor; border-width: 0 2px 2px 0; transform: translateY(-2px) rotate(45deg); }
-  [popover] { position: fixed; inset: auto; margin: 0; min-width: 11rem; padding: 0.3rem; border: 1px solid var(--border, #dde); border-radius: 0.6rem; background: var(--card, #fff); color: var(--foreground, #1d2130); box-shadow: 0 8px 24px #0d122026; }
+  [popover] { position: fixed; inset: auto; margin: 0; min-width: 11rem; padding: 0.3rem; border: 1px solid var(--border, #dde); border-radius: calc(var(--radius, 0.625rem) * 0.96); background: var(--card, #fff); color: var(--foreground, #1d2130); box-shadow: 0 8px 24px #0d122026; }
   @supports (position-area: bottom) {
     [popover] { position-area: bottom span-right; position-try-fallbacks: flip-block; margin-top: 4px; }
   }
-  [role=menuitem] { display: block; width: 100%; padding: 0.4rem 0.6rem; border: 0; border-radius: 0.4rem; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+  [role=menuitem] { display: block; width: 100%; padding: 0.4rem 0.6rem; border: 0; border-radius: calc(var(--radius, 0.625rem) * 0.64); background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
   [role=menuitem]:hover, [role=menuitem]:focus { background: var(--accent, #f2f4f8); outline: none; }
   [role=menuitem]:disabled { color: var(--muted-foreground, #98a2b3); cursor: default; }
 </style>

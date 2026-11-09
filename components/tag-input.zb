@@ -50,10 +50,10 @@
 </script>
 <style>
   :host { display: block; }
-  .box { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem; padding: 0.35rem 0.4rem; border: 1px solid var(--border, #d9dce3); border-radius: 0.6rem; background: var(--card, #ffffff); }
+  .box { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem; padding: 0.35rem 0.4rem; border: 1px solid var(--border, #d9dce3); border-radius: calc(var(--radius, 0.625rem) * 0.96); background: var(--card, #ffffff); }
   .box:focus-within { outline: 2px solid var(--primary, #4f5df5); outline-offset: 1px; }
-  .tag { display: inline-flex; align-items: center; gap: 0.15rem; padding: 0.1rem 0.2rem 0.1rem 0.5rem; border-radius: 0.4rem; background: var(--chip, var(--secondary, #f4f4f5)); color: var(--chip-ink, var(--secondary-foreground, #18181b)); font-size: 0.8125rem; font-weight: 600; }
-  .tag button { display: inline-grid; place-items: center; min-width: 1.5rem; min-height: 1.5rem; border: 0; border-radius: 0.3rem; background: none; color: inherit; padding: 0; cursor: pointer; font: inherit; font-size: 1rem; }
+  .tag { display: inline-flex; align-items: center; gap: 0.15rem; padding: 0.1rem 0.2rem 0.1rem 0.5rem; border-radius: calc(var(--radius, 0.625rem) * 0.64); background: var(--chip, var(--secondary, #f4f4f5)); color: var(--chip-ink, var(--secondary-foreground, #18181b)); font-size: 0.8125rem; font-weight: 600; }
+  .tag button { display: inline-grid; place-items: center; min-width: 1.5rem; min-height: 1.5rem; border: 0; border-radius: calc(var(--radius, 0.625rem) * 0.48); background: none; color: inherit; padding: 0; cursor: pointer; font: inherit; font-size: 1rem; }
   .tag button:hover { background: color-mix(in oklab, currentColor 12%, transparent); }
   input { flex: 1; min-width: 7rem; border: 0; outline: 0; padding: 0.3rem; font: inherit; background: none; color: inherit; }
   .hint { margin: 0.3rem 0 0; font-size: 0.75rem; color: var(--muted-foreground, #667085); }
