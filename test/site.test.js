@@ -147,7 +147,7 @@ async function lowContrast(page) {
         if (value < 3) failures.push(`"${text.slice(0, 30)}" ${value.toFixed(2)}:1`);
       }
     };
-    for (const stage of document.querySelectorAll('[data-preview], .look')) visit(stage);
+    for (const stage of document.querySelectorAll('[data-preview], .look, .variants')) visit(stage);
     return failures;
   });
 }
@@ -241,6 +241,13 @@ test('themes: each section takes its theme; the look picker themes the whole sit
   await page.click('#theme-open');
   await page.locator('#look').getByText('Terminal', { exact: true }).click();
   assert.equal(await page.evaluate(() => document.documentElement.dataset.theme), 'terminal');
+  // Terminal is dark first: the Dark button says so, and pressing it makes the page light.
+  await page.keyboard.press('Escape');
+  assert.equal(await page.getAttribute('#mode', 'aria-pressed'), 'true');
+  const darkBackground = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+  await page.click('#mode');
+  assert.equal(await page.getAttribute('#mode', 'aria-pressed'), 'false');
+  assert.notEqual(await page.evaluate(() => getComputedStyle(document.body).backgroundColor), darkBackground);
   const next = await context.newPage();
   await next.goto(`${site.url}/components/toggle-switch/`, { waitUntil: 'networkidle' });
   assert.equal(await next.evaluate(() => document.documentElement.dataset.theme), 'terminal');
@@ -258,14 +265,19 @@ test('search filters the nav, "/" focuses it, and install commands follow the ch
   assert.deepEqual(shown, ['toast-region']);
   await page.fill('#nav-search', 'zzzz');
   assert.equal(await page.textContent('#nav-none'), 'No component matches.');
+  await page.fill('#nav-search', 'but');
+  assert.equal(await page.textContent('.site-nav li.nav-best'), 'action-button', 'a name that starts with it ranks first');
   await page.fill('#nav-search', 'stepper');
   await page.keyboard.press('Enter');
   await page.waitForURL(/quantity-stepper/);
 
   const install = page.locator('#install ~ .install pre').first();
   assert.match(await install.innerText(), /^npx shadcn@latest add /);
-  await page.locator('#install ~ .install [data-pm-tab="pnpm"]').first().click();
-  assert.match(await install.innerText(), /^pnpm dlx shadcn@latest add /);
+  await page.locator('#install ~ .install [data-pm-tab="npm"]').first().focus();
+  await page.keyboard.press('ArrowRight');
+  assert.match(await install.innerText(), /^pnpm dlx shadcn@latest add /, 'the arrow keys switch');
+  assert.equal(await page.evaluate(() => document.activeElement.dataset.pmTab), 'pnpm');
+  assert.deepEqual(await page.locator('#install ~ .install').first().locator('[data-pm-tab]').evaluateAll((tabs) => tabs.map((tab) => tab.tabIndex)), [-1, 0, -1, -1], 'one Tab stop per row');
   const next = await context.newPage();
   await next.goto(`${site.url}/`, { waitUntil: 'networkidle' });
   assert.match(await next.locator('.steps pre').first().innerText(), /^pnpm dlx shadcn/, 'remembered across pages');

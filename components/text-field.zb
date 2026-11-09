@@ -31,10 +31,10 @@
   .field-optional { font-weight: 400; color: color-mix(in oklab, var(--muted-foreground, #71717a) 75%, var(--foreground, #18181b)); }
   .field-help { margin: 0; font-size: 0.85rem; color: color-mix(in oklab, var(--muted-foreground, #71717a) 75%, var(--foreground, #18181b)); }
   .field-control { width: 100%; box-sizing: border-box; padding: 0.55rem 0.75rem; border: 1px solid var(--input, #e4e4e7); border-radius: calc(var(--radius, 0.625rem) - 2px); background: var(--background, #fff); color: var(--foreground, #18181b); font: inherit; transition: border-color var(--duration-fast, 150ms), box-shadow var(--duration-fast, 150ms); }
-  textarea.control { resize: vertical; min-height: 4.5rem; }
+  textarea.field-control { resize: vertical; min-height: 4.5rem; }
   .field-control::placeholder { color: var(--muted-foreground, #71717a); }
   .field-control:focus-visible { outline: none; border-color: var(--ring, #a1a1aa); box-shadow: 0 0 0 3px color-mix(in oklab, var(--ring, #a1a1aa) 40%, transparent); }
-  .field-control[aria-invalid=true] { border-color: var(--destructive, #dc2626); }
+  .field-control[aria-invalid=true], .field-control[aria-invalid=true]:focus-visible { border-color: var(--destructive, #dc2626); }
   .field-control:disabled { opacity: 0.55; cursor: not-allowed; }
   .field-error { margin: 0; font-size: 0.85rem; color: var(--destructive, #dc2626); }
   .field-error:empty { display: none; }

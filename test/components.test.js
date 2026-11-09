@@ -595,6 +595,11 @@ test('toast-region: a document event shows a toast above a modal, it closes itse
   await page.keyboard.press('Escape');
   await element.getByRole('button', { name: 'Dismiss notification' }).click();
   assert.equal(await toasts.count(), 0);
+  // The same message again replaces the one showing; Escape closes the newest.
+  await page.evaluate(() => { for (const message of ['Saved', 'Saved', 'Copied']) document.dispatchEvent(new CustomEvent('toast', { detail: { message, duration: 0 } })); });
+  assert.deepEqual((await toasts.allTextContents()).map((text) => text.replace('×', '').trim()), ['Saved', 'Copied']);
+  await page.keyboard.press('Escape');
+  assert.deepEqual((await toasts.allTextContents()).map((text) => text.replace('×', '').trim()), ['Saved']);
   assert.deepEqual(problems, []);
   await page.close();
 });

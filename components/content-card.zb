@@ -26,7 +26,7 @@
   /* The heading's link covers the card, so a click anywhere opens it. */
   .card-linked h3 a::after { content: ""; position: absolute; inset: 0; }
   .card-text { color: color-mix(in oklab, var(--muted-foreground, #71717a) 75%, var(--foreground, #18181b)); }
-  footer { position: relative; display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; padding: 0.8rem 1.2rem; border-top: 1px solid var(--border, #e4e4e7); }
+  footer { position: relative; font-size: 0.875rem; color: color-mix(in oklab, var(--muted-foreground, #71717a) 75%, var(--foreground, #18181b)); display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; padding: 0.8rem 1.2rem; border-top: 1px solid var(--border, #e4e4e7); }
   @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: 0s !important; animation-duration: 0s !important; animation-iteration-count: 1 !important; } }
 </style>
 <content-card heading="" href="">

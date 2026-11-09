@@ -8,7 +8,7 @@
 -->
 <style>
   :host { display: block; }
-  .backdrop { position: relative; isolation: isolate; overflow: hidden; border-radius: inherit; }
+  .backdrop-frame { position: relative; isolation: isolate; overflow: hidden; border-radius: inherit; }
   .backdrop-layer { position: absolute; inset: 0; z-index: -1; pointer-events: none; --line: color-mix(in oklab, var(--foreground, #18181b) 9%, transparent); --a: var(--chart-1, oklch(0.65 0.2 40)); --b: var(--chart-2, oklch(0.6 0.12 185)); --c: var(--chart-3, oklch(0.4 0.07 227)); }
   .backdrop-fade .backdrop-layer { mask-image: radial-gradient(ellipse at center, #000 35%, transparent 78%); }
   .backdrop-content { position: relative; }
@@ -26,7 +26,7 @@
   @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: 0s !important; animation-duration: 0s !important; animation-iteration-count: 1 !important; } }
 </style>
 <backdrop-pattern pattern="grid" size="24px" fade={true} animated={false}>
-  <div class="backdrop backdrop-{pattern}" class:backdrop-fade={fade} class:backdrop-animated={animated} style:--size={size}>
+  <div class="backdrop-frame backdrop-{pattern}" class:backdrop-fade={fade} class:backdrop-animated={animated} style:--size={size}>
     <div class="backdrop-layer" aria-hidden="true"></div>
     <div class="backdrop-content"><zb-slot></zb-slot></div>
   </div>

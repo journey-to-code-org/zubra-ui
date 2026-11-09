@@ -29,14 +29,16 @@ export async function start({ stacks, stackKey, looks = [] }) {
 
   // Dark mode: shadcn's `.dark` class, which the theme's variables switch on.
   const mode = document.querySelector('#mode');
-  const showMode = () => {
-    const dark = html.classList.contains('dark');
-    mode.setAttribute('aria-pressed', String(dark));
-  };
+  // Pressed means the page is dark, whatever made it so: `.dark`, or a look that is dark first.
+  // Pressing it switches to the other, with `.light` to turn a dark-first look light.
+  const isDark = () => getComputedStyle(html).colorScheme.includes('dark');
+  const showMode = () => mode.setAttribute('aria-pressed', String(isDark()));
   showMode();
   mode.addEventListener('click', () => {
-    html.classList.toggle('dark');
-    store.set('zubra-ui:mode', html.classList.contains('dark') ? 'dark' : 'light');
+    const dark = !isDark();
+    html.classList.toggle('dark', dark);
+    html.classList.toggle('light', !dark);
+    store.set('zubra-ui:mode', dark ? 'dark' : 'light');
     showMode();
   });
 
@@ -53,6 +55,7 @@ export async function start({ stacks, stackKey, looks = [] }) {
   look.addEventListener('valuechange', (event) => {
     if (event.detail === 'zinc') delete html.dataset.theme;
     else html.dataset.theme = event.detail;
+    showMode();
     store.set('zubra-ui:look', event.detail === 'zinc' ? null : event.detail);
   });
   preset.options = PRESETS;
@@ -85,6 +88,7 @@ export async function start({ stacks, stackKey, looks = [] }) {
     look.value = 'zinc';
     delete html.dataset.theme;
     store.set('zubra-ui:look', null);
+    showMode();
     status.textContent = 'Back to the default theme.';
   });
 
@@ -92,9 +96,15 @@ export async function start({ stacks, stackKey, looks = [] }) {
   // Enter opens the first match.
   const search = document.querySelector('#nav-search');
   const none = document.querySelector('#nav-none');
+  // The best match (a name that starts with the search, then one that contains it) is marked, and
+  // Enter opens it.
+  let best = null;
   const filter = () => {
     const words = search.value.toLowerCase().split(/\s+/).filter(Boolean);
     let shown = 0;
+    best?.classList.remove('nav-best');
+    best = null;
+    let bestScore = 0;
     for (const section of document.querySelectorAll('.site-nav section')) {
       let any = false;
       for (const item of section.querySelectorAll('li')) {
@@ -102,15 +112,19 @@ export async function start({ stacks, stackKey, looks = [] }) {
         item.hidden = !match;
         any ||= match;
         shown += match ? 1 : 0;
+        const name = item.textContent.toLowerCase();
+        const score = !match || !words.length ? 0 : name.startsWith(words[0]) ? 3 : name.includes(words[0]) ? 2 : 1;
+        if (score > bestScore) { best = item; bestScore = score; }
       }
       section.hidden = !any;
     }
     none.textContent = words.length && !shown ? 'No component matches.' : '';
+    if (words.length) best?.classList.add('nav-best');
   };
   search.addEventListener('input', filter);
   search.addEventListener('keydown', (event) => {
     if (event.key !== 'Enter') return;
-    const first = document.querySelector('.site-nav li:not([hidden]) a');
+    const first = best?.querySelector('a') ?? document.querySelector('.site-nav li:not([hidden]) a');
     if (first) location.href = first.href;
   });
   document.addEventListener('keydown', (event) => {
@@ -121,7 +135,23 @@ export async function start({ stacks, stackKey, looks = [] }) {
   });
 
   // Package manager tabs on install commands: one choice for every command on the site.
-  const showPm = () => document.querySelectorAll('[data-pm-tab]').forEach((tab) => tab.setAttribute('aria-pressed', String(tab.dataset.pmTab === html.dataset.pm)));
+  // One Tab stop per row (the chosen one); the arrow keys move between them.
+  const showPm = () => document.querySelectorAll('[data-pm-tab]').forEach((tab) => {
+    const chosen = tab.dataset.pmTab === html.dataset.pm;
+    tab.setAttribute('aria-pressed', String(chosen));
+    tab.tabIndex = chosen ? 0 : -1;
+  });
+  document.addEventListener('keydown', (event) => {
+    const tab = event.target.closest?.('[data-pm-tab]');
+    if (!tab || !['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+    const tabs = [...tab.parentElement.querySelectorAll('[data-pm-tab]')];
+    const at = tabs.indexOf(tab);
+    const next = { ArrowLeft: at - 1, ArrowRight: at + 1, Home: 0, End: tabs.length - 1 }[event.key];
+    const target = tabs[(next + tabs.length) % tabs.length];
+    event.preventDefault();
+    target.click();
+    target.focus();
+  });
   showPm();
   document.addEventListener('click', (event) => {
     const tab = event.target.closest('[data-pm-tab]');

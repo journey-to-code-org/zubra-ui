@@ -122,7 +122,7 @@ const REPO = 'https://github.com/journey-to-code-org/zubra-ui';
 
 function frame({ prefix, title, description, current, body, scripts = [] }) {
   const nav = Object.entries(CATEGORIES).map(([category, heading]) => {
-    const items = components.filter((component) => component.category === category);
+    const items = components.filter((component) => component.category === category).sort((a, b) => a.name.localeCompare(b.name));
     if (!items.length) return '';
     return `<section><h2>${heading}</h2><ul>${items.map((component) => `<li data-search="${escape(`${component.name} ${heading} ${component.description.split(/(?<=\.)\s/)[0]}`.toLowerCase())}"><a href="${prefix}components/${component.name}/"${component.name === current ? ' aria-current="page"' : ''}>${component.name}</a></li>`).join('')}</ul></section>`;
   }).join('');
@@ -145,7 +145,9 @@ function frame({ prefix, title, description, current, body, scripts = [] }) {
       const html = document.documentElement;
       const stack = localStorage.getItem('${STACK_KEY}');
       html.dataset.stack = ${JSON.stringify(STACKS)}.includes(stack) ? stack : 'html';
-      if (localStorage.getItem('zubra-ui:mode') === 'dark' || (!localStorage.getItem('zubra-ui:mode') && matchMedia('(prefers-color-scheme: dark)').matches)) html.classList.add('dark');
+      const mode = localStorage.getItem('zubra-ui:mode');
+      if (mode === 'dark' || (!mode && matchMedia('(prefers-color-scheme: dark)').matches)) html.classList.add('dark');
+      else if (mode === 'light') html.classList.add('light');
       const pm = localStorage.getItem('zubra-ui:pm');
       html.dataset.pm = ['npm', 'pnpm', 'yarn', 'bun'].includes(pm) ? pm : 'npm';
       const look = localStorage.getItem('zubra-ui:look');
@@ -176,7 +178,7 @@ function frame({ prefix, title, description, current, body, scripts = [] }) {
   </header>
   <div class="layout">
     <nav class="site-nav" aria-label="Components">
-      <div class="nav-search"><input type="search" id="nav-search" placeholder="Search components" aria-label="Search components" aria-keyshortcuts="/" autocomplete="off"><p class="nav-none" id="nav-none" role="status"></p></div>
+      <div class="nav-search"><input type="search" id="nav-search" placeholder="Search  ( / )" aria-label="Search components" aria-keyshortcuts="/" autocomplete="off"><p class="nav-none" id="nav-none" role="status"></p></div>
       <a class="side-home" href="${prefix}"${current ? '' : ' aria-current="page"'}>Getting started</a>
       <a class="side-home" href="${prefix}themes/"${current === 'themes' ? ' aria-current="page"' : ''}>Themes</a>
       ${nav}
@@ -188,8 +190,10 @@ ${body}
   <modal-dialog id="theme" label="Theme">
     <span slot="heading">Theme</span>
     <p class="hint">Every component reads shadcn/ui's CSS variables, so any shadcn theme works. Pick a look or a colour, or paste a theme's CSS.</p>
-    <segmented-control id="look" label="Look"></segmented-control>
-    <segmented-control id="preset" label="Colour"></segmented-control>
+    <p class="dialog-label" id="look-label">Look: colours, fonts, corners and motion</p>
+    <segmented-control id="look" label="Look" aria-labelledby="look-label"></segmented-control>
+    <p class="dialog-label" id="preset-label">Accent colour</p>
+    <segmented-control id="preset" label="Accent colour" aria-labelledby="preset-label"></segmented-control>
     <label class="paste-label" for="paste">Paste a shadcn theme (the <code>:root</code> and <code>.dark</code> blocks)</label>
     <textarea id="paste" rows="7" spellcheck="false" placeholder=":root {&#10;  --primary: oklch(0.546 0.245 262.881);&#10;  ...&#10;}"></textarea>
     <p class="hint" id="paste-status" role="status"></p>
@@ -273,6 +277,7 @@ for (const component of components) {
         <h1>${escape(name)}</h1>
         <p class="lead">${prose(component.description)}</p>
         ${preview(name, demo)}
+        ${demo.variants ? `<p class="variants-label">${escape(demo.variants.label)}</p><div class="variants" data-variants="${name}">${demo.variants.html}</div>` : ''}
         <p class="source">Source: <a href="${REPO}/blob/master/components/${component.files[0]}"><code>${component.files[0]}</code></a>, and its <a href="${prefix}r/${name}.json">registry item</a>.</p>
         <h2 id="install">Install</h2>
         ${installs(name).map(([label, command]) => `<div class="install"><span>${escape(label)}</span>${code(command, 'sh', 'Terminal')}</div>`).join('')}
@@ -325,12 +330,12 @@ ${themeIndex.map((theme) => `        <section class="look" data-theme="${theme.n
           <div class="install look-install"><span>Add the ${escape(theme.label)} theme</span>${code(`npx shadcn@latest add ${baseUrl}/r/themes/${theme.name}.json`, 'sh', 'Terminal')}</div>
         </section>`).join('\n')}
         <h2 id="make">Make your own</h2>
-        <p>Start from a theme, change what you like, and copy the result: the JSON to keep in <code>themes/sets/</code> (it compiles with the rest), or the CSS to use as it is.</p>
+        <p>Start from a theme, change what you like, and copy the result. The accent applies in light and dark; the page and text colours are the light ones, and dark keeps the starting theme's. Copy the JSON to keep in <code>themes/sets/</code> (it compiles with the rest), or the CSS to use as it is.</p>
         <form class="editor" id="editor">
           <select-field id="editor-base" label="Start from" name="base"></select-field>
-          <label class="editor-colour">Accent <input type="color" id="editor-primary" name="primary" value="#7c3aed"></label>
-          <label class="editor-colour">Page <input type="color" id="editor-background" name="background" value="#ffffff"></label>
-          <label class="editor-colour">Text <input type="color" id="editor-foreground" name="foreground" value="#18181b"></label>
+          <label class="editor-colour">Accent, light and dark <input type="color" id="editor-primary" name="primary" value="#7c3aed"></label>
+          <label class="editor-colour">Page, in light <input type="color" id="editor-background" name="background" value="#ffffff"></label>
+          <label class="editor-colour">Text, in light <input type="color" id="editor-foreground" name="foreground" value="#18181b"></label>
           <label class="editor-range">Corners <input type="range" id="editor-radius" name="radius" min="0" max="1.5" step="0.05" value="0.6"> <output id="editor-radius-out">0.6rem</output></label>
           <select-field id="editor-font" label="Font" name="font"></select-field>
           <radio-group id="editor-motion" label="Motion" name="motion" orientation="horizontal"></radio-group>
@@ -390,7 +395,7 @@ const homeBody = `      <section class="home">
         <p>Every one at once (shadcn takes several items in one command):</p>
         ${code(`npx shadcn@latest add ${components.map(({ name }) => `${baseUrl}/r/${name}.json`).join(' ')}`, 'sh', 'Terminal')}
         <p class="note">The registry's index is <a href="r/registry.json"><code>r/registry.json</code></a>, and <a href="llms.txt"><code>llms.txt</code></a> describes every component for AI tools.</p>
-        <ul class="all">${components.map((component) => `<li><a href="components/${component.name}/">${component.name}</a><span>${prose(component.description.split(/(?<=\.)\s/)[0])}</span></li>`).join('')}</ul>
+        <ul class="all">${[...components].sort((a, b) => a.name.localeCompare(b.name)).map((component) => `<li><a href="components/${component.name}/">${component.name}</a><span>${prose(component.description.split(/(?<=\.)\s/)[0])}</span></li>`).join('')}</ul>
       </section>`;
 write('index.html', frame({
   prefix: './',

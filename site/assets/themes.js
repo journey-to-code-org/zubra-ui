@@ -45,7 +45,11 @@ export async function startEditor() {
     const theme = {
       label: 'Yours',
       extends: from.value,
-      colors: { light: { primary, primaryForeground: onColour(primary), ring: primary, background: $('#editor-background').value, foreground: $('#editor-foreground').value, chart1: primary } },
+      // The accent in both schemes; the page and text colours are the light ones (dark keeps the base's).
+      colors: {
+        light: { primary, primaryForeground: onColour(primary), ring: primary, background: $('#editor-background').value, foreground: $('#editor-foreground').value, chart1: primary },
+        dark: { primary, primaryForeground: onColour(primary), ring: primary, chart1: primary },
+      },
       tokens: { radius: `${radius.value}rem`, ...(MOTION[motion.value] ?? {}) },
       ...(FONTS[font.value] ? { fonts: { body: FONTS[font.value], heading: FONTS[font.value] } } : {}),
     };

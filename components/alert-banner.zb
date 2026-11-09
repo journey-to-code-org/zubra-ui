@@ -32,6 +32,7 @@
   .alert-box { --tone-bg: color-mix(in oklab, var(--tone) 9%, var(--background, #fff)); --tone-border: color-mix(in oklab, var(--tone) 35%, var(--background, #fff)); }
   .alert-icon { display: grid; place-items: center; width: 1.35rem; height: 1.35rem; margin-top: 0.05rem; border-radius: 50%; background: var(--tone); color: #fff; font-size: 0.8rem; font-weight: 800; }
   .alert-warning .alert-icon { color: #1c1917; }
+  .alert-danger .alert-icon { background: color-mix(in oklab, var(--tone) 78%, #000); }
   .alert-content { display: grid; gap: 0.25rem; min-width: 0; }
   strong { font-weight: 700; }
   strong:empty { display: none; }

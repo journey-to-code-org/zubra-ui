@@ -16,13 +16,14 @@
   .action-outline { border-color: var(--border, #e4e4e7); background: var(--background, #fff); color: var(--foreground, #18181b); }
   .action-outline:hover, .action-ghost:hover { background: var(--accent, #f4f4f5); color: var(--accent-foreground, #18181b); }
   .action-ghost { background: none; color: var(--foreground, #18181b); }
-  .action-destructive { background: var(--destructive, #dc2626); color: #fff; }
-  .action-destructive:hover { background: color-mix(in oklab, var(--destructive, #dc2626) 88%, #000); }
+  /* Darkened, so white text reads on the lighter reds that dark themes use. */
+  .action-destructive { background: color-mix(in oklab, var(--destructive, #dc2626) 78%, #000); color: #fff; }
+  .action-destructive:hover { background: color-mix(in oklab, var(--destructive, #dc2626) 68%, #000); }
   .action-link { height: auto; padding: 0; background: none; color: var(--primary, #18181b); text-decoration: underline; text-underline-offset: 3px; }
   .action-link:hover { background: none; text-decoration-thickness: 2px; }
   .action-sm { height: 2rem; padding: 0 0.75rem; font-size: 0.85rem; }
   .action-lg { height: 2.875rem; padding: 0 1.4rem; font-size: 1rem; }
-  .action-link.sm, .action-link.lg { height: auto; padding: 0; }
+  .action-link.action-sm, .action-link.action-lg { height: auto; padding: 0; }
   .action-button[aria-disabled=true], .action-button:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
   .action-button[aria-busy=true] { cursor: progress; }
   .action-spinner { width: 1em; height: 1em; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin 0.7s linear infinite; }

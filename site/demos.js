@@ -232,6 +232,7 @@ export const demos = {
     events: ['send'],
   },
   'action-button': {
+    variants: { label: 'Every variant and size', html: '<action-button variant="primary">Primary</action-button><action-button variant="secondary">Secondary</action-button><action-button variant="outline">Outline</action-button><action-button variant="ghost">Ghost</action-button><action-button variant="destructive">Destructive</action-button><action-button variant="link">Link</action-button><action-button size="sm">Small</action-button><action-button size="lg">Large</action-button><action-button loading>Saving</action-button><action-button disabled>Disabled</action-button>' },
     attrs: { variant: 'primary' },
     events: ['click'],
     html: 'Save changes',
@@ -272,11 +273,13 @@ export const demos = {
     events: ['valuechange'],
   },
   'status-badge': {
+    variants: { label: 'Every variant', html: '<status-badge variant="neutral">Draft</status-badge><status-badge variant="primary">New</status-badge><status-badge variant="success">Paid</status-badge><status-badge variant="warning">Due soon</status-badge><status-badge variant="danger">Overdue</status-badge><status-badge variant="outline">Archived</status-badge><status-badge variant="success" dot>Online</status-badge>' },
     attrs: { variant: 'success' },
     props: { dot: true },
     html: 'Paid',
   },
   'user-avatar': {
+    variants: { label: 'Sizes and statuses', html: '<user-avatar name="Grace Hopper" size="sm" status="busy"></user-avatar><user-avatar name="Alan Turing" size="md" status="away"></user-avatar><user-avatar name="Katherine Johnson" size="lg"></user-avatar><user-avatar name="Margaret Hamilton" size="xl" status="online"></user-avatar>' },
     attrs: { name: 'Ada Lovelace', size: 'lg', status: 'online' },
   },
   'content-card': {
@@ -284,6 +287,7 @@ export const demos = {
     html: '<p>A starter, a loaf and a schedule that fits around work. Six steps, two days, mostly waiting.</p>\n<span slot="footer">12 min read</span>',
   },
   'alert-banner': {
+    variants: { label: 'Every variant', html: '<alert-banner variant="info" heading="Heads up" style="inline-size: 100%">Maintenance on Sunday, 2–3 am.</alert-banner><alert-banner variant="success" heading="Payment received" style="inline-size: 100%">Thanks: your receipt is on its way.</alert-banner><alert-banner variant="danger" heading="Card declined" style="inline-size: 100%">Try another card, or contact your bank.</alert-banner>' },
     attrs: { variant: 'warning', heading: 'Your trial ends in 3 days' },
     props: { dismissible: true },
     events: ['close'],
@@ -295,6 +299,7 @@ export const demos = {
     trigger: { label: 'Save', event: 'toast', detail: { heading: 'Saved', message: 'Your changes are live.', variant: 'success' } },
   },
   'loading-spinner': {
+    variants: { label: 'Sizes', html: '<loading-spinner size="sm" label="Loading"></loading-spinner><loading-spinner size="md" label="Loading"></loading-spinner><loading-spinner size="lg" label="Loading"></loading-spinner>' },
     attrs: { label: 'Loading your projects', size: 'md' },
     props: { inline: true },
   },
