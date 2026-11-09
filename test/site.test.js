@@ -19,6 +19,8 @@ after(async () => { await browser?.close(); site?.close(); });
 const ELEMENTS = process.env.ZUBRA_UI_EMIT === 'element'
   ? new Set(readdirSync(join(root, 'dist/elements')).filter((file) => file.endsWith('.js')).map((file) => file.slice(0, -3)))
   : new Set();
+// The pages that are tools rather than a component: no component preview of their own.
+const TOOL_PAGES = ['/themes/', '/studio/'];
 async function open(path, { context } = {}) {
   const page = await (context ?? browser).newPage();
   if (ELEMENTS.size) {
@@ -38,7 +40,7 @@ async function open(path, { context } = {}) {
 
 test('every page loads cleanly and its previews render', async () => {
   const context = await browser.newContext();
-  const pages = ['/', '/themes/', ...components.map(({ name }) => `/components/${name}/`)];
+  const pages = ['/', ...TOOL_PAGES, ...components.map(({ name }) => `/components/${name}/`)];
   const failures = [];
   await Promise.all(pages.map(async (path) => {
     const { page, problems } = await open(path, { context });
@@ -55,7 +57,7 @@ test('every page loads cleanly and its previews render', async () => {
         return { name, defined: !!customElements.get(name), rendered: !!element && (element.shadowRoot?.childElementCount ?? element.childElementCount) > 0 };
       });
     });
-    if (!previews.length && path !== '/themes/') problems.push('no previews');
+    if (!previews.length && !TOOL_PAGES.includes(path)) problems.push('no previews');
     for (const preview of previews) if (!preview.defined || !preview.rendered) problems.push(`preview ${preview.name}: ${JSON.stringify(preview)}`);
     if (problems.length) failures.push(`${path}\n  ${problems.join('\n  ')}`);
     await page.close();
@@ -170,7 +172,7 @@ test('preview text is readable in light and dark', async () => {
 test('on a phone nothing scrolls sideways, and the nav lists every component', async () => {
   const context = await browser.newContext({ viewport: { width: 320, height: 740 } });
   const failures = [];
-  await Promise.all(['/', '/themes/', ...components.map(({ name }) => `/components/${name}/`)].map(async (path) => {
+  await Promise.all(['/', ...TOOL_PAGES, ...components.map(({ name }) => `/components/${name}/`)].map(async (path) => {
     const { page } = await open(path, { context });
     const { scroll, width, nav } = await page.evaluate(() => ({ scroll: document.documentElement.scrollWidth, width: innerWidth, nav: document.querySelectorAll('.site-nav a[href*="components/"]').length }));
     if (scroll > width) failures.push(`${path}: ${scroll}px wide in ${width}px`);
@@ -187,7 +189,7 @@ test('axe finds no serious or critical problems on any page, light or dark', asy
   const axe = readFileSync(join(root, 'node_modules/axe-core/axe.min.js'), 'utf8');
   const context = await browser.newContext({ reducedMotion: 'reduce' });
   const failures = [];
-  await Promise.all(['/', '/themes/', ...components.map(({ name }) => `/components/${name}/`)].map(async (path) => {
+  await Promise.all(['/', ...TOOL_PAGES, ...components.map(({ name }) => `/components/${name}/`)].map(async (path) => {
     const { page } = await open(path, { context });
     await page.addScriptTag({ content: axe });
     for (const mode of ['light', 'dark']) {
@@ -212,7 +214,7 @@ test('previews report their events', async () => {
   await page.close();
 });
 
-test('themes: each section takes its theme; the look picker themes the whole site; the editor makes one live', async () => {
+test('themes: each section takes its theme, and the look picker themes the whole site', async () => {
   const context = await browser.newContext({ reducedMotion: 'reduce' });
   // (Reduced motion: colours are read after a change, not halfway through its transition.)
   const { page, problems } = await open('/themes/', { context });
@@ -222,20 +224,11 @@ test('themes: each section takes its theme; the look picker themes the whole sit
     font: getComputedStyle(section.querySelector('content-card')).fontFamily,
     radius: getComputedStyle(section.querySelector('text-field input')).borderRadius,
   })));
-  assert.deepEqual(looks.map((look) => look.theme), ['zinc', 'paper', 'terminal', 'candy', 'midnight', 'custom']);
+  assert.deepEqual(looks.map((look) => look.theme), ['zinc', 'paper', 'terminal', 'candy', 'midnight']);
   assert.equal(new Set(looks.slice(0, 5).map((look) => look.primary)).size, 5, 'five different accents');
   assert.match(looks.find((look) => look.theme === 'paper').font, /Iowan|Palatino|Georgia/);
   assert.match(looks.find((look) => look.theme === 'terminal').font, /monospace/);
   assert.equal(looks.find((look) => look.theme === 'terminal').radius, '0px', 'square corners all the way down');
-
-  // The editor: a new accent and square corners show on "Yours" at once, and in the CSS to copy.
-  await page.locator('#editor-primary').evaluate((input) => { input.value = '#0f766e'; input.dispatchEvent(new Event('input', { bubbles: true })); });
-  await page.locator('#editor-radius').fill('0');
-  const custom = page.locator('section.look[data-theme="custom"]');
-  assert.equal(await custom.locator('action-button button').first().evaluate((button) => getComputedStyle(button).backgroundColor), 'rgb(15, 118, 110)');
-  assert.equal(await custom.locator('text-field input').evaluate((input) => getComputedStyle(input).borderRadius), '0px');
-  assert.match(await page.textContent('#editor-css'), /\[data-theme="custom"\][^}]*--primary: #0f766e/);
-  assert.match(await page.textContent('#editor-json'), /"extends": "zinc"/);
 
   // The look picker: the whole site, remembered on the next page.
   await page.click('#theme-open');
@@ -281,6 +274,49 @@ test('search filters the nav, "/" focuses it, and install commands follow the ch
   const next = await context.newPage();
   await next.goto(`${site.url}/`, { waitUntil: 'networkidle' });
   assert.match(await next.locator('.steps pre').first().innerText(), /^pnpm dlx shadcn/, 'remembered across pages');
+  assert.deepEqual(problems, []);
+  await context.close();
+});
+
+test('theme studio: colours change the light and dark previews, contrast is checked, and the theme travels', async () => {
+  const context = await browser.newContext({ reducedMotion: 'reduce' });
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  const { page, problems } = await open('/studio/', { context });
+  const button = (scheme) => page.locator(`#studio-${scheme} action-button button`).first().evaluate((el) => getComputedStyle(el).backgroundColor);
+  // A new primary for light.
+  await page.locator('#studio-colours [data-key=primary]').evaluate((input) => { input.value = '#0f766e'; input.dispatchEvent(new Event('input', { bubbles: true })); });
+  assert.equal(await button('light'), 'rgb(15, 118, 110)');
+  assert.notEqual(await button('dark'), 'rgb(15, 118, 110)', 'dark keeps its own until changed');
+  // Typed CSS colours are checked.
+  await page.locator('#studio-colours [data-css=primary]').fill('not a colour');
+  await page.locator('#studio-colours [data-css=primary]').dispatchEvent('change');
+  assert.match(await page.textContent('#studio-status'), /isn't a CSS colour/);
+  // Dark made from light keeps the hue, lifted for a dark page.
+  await page.click('#studio-derive');
+  const dark = await button('dark');
+  assert.notEqual(dark, 'rgb(15, 118, 110)');
+  assert.match(await page.textContent('#studio-json'), /"dark": \{/);
+  // Contrast: a row per pair, each judged.
+  assert.equal(await page.locator('#studio-contrast tbody tr').count(), 8);
+  assert.ok((await page.locator('#studio-contrast status-badge').count()) >= 14);
+  // Name, corners and the CSS to copy.
+  await page.getByLabel('Name').fill('Sea Glass');
+  await page.getByLabel('Name').press('Tab');
+  assert.match(await page.textContent('#studio-css'), /\[data-theme="sea-glass"\]/);
+  assert.equal(await page.textContent('#studio-json-name'), 'themes/sets/sea-glass.json');
+  // A link carries it to another page; "Use on this site" makes it the site's look.
+  await page.click('#studio-share');
+  const link = page.url();
+  assert.match(link, /#theme=/);
+  const other = await (await browser.newContext()).newPage();
+  await other.goto(link, { waitUntil: 'networkidle' });
+  await other.waitForFunction(() => document.querySelector('#studio-css')?.textContent.includes('sea-glass'));
+  await other.context().close();
+  await page.click('#studio-use');
+  const next = await context.newPage();
+  await next.goto(`${site.url}/components/action-button/`, { waitUntil: 'networkidle' });
+  assert.equal(await next.evaluate(() => document.documentElement.dataset.theme), 'custom');
+  assert.equal(await next.locator('[data-preview] action-button button').evaluate((el) => getComputedStyle(el).backgroundColor), 'rgb(15, 118, 110)');
   assert.deepEqual(problems, []);
   await context.close();
 });
