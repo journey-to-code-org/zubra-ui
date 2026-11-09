@@ -26,7 +26,7 @@
   :host { display: block; }
   article { position: relative; display: grid; grid-template-columns: 2.25rem 1fr; gap: 0 0.7rem; padding: 0.45rem 1.25rem; }
   article:hover { background: var(--accent, #f2f4f8); }
-  article.mentioned { background: var(--mention-wash, #fff4cc); box-shadow: inset 3px 0 var(--mention, #8a5a00); }
+  article.mentioned { background: var(--mention-wash, color-mix(in oklab, var(--mention, #b07800) 20%, transparent)); box-shadow: inset 3px 0 var(--mention, #8a5a00); }
   .avatar { grid-row: span 3; display: grid; place-items: center; width: 2.25rem; height: 2.25rem; border-radius: 0.6rem; color: white; font-weight: 800; font-size: 0.8rem; }
   header { display: flex; align-items: baseline; gap: 0.5rem; }
   .author { font-weight: 700; }
@@ -34,12 +34,12 @@
   time { font-size: 0.75rem; color: var(--muted-foreground, #667085); }
   .quote { margin: 0.15rem 0 0.25rem; padding-left: 0.6rem; border-left: 3px solid var(--border, #d9dce3); color: var(--muted-foreground, #667085); font-size: 0.875rem; }
   p { margin: 0; white-space: pre-wrap; word-break: break-word; }
-  .mention { padding: 0 0.15rem; border-radius: 0.3rem; background: var(--mention-wash, #fff4cc); color: var(--mention, #8a5a00); font-weight: 600; }
+  .mention { padding: 0 0.15rem; border-radius: 0.3rem; background: var(--mention-wash, color-mix(in oklab, var(--mention, #b07800) 20%, transparent)); color: inherit; font-weight: 600; }
   .mention.me { background: var(--mention, #8a5a00); color: white; }
   a { color: var(--primary, #2563eb); }
   .reactions { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.35rem; }
   .reactions button { display: inline-flex; gap: 0.3rem; align-items: center; padding: 0.05rem 0.5rem; border: 1px solid var(--border, #d9dce3); border-radius: 999px; background: var(--card, #ffffff); color: inherit; font: inherit; font-size: 0.8125rem; cursor: pointer; }
-  .reactions button[aria-pressed=true] { border-color: var(--primary, #2563eb); background: var(--mention-wash, #fff4cc); }
+  .reactions button[aria-pressed=true] { border-color: var(--primary, #2563eb); background: var(--mention-wash, color-mix(in oklab, var(--mention, #b07800) 20%, transparent)); }
   .tools { position: absolute; top: -0.9rem; right: 1rem; display: flex; opacity: 0; gap: 0.1rem; padding: 0.15rem; border: 1px solid var(--border, #d9dce3); border-radius: 0.55rem; background: var(--card, #ffffff); box-shadow: 0 2px 8px #0002; }
   /* Transparent rather than hidden, so the keyboard can reach it; it shows on hover or focus. */
   article:hover .tools, .tools:focus-within { opacity: 1; }
@@ -48,7 +48,7 @@
 </style>
 <chat-message me="" message={{ id: "", author: "", text: "", time: 0, reactions: {}, replyTo: null }}>
   <article class:mentioned={pieces.some((piece) => piece.me)} data-mine={mine ? "true" : "false"}>
-    <span class="avatar" style:background={`hsl(${hue} 55% 40%)`} aria-hidden="true">{initials}</span>
+    <span class="avatar" style:background={`hsl(${hue} 60% 28%)`} aria-hidden="true">{initials}</span>
     <header><span class="author">{message.author}</span><zb-if test={mine}><span class="you">YOU</span></zb-if><time>{time}</time></header>
     <div zb-if={message.replyTo} class="quote">{message.replyTo?.author}: {message.replyTo?.text}</div>
     <p><zb-each items={pieces} as="piece" key={piece.index}><zb-if test={piece.kind === "mention"}><span class="mention" class:me={piece.me}>{piece.text}</span><zb-else-if test={piece.kind === "link"}><a href={piece.text} target="_blank" rel="noopener">{piece.text}</a></zb-else-if><zb-else>{piece.text}</zb-else></zb-if></zb-each></p>

@@ -39,7 +39,7 @@
     {
       "name": "combo-box",
       "category": "widget",
-      "description": "A combobox: type to filter, arrow keys to move, Enter to pick, Escape to close. A form control. Its behaviour is Zag.js's combobox machine (through @zubra/runtime/zag); its markup and styles are this file's. It needs `npm install @zag-js/vanilla @zag-js/combobox`. `items` is `[{ value, label }]`; `value` is two-way.",
+      "description": "A combobox: type to filter, arrow keys to move, Enter to pick, Escape to close. A form control. `items` is `[{ value, label }]`; `value` is two-way.",
       "files": [
         "combo-box.zb"
       ],

@@ -4,7 +4,7 @@
   `open` is two-way.
   @slot - The dialog's content.
   @slot heading - Its title, which labels the dialog (defaults to `label`).
-  @slot actions - Buttons at the bottom, shown only when given.
+  @slot actions - Buttons at the bottom, shown only when given. One with `data-close` closes the dialog.
 -->
 <script>
   import { effect, hasSlot, id } from '@zubra/runtime'
@@ -12,6 +12,9 @@
   const headingId = id()
   const hasActions = hasSlot('actions')
   let dialog = null
+  // A click on the backdrop closes the dialog, but not one that started inside it (a text
+  // selection dragged past the edge).
+  let pressedBackdrop = false
 
   // Follow `open` (from outside or inside): show the dialog modally, or close it.
   effect(() => {
@@ -31,14 +34,14 @@
   footer { display: flex; justify-content: flex-end; gap: 0.5rem; }
 </style>
 <modal-dialog open:model={false} label="Dialog">
-  <dialog ref={dialog} aria-labelledby={headingId} onclose={() => (open = false)} onclick.self={() => (open = false)}>
+  <dialog ref={dialog} aria-labelledby={headingId} onclose={() => (open = false)} onpointerdown={(event) => (pressedBackdrop = event.target === dialog)} onclick.self={() => pressedBackdrop && (open = false)}>
     <div class="panel">
       <header>
         <h2 id={headingId}><zb-slot name="heading">{label}</zb-slot></h2>
         <button type="button" class="close" aria-label="Close" onclick={() => (open = false)}>×</button>
       </header>
       <div class="body"><zb-slot></zb-slot></div>
-      <footer zb-if={hasActions}><zb-slot name="actions"></zb-slot></footer>
+      <footer zb-if={hasActions} onclick={(event) => event.target.closest?.("[data-close]") && (open = false)}><zb-slot name="actions"></zb-slot></footer>
     </div>
   </dialog>
 </modal-dialog>

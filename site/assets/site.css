@@ -1,0 +1,195 @@
+/* The Zubra UI site. Everything under the header is drawn with the theme's variables (shadcn/ui's
+   names), so the theme picker restyles the page you're reading as well as the components. The
+   header is the brand: Zubra's ink and indigo, the same in every theme. */
+
+@font-face { font-family: "Instrument Sans"; src: url("fonts/instrument-sans.woff2") format("woff2"); font-weight: 400 700; font-display: swap; }
+@font-face { font-family: "JetBrains Mono"; src: url("fonts/jetbrains-mono-400.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "JetBrains Mono"; src: url("fonts/jetbrains-mono-600.woff2") format("woff2"); font-weight: 600; font-display: swap; }
+
+/* Accent presets, as shadcn's theme picker offers them: only the primary colours change. */
+.theme-blue { --primary: oklch(0.546 0.245 262.881); --primary-foreground: oklch(0.97 0.014 254.604); --ring: oklch(0.623 0.214 259.815); }
+.dark.theme-blue { --primary: oklch(0.623 0.214 259.815); --primary-foreground: oklch(0.21 0.006 285.885); }
+.theme-rose { --primary: oklch(0.645 0.246 16.439); --primary-foreground: oklch(0.969 0.015 12.422); --ring: oklch(0.645 0.246 16.439); }
+.dark.theme-rose { --primary: oklch(0.645 0.246 16.439); --primary-foreground: oklch(0.969 0.015 12.422); }
+.theme-green { --primary: oklch(0.527 0.154 150.069); --primary-foreground: oklch(0.982 0.018 155.826); --ring: oklch(0.527 0.154 150.069); }
+.dark.theme-green { --primary: oklch(0.696 0.17 162.48); --primary-foreground: oklch(0.21 0.006 285.885); }
+.theme-orange { --primary: oklch(0.646 0.222 41.116); --primary-foreground: oklch(0.98 0.016 73.684); --ring: oklch(0.646 0.222 41.116); }
+.dark.theme-orange { --primary: oklch(0.705 0.213 47.604); --primary-foreground: oklch(0.21 0.006 285.885); }
+
+:root {
+  --brand-ink: #14161f;
+  --brand-line: #2c3040;
+  --brand-text: #f2f3f8;
+  --brand-accent: #8b95ff;
+  --bar-height: 3.75rem;
+  --side-width: 15rem;
+  --font: "Instrument Sans", ui-sans-serif, system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  /* Code colours on --muted, readable in both modes. */
+  --tok-c: var(--muted-foreground);
+  --tok-s: oklch(0.5 0.13 150);
+  --tok-k: oklch(0.5 0.2 285);
+  --tok-n: oklch(0.55 0.17 45);
+  --tok-t: oklch(0.52 0.19 0);
+  --tok-a: oklch(0.55 0.13 70);
+  --tok-p: oklch(0.5 0.15 245);
+}
+.dark {
+  --tok-s: oklch(0.8 0.13 150);
+  --tok-k: oklch(0.78 0.13 285);
+  --tok-n: oklch(0.8 0.13 55);
+  --tok-t: oklch(0.78 0.15 0);
+  --tok-a: oklch(0.82 0.11 75);
+  --tok-p: oklch(0.78 0.11 240);
+}
+
+* { box-sizing: border-box; }
+html { color-scheme: light; scroll-padding-top: calc(var(--bar-height) + 1rem); }
+html.dark { color-scheme: dark; }
+body { margin: 0; background: var(--background); color: var(--foreground); font: 400 1rem/1.6 var(--font); -webkit-font-smoothing: antialiased; }
+a { color: inherit; text-underline-offset: 0.18em; text-decoration-color: color-mix(in oklch, currentColor 40%, transparent); }
+a:hover { text-decoration-color: currentColor; }
+:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+code { font-family: var(--mono); font-size: 0.86em; }
+:not(pre) > code { padding: 0.1em 0.35em; border-radius: calc(var(--radius) - 6px); background: var(--muted); color: var(--foreground); }
+.skip { position: absolute; left: -999px; top: 0.5rem; z-index: 20; padding: 0.5rem 0.75rem; background: var(--background); color: var(--foreground); }
+.skip:focus { left: 0.5rem; }
+@media (prefers-reduced-motion: reduce) { *, ::before, ::after { transition-duration: 0s !important; animation-duration: 0s !important; } }
+
+/* ---- the bar */
+.bar {
+  position: sticky; top: 0; z-index: 10; display: flex; align-items: center; gap: 1rem;
+  height: var(--bar-height); padding: 0 1rem; background: var(--brand-ink); color: var(--brand-text); border-bottom: 1px solid var(--brand-line);
+}
+.brand { display: inline-flex; align-items: center; gap: 0.55rem; color: inherit; font-weight: 650; font-size: 1.05rem; letter-spacing: -0.01em; text-decoration: none; }
+.mark { width: 1.75rem; height: 1.75rem; }
+.mark-accent { fill: var(--brand-accent); }
+.stack-switch { display: flex; align-items: center; gap: 0.6rem; margin-left: auto; font-size: 0.88rem; color: #b9bdd0; }
+/* The stack switch is a Zubra UI segmented-control on the brand's colours. */
+.stack-switch segmented-control {
+  --muted: #232738; --background: #353a52; --foreground: #f2f3f8; --muted-foreground: #b9bdd0; --border: #2c3040; --card: #444b6e; --primary: #8b95ff; --accent: #2c3040;
+}
+.bar-tools { display: flex; align-items: center; gap: 0.25rem; }
+.tool { padding: 0.35rem 0.6rem; border: 1px solid transparent; border-radius: 0.45rem; background: none; color: inherit; font: inherit; font-size: 0.88rem; text-decoration: none; cursor: pointer; }
+.tool:hover { border-color: var(--brand-line); background: #1c1f2b; }
+.tool[aria-pressed=true] { border-color: var(--brand-line); }
+
+/* ---- layout */
+.layout { display: grid; grid-template-columns: var(--side-width) minmax(0, 1fr); }
+.side { position: sticky; top: var(--bar-height); align-self: start; height: calc(100dvh - var(--bar-height)); overflow-y: auto; padding: 1.25rem 0.75rem 2rem 1rem; border-right: 1px solid var(--border); font-size: 0.92rem; }
+.side h2 { margin: 1.25rem 0 0.35rem; padding-left: 0.5rem; color: var(--muted-foreground); font-size: 0.8rem; font-weight: 600; }
+.side ul { margin: 0; padding: 0; list-style: none; }
+.side a { display: block; padding: 0.28rem 0.5rem; border-radius: calc(var(--radius) - 4px); color: var(--foreground); text-decoration: none; }
+.side a:hover { background: var(--accent); }
+.side a[aria-current=page] { background: var(--secondary); font-weight: 600; box-shadow: inset 2px 0 0 var(--primary); }
+.side-home { font-weight: 600; }
+main { min-width: 0; padding: 2.5rem clamp(1rem, 4vw, 3.5rem) 5rem; outline: none; }
+main > * { max-width: 48rem; }
+
+/* ---- type */
+h1 { margin: 0 0 0.6rem; font-size: clamp(2rem, 4.5vw, 2.9rem); font-weight: 650; line-height: 1.08; letter-spacing: -0.03em; }
+.component h1 { font-family: var(--mono); font-size: clamp(1.6rem, 3.5vw, 2.2rem); font-weight: 600; letter-spacing: -0.02em; }
+h2 { margin: 2.75rem 0 0.75rem; font-size: 1.25rem; font-weight: 650; letter-spacing: -0.01em; }
+.lead { max-width: 38rem; margin: 0 0 1.75rem; color: var(--muted-foreground); font-size: 1.12rem; line-height: 1.55; }
+.note, .hint { color: var(--muted-foreground); font-size: 0.92rem; }
+
+/* ---- the preview stage: the component on the theme's background, with room around it */
+.stage {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 1rem;
+  min-height: 12rem; padding: 2.5rem 1.5rem; border: 1px solid var(--border); border-radius: var(--radius);
+  background-color: var(--background);
+  background-image: radial-gradient(color-mix(in oklch, var(--foreground) 9%, transparent) 1px, transparent 1px);
+  background-size: 14px 14px;
+}
+.stage > :not(button) { max-width: 100%; }
+.event { min-height: 1.6em; margin: 0.5rem 0 0; color: var(--muted-foreground); font-size: 0.88rem; }
+.event output { color: var(--foreground); font-family: var(--mono); font-size: 0.85em; }
+
+/* ---- code */
+.code { --code-dim: color-mix(in oklab, var(--muted-foreground) 72%, var(--foreground)); overflow: hidden; margin: 0.75rem 0; border: 1px solid var(--border); border-radius: var(--radius); background: var(--muted); }
+.code-head { display: flex; align-items: center; justify-content: space-between; padding: 0.35rem 0.5rem 0.35rem 0.9rem; border-bottom: 1px solid var(--border); color: var(--code-dim); font-size: 0.8rem; }
+.code pre { overflow-x: auto; margin: 0; padding: 0.9rem 1rem; font-size: 0.8125rem; line-height: 1.6; tab-size: 2; }
+.copy { padding: 0.2rem 0.55rem; border: 1px solid var(--border); border-radius: calc(var(--radius) - 4px); background: var(--background); color: var(--foreground); font: inherit; font-size: 0.78rem; cursor: pointer; }
+.copy:hover { border-color: var(--ring); }
+.code pre code { font-size: inherit; }
+.tok-c { color: var(--code-dim); font-style: italic; } .tok-s { color: var(--tok-s); } .tok-k { color: var(--tok-k); } .tok-n { color: var(--tok-n); }
+.tok-t { color: var(--tok-t); } .tok-a { color: var(--tok-a); } .tok-p { color: var(--tok-p); }
+/* One stack's code at a time: the one chosen in the bar. */
+.stack-only { display: none; }
+html[data-stack=html] .stack-only[data-stack=html], html[data-stack=react] .stack-only[data-stack=react], html[data-stack=vue] .stack-only[data-stack=vue],
+html[data-stack=svelte] .stack-only[data-stack=svelte], html[data-stack=angular] .stack-only[data-stack=angular] { display: block; }
+.install { margin: 0.5rem 0 1rem; }
+.install > span { font-size: 0.9rem; font-weight: 600; }
+
+/* ---- tables */
+.table { overflow-x: auto; margin: 1rem 0; border: 1px solid var(--border); border-radius: var(--radius); }
+table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+caption { padding: 0.6rem 0.9rem; border-bottom: 1px solid var(--border); font-weight: 600; text-align: left; }
+th, td { padding: 0.5rem 0.9rem; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; }
+th { color: var(--muted-foreground); font-weight: 500; }
+tr:last-child td { border-bottom: 0; }
+.none { color: var(--muted-foreground); }
+
+/* ---- home */
+.home h1 { max-width: 15ch; }
+.showcase { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: 0.75rem; max-width: 60rem; margin: 2rem 0 0.5rem; }
+.tile { display: flex; flex-direction: column; min-width: 0; }
+.tile .stage { flex: 1; min-height: 9rem; padding: 1.5rem 1rem; }
+.tile .event { display: none; }
+.tile-name { align-self: flex-start; margin-bottom: 0.35rem; font-family: var(--mono); font-size: 0.82rem; color: var(--muted-foreground); }
+.steps { margin: 0; padding-left: 1.25rem; }
+.steps li { margin-bottom: 1.25rem; padding-left: 0.25rem; }
+.steps li p { margin: 0 0 0.25rem; }
+.all { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--border); }
+.all li { display: grid; grid-template-columns: 11rem 1fr; gap: 1rem; padding: 0.6rem 0; border-bottom: 1px solid var(--border); font-size: 0.93rem; }
+.all a { font-family: var(--mono); font-size: 0.88rem; }
+.all span { color: var(--muted-foreground); }
+
+/* ---- buttons and the theme dialog */
+.button { padding: 0.5rem 0.9rem; border: 1px solid var(--border); border-radius: calc(var(--radius) - 2px); background: var(--background); color: var(--foreground); font: inherit; font-size: 0.92rem; font-weight: 500; cursor: pointer; }
+.button:hover { background: var(--accent); }
+a.button { display: inline-block; text-decoration: none; }
+.button.primary { border-color: var(--primary); background: var(--primary); color: var(--primary-foreground); }
+.button.primary:hover { opacity: 0.9; }
+#theme textarea { display: block; width: 100%; margin: 0.35rem 0 0; padding: 0.6rem 0.75rem; border: 1px solid var(--border); border-radius: calc(var(--radius) - 2px); background: var(--background); color: var(--foreground); font: 0.82rem/1.5 var(--mono); resize: vertical; }
+.paste-label { display: block; margin-top: 1.25rem; font-size: 0.9rem; font-weight: 600; }
+.actions { display: flex; justify-content: flex-end; gap: 0.5rem; }
+
+/* ---- narrow screens: the components list folds above the page */
+@media (max-width: 52rem) {
+  .layout { grid-template-columns: minmax(0, 1fr); }
+  /* The nav becomes one scrolling row under the bar. */
+  .side { position: static; display: flex; min-width: 0; gap: 0.25rem; height: auto; padding: 0.5rem 1rem; overflow-x: auto; border-right: 0; border-bottom: 1px solid var(--border); scrollbar-width: thin; }
+  .side section, .side ul { display: contents; }
+  .side h2 { display: none; }
+  .side a { white-space: nowrap; font-size: 0.85rem; }
+  .side a[aria-current=page] { box-shadow: inset 0 -2px 0 var(--primary); }
+  .stack-switch > span { display: none; }
+  /* The bar wraps: brand and tools on top, the stack switch across the full width below. */
+  .bar { flex-wrap: wrap; height: auto; min-height: var(--bar-height); gap: 0.25rem 0.5rem; padding: 0.5rem 0.75rem; }
+  .bar-tools { margin-left: auto; }
+  .stack-switch { order: 3; flex: 1 0 100%; margin-left: 0; }
+  .stack-switch segmented-control { flex: 1; }
+  .bar { position: static; }
+  .all li { grid-template-columns: minmax(0, 1fr); gap: 0.1rem; }
+}
+
+
+/* The demo's kanban cards (any elements the reader puts in a column). */
+kanban-column article { padding: 0.6rem 0.75rem; border: 1px solid var(--border); border-radius: calc(var(--radius) - 2px); background: var(--card); color: var(--card-foreground); font-size: 0.9rem; cursor: grab; }
+.cta { display: flex; flex-wrap: wrap; gap: 0.6rem; margin: -0.5rem 0 1rem; }
+caption small { color: var(--muted-foreground); font-weight: 400; }
+td small { color: var(--muted-foreground); }
+
+/* A long event detail wraps rather than widening the page. */
+.event { overflow-wrap: anywhere; }
+/* The narrowest phones: the stack switch's buttons tighten so all five fit. */
+@media (max-width: 24rem) {
+  .stack-switch segmented-control button { padding-inline: 0.45rem; font-size: 0.85rem; }
+  .brand { gap: 0.35rem; }
+}
+.source { margin: 0 0 1.5rem; color: var(--muted-foreground); font-size: 0.9rem; }
+/* The demo dialog's action buttons, in the site's button style. */
+modal-dialog [slot=actions] { padding: 0.5rem 0.9rem; border: 1px solid var(--border); border-radius: calc(var(--radius) - 2px); background: var(--background); color: var(--foreground); font: inherit; font-size: 0.92rem; font-weight: 500; cursor: pointer; }
+modal-dialog [slot=actions]:last-child { border-color: var(--destructive); background: var(--destructive); color: #fff; }
+modal-dialog p { margin: 0; }

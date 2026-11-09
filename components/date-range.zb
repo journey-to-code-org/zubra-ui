@@ -8,23 +8,36 @@
 
   const startId = id()
   const endId = id()
-  const nights = value.start && value.end ? Math.round((Date.parse(value.end) - Date.parse(value.start)) / 86400000) : 0
-  const nextDay = (day) => (day ? new Date(Date.parse(day) + 86400000).toISOString().slice(0, 10) : min)
+  // Only plain YYYY-MM-DD days count (a date input can hold years past 9999).
+  const isDay = (day) => /^\d{4}-\d{2}-\d{2}$/.test(day ?? "") && !isNaN(Date.parse(day))
+  const nights = isDay(value.start) && isDay(value.end) ? Math.round((Date.parse(value.end) - Date.parse(value.start)) / 86400000) : 0
+  const nextDay = (day) => {
+    if (!isDay(day)) return min
+    const next = new Date(Date.parse(day) + 86400000).toISOString().slice(0, 10)
+    return isDay(next) ? next : ""
+  }
+  const wrongOrder = Boolean(value.start && value.end) && nights < 1
 
   formValue(() => (value.start && value.end ? `${value.start}/${value.end}` : null))
-  validity(() => (!value.start || !value.end ? "Choose both dates" : nights < 1 ? "Check-out must be after check-in" : ""))
+  validity(() => (!isDay(value.start) || !isDay(value.end) ? "Choose both dates" : nights < 1 ? "Check-out must be after check-in" : ""))
 
   function set(part, day) {
     const next = { ...value, [part]: day }
     if (part === "start" && next.end && next.end <= day) next.end = nextDay(day)
+    if (!isDay(next.start)) next.start = ""
+    if (!isDay(next.end)) next.end = ""
     value = next
   }
 </script>
 <style>
-  :host { display: grid; grid-template-columns: 1fr 1fr auto; gap: 0.75rem; align-items: end; }
+  /* Two dates and the nights side by side; on a narrow screen they wrap instead of overflowing. */
+  :host { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: end; }
+  label { flex: 1 1 9rem; min-width: 0; }
   label { display: grid; gap: 0.3rem; font-size: 0.8125rem; font-weight: 600; color: var(--muted-foreground, #667); }
-  input { font: inherit; padding: 0.55rem 0.65rem; border: 1px solid var(--border, #ccd); border-radius: 0.6rem; background: var(--card, #fff); color: var(--foreground, #111); }
-  .nights { padding: 0.55rem 0.8rem; border-radius: 999px; background: var(--chip, #eef); font-weight: 700; white-space: nowrap; }
+  input { box-sizing: border-box; width: 100%; min-width: 0; font: inherit; padding: 0.55rem 0.65rem; border: 1px solid var(--border, #ccd); border-radius: 0.6rem; background: var(--card, #fff); color: var(--foreground, #111); }
+  .error { flex-basis: 100%; margin: 0; color: var(--destructive, #d92d20); font-size: 0.875rem; }
+  .error:empty { display: none; }
+  .nights { padding: 0.55rem 0.8rem; border-radius: 999px; background: var(--chip, var(--secondary, #f4f4f5)); color: var(--chip-ink, var(--secondary-foreground, #18181b)); font-weight: 700; white-space: nowrap; }
 </style>
 <date-range form-associated value:model={{ start: "", end: "" }} min="">
   <label for={startId}>Check-in
@@ -34,4 +47,5 @@
     <input id={endId} type="date" class="end" min={nextDay(value.start)} value={value.end} onchange={(event) => set("end", event.target.value)}>
   </label>
   <span class="nights" aria-live="polite">{nights > 0 ? `${nights} night${nights === 1 ? "" : "s"}` : "—"}</span>
+  <p class="error" aria-live="polite">{wrongOrder ? "Check-out must be after check-in" : ""}</p>
 </date-range>

@@ -24,9 +24,15 @@
       if (!anchored) place()
     }, delay)
   }
-  function hide() {
+  function close() {
     clearTimeout(timer)
     if (tip?.matches(":popover-open")) tip.hidePopover()
+  }
+  // A moment's grace, so the pointer can cross the gap into the tip (pointerenter on the tip,
+  // inside the trigger's wrapper, cancels it).
+  function hide() {
+    clearTimeout(timer)
+    timer = setTimeout(close, 150)
   }
   // Without anchor positioning: centred above the trigger, or below it if there's no room.
   function place() {
@@ -44,10 +50,10 @@
     const described = (trigger.getAttribute("aria-describedby") ?? "").split(" ").filter(Boolean)
     if (!described.includes(tipId)) trigger.setAttribute("aria-describedby", [...described, tipId].join(" "))
     trigger.style.setProperty("anchor-name", `--${tipId}`)
-    const escape = (event) => { if (event.key === "Escape") hide() }
+    const escape = (event) => { if (event.key === "Escape") close() }
     document.addEventListener("keydown", escape)
     return () => {
-      hide()
+      close()
       document.removeEventListener("keydown", escape)
     }
   })
@@ -61,7 +67,7 @@
   }
 </style>
 <tool-tip text="" delay={300}>
-  <span class="trigger" ref={wrap} onpointerenter={show} onpointerleave={hide} onfocusin={show} onfocusout={hide}>
+  <span class="trigger" ref={wrap} onpointerenter={show} onpointerleave={hide} onfocusin={show} onfocusout={close}>
     <zb-slot></zb-slot>
     <span popover="manual" role="tooltip" id={tipId} ref={tip} style:position-anchor={`--${tipId}`}><zb-slot name="content">{text}</zb-slot></span>
   </span>
