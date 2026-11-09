@@ -124,10 +124,10 @@ function frame({ prefix, title, description, current, body, scripts = [] }) {
   const nav = Object.entries(CATEGORIES).map(([category, heading]) => {
     const items = components.filter((component) => component.category === category);
     if (!items.length) return '';
-    return `<section><h2>${heading}</h2><ul>${items.map((component) => `<li><a href="${prefix}components/${component.name}/"${component.name === current ? ' aria-current="page"' : ''}>${component.name}</a></li>`).join('')}</ul></section>`;
+    return `<section><h2>${heading}</h2><ul>${items.map((component) => `<li data-search="${escape(`${component.name} ${heading} ${component.description.split(/(?<=\.)\s/)[0]}`.toLowerCase())}"><a href="${prefix}components/${component.name}/"${component.name === current ? ' aria-current="page"' : ''}>${component.name}</a></li>`).join('')}</ul></section>`;
   }).join('');
   return `<!doctype html>
-<html lang="en" data-stack="html">
+<html lang="en" data-stack="html" data-pm="npm">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -146,6 +146,8 @@ function frame({ prefix, title, description, current, body, scripts = [] }) {
       const stack = localStorage.getItem('${STACK_KEY}');
       html.dataset.stack = ${JSON.stringify(STACKS)}.includes(stack) ? stack : 'html';
       if (localStorage.getItem('zubra-ui:mode') === 'dark' || (!localStorage.getItem('zubra-ui:mode') && matchMedia('(prefers-color-scheme: dark)').matches)) html.classList.add('dark');
+      const pm = localStorage.getItem('zubra-ui:pm');
+      html.dataset.pm = ['npm', 'pnpm', 'yarn', 'bun'].includes(pm) ? pm : 'npm';
       const look = localStorage.getItem('zubra-ui:look');
       if (look && look !== 'zinc') html.dataset.theme = look;
       const preset = localStorage.getItem('zubra-ui:preset');
@@ -174,6 +176,7 @@ function frame({ prefix, title, description, current, body, scripts = [] }) {
   </header>
   <div class="layout">
     <nav class="site-nav" aria-label="Components">
+      <div class="nav-search"><input type="search" id="nav-search" placeholder="Search components" aria-label="Search components" aria-keyshortcuts="/" autocomplete="off"><p class="nav-none" id="nav-none" role="status"></p></div>
       <a class="side-home" href="${prefix}"${current ? '' : ' aria-current="page"'}>Getting started</a>
       <a class="side-home" href="${prefix}themes/"${current === 'themes' ? ' aria-current="page"' : ''}>Themes</a>
       ${nav}
@@ -211,7 +214,14 @@ ${scripts.join('\n')}
 
 const language = { html: 'html', react: 'html', vue: 'html', svelte: 'html', angular: 'js' };
 const file = { html: 'index.html', react: 'Example.jsx', vue: 'Example.vue', svelte: 'Example.svelte', angular: 'example.component.ts' };
+// shadcn's CLI through each package manager: an install command shows the visitor's choice.
+const RUNNERS = { npm: 'npx', pnpm: 'pnpm dlx', yarn: 'yarn dlx', bun: 'bunx --bun' };
 function code(text, lang, label) {
+  if (lang === 'sh' && text.startsWith('npx shadcn@latest ')) {
+    const tabs = Object.keys(RUNNERS).map((pm) => `<button type="button" class="pm-tab" data-pm-tab="${pm}">${pm}</button>`).join('');
+    const variants = Object.entries(RUNNERS).map(([pm, runner]) => `<code class="pm-only" data-pm="${pm}">${highlight(text.replace(/^npx /, `${runner} `), lang)}</code>`).join('');
+    return `<div class="code"><div class="code-head"><span class="pm-tabs" role="group" aria-label="Package manager">${tabs}</span><button type="button" class="copy" data-copy>Copy</button></div><pre tabindex="0">${variants}</pre></div>`;
+  }
   return `<div class="code"><div class="code-head"><span>${escape(label)}</span><button type="button" class="copy" data-copy>Copy</button></div><pre tabindex="0"><code>${highlight(text, lang)}</code></pre></div>`;
 }
 const stackCode = (name, demo) => STACKS.map((stack) => `<div class="stack-only" data-stack="${stack}">${code(snippets[stack](name, demo), language[stack], file[stack])}</div>`).join('');
@@ -362,6 +372,11 @@ const homeBody = `      <section class="home">
         <p class="cta"><a class="button primary" href="#start">Get started</a><a class="button" href="#all">Browse all ${components.length} components</a></p>
         <div class="showcase">
           ${showcase.map((name) => `<div class="tile"><a class="tile-name" href="components/${name}/">${name}</a>${preview(name, demos[name])}</div>`).join('\n          ')}
+        </div>
+        <h2 id="themes">Themes with character</h2>
+        <p>Colours, fonts, corners and motion, for a whole page or one section: put <code>data-theme</code> where you want it. <a href="themes/">See all five on the same app, or make your own</a>.</p>
+        <div class="theme-strip">
+          ${themeIndex.map((theme) => `<a class="theme-chip" data-theme="${theme.name}" href="themes/#look-${theme.name}"><strong>${escape(theme.label)}</strong><span class="theme-swatches" aria-hidden="true"><span style="background: var(--primary)"></span><span style="background: var(--secondary)"></span><span style="background: var(--chart-1)"></span><span style="background: var(--chart-2)"></span></span><small>${escape(theme.description.split(':')[0])}</small></a>`).join('\n          ')}
         </div>
         <h2 id="start">Start</h2>
         <ol class="steps">

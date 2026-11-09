@@ -88,6 +88,49 @@ export async function start({ stacks, stackKey, looks = [] }) {
     status.textContent = 'Back to the default theme.';
   });
 
+  // Search: filters the nav by name, section and what each component is; "/" jumps to it, and
+  // Enter opens the first match.
+  const search = document.querySelector('#nav-search');
+  const none = document.querySelector('#nav-none');
+  const filter = () => {
+    const words = search.value.toLowerCase().split(/\s+/).filter(Boolean);
+    let shown = 0;
+    for (const section of document.querySelectorAll('.site-nav section')) {
+      let any = false;
+      for (const item of section.querySelectorAll('li')) {
+        const match = words.every((word) => item.dataset.search.includes(word));
+        item.hidden = !match;
+        any ||= match;
+        shown += match ? 1 : 0;
+      }
+      section.hidden = !any;
+    }
+    none.textContent = words.length && !shown ? 'No component matches.' : '';
+  };
+  search.addEventListener('input', filter);
+  search.addEventListener('keydown', (event) => {
+    if (event.key !== 'Enter') return;
+    const first = document.querySelector('.site-nav li:not([hidden]) a');
+    if (first) location.href = first.href;
+  });
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== '/' || event.ctrlKey || event.metaKey || event.altKey) return;
+    if (event.target.closest('input, textarea, select, [contenteditable]')) return;
+    event.preventDefault();
+    search.focus();
+  });
+
+  // Package manager tabs on install commands: one choice for every command on the site.
+  const showPm = () => document.querySelectorAll('[data-pm-tab]').forEach((tab) => tab.setAttribute('aria-pressed', String(tab.dataset.pmTab === html.dataset.pm)));
+  showPm();
+  document.addEventListener('click', (event) => {
+    const tab = event.target.closest('[data-pm-tab]');
+    if (!tab) return;
+    html.dataset.pm = tab.dataset.pmTab;
+    store.set('zubra-ui:pm', tab.dataset.pmTab);
+    showPm();
+  });
+
   // Copy buttons on every code block.
   document.addEventListener('click', async (event) => {
     const button = event.target.closest('[data-copy]');

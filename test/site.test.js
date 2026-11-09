@@ -247,3 +247,28 @@ test('themes: each section takes its theme; the look picker themes the whole sit
   assert.deepEqual(problems, []);
   await context.close();
 });
+
+test('search filters the nav, "/" focuses it, and install commands follow the chosen package manager', async () => {
+  const context = await browser.newContext();
+  const { page, problems } = await open('/components/toggle-switch/', { context });
+  await page.keyboard.press('/');
+  assert.equal(await page.evaluate(() => document.activeElement?.id), 'nav-search');
+  await page.keyboard.type('toast');
+  const shown = await page.$$eval('.site-nav li:not([hidden]) a', (links) => links.map((link) => link.textContent));
+  assert.deepEqual(shown, ['toast-region']);
+  await page.fill('#nav-search', 'zzzz');
+  assert.equal(await page.textContent('#nav-none'), 'No component matches.');
+  await page.fill('#nav-search', 'stepper');
+  await page.keyboard.press('Enter');
+  await page.waitForURL(/quantity-stepper/);
+
+  const install = page.locator('#install ~ .install pre').first();
+  assert.match(await install.innerText(), /^npx shadcn@latest add /);
+  await page.locator('#install ~ .install [data-pm-tab="pnpm"]').first().click();
+  assert.match(await install.innerText(), /^pnpm dlx shadcn@latest add /);
+  const next = await context.newPage();
+  await next.goto(`${site.url}/`, { waitUntil: 'networkidle' });
+  assert.match(await next.locator('.steps pre').first().innerText(), /^pnpm dlx shadcn/, 'remembered across pages');
+  assert.deepEqual(problems, []);
+  await context.close();
+});

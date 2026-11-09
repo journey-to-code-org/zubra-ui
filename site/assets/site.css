@@ -226,3 +226,36 @@ masonry-grid article p { margin: 0; color: var(--muted-foreground); font-size: 0
 .editor-range input { width: 100%; accent-color: var(--primary); }
 .editor-out { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); gap: 1rem; }
 .editor-out pre { max-height: 22rem; overflow: auto; }
+
+/* ---- package manager tabs on install commands */
+.pm-only { display: none; }
+html[data-pm=npm] .pm-only[data-pm=npm], html[data-pm=pnpm] .pm-only[data-pm=pnpm], html[data-pm=yarn] .pm-only[data-pm=yarn], html[data-pm=bun] .pm-only[data-pm=bun] { display: inline; }
+.pm-tabs { display: inline-flex; gap: 0.15rem; }
+.pm-tab { padding: 0.1rem 0.5rem; border: 0; border-radius: calc(var(--radius) - 4px); background: none; color: color-mix(in oklab, var(--muted-foreground) 60%, var(--foreground)); font: inherit; font-size: 0.8rem; cursor: pointer; }
+.pm-tab[aria-pressed=true] { background: var(--background); color: var(--foreground); box-shadow: 0 0 0 1px var(--border); }
+.pm-tab:focus-visible { outline: 2px solid var(--ring); outline-offset: 1px; }
+
+/* ---- nav search */
+.nav-search { margin: 0 0 0.75rem; }
+.nav-search input { width: 100%; box-sizing: border-box; padding: 0.45rem 0.65rem; border: 1px solid var(--input); border-radius: calc(var(--radius) - 2px); background: var(--background); color: var(--foreground); font: inherit; font-size: 0.9rem; }
+.nav-search input:focus-visible { outline: 2px solid var(--ring); outline-offset: 1px; }
+.nav-none { margin: 0.4rem 0 0; font-size: 0.85rem; color: var(--muted-foreground); }
+.nav-none:empty { display: none; }
+.site-nav li[hidden], .site-nav section[hidden] { display: none; }
+@media (max-width: 52rem) {
+  .nav-search { flex: 0 0 11rem; margin: 0; }
+  .nav-none { display: none; }
+}
+
+/* ---- the home page's theme strip */
+.theme-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 8.5rem), 1fr)); gap: 0.75rem; margin: 1rem 0 0.5rem; }
+.theme-chip { display: grid; gap: 0.6rem; padding: 0.9rem 1rem; border: 1px solid var(--border); border-radius: var(--radius); text-decoration: none; transition: transform var(--duration-fast) var(--ease-out); }
+.theme-chip:hover { transform: translateY(-2px); }
+.theme-chip strong { font-family: var(--font-heading, inherit); }
+.theme-swatches { display: flex; gap: 0.3rem; }
+.theme-swatches span { width: 1.1rem; height: 1.1rem; border-radius: calc(var(--radius) * 0.5); box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--foreground) 15%, transparent); }
+.theme-chip small { color: var(--muted-foreground); }
+@media (prefers-reduced-motion: reduce) { .theme-chip { transition: none; } }
+
+.demo-hero { padding: 3rem 1.5rem; text-align: center; }
+.demo-hero h2 { margin: 0; }

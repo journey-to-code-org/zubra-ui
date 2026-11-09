@@ -305,7 +305,7 @@ export const demos = {
   'backdrop-pattern': {
     attrs: { pattern: 'aurora' },
     props: { animated: true },
-    html: '<div style="padding: 3rem 1.5rem; text-align: center">\n  <h2 style="margin: 0">Ship components, not frameworks</h2>\n  <p>One file each, in any stack.</p>\n</div>',
+    html: '<div class="demo-hero">\n  <h2>Ship components, not frameworks</h2>\n  <p>One file each, in any stack.</p>\n</div>',
   },
   'switcher-layout': {
     attrs: { threshold: '28rem', gap: '0.75rem' },
