@@ -113,7 +113,7 @@ function slotDocs(component) {
 // ---- the page frame
 
 const themeIndex = JSON.parse(readFileSync(join(out, 'themes/sets/index.json'), 'utf8'));
-const CATEGORIES = { input: 'Form controls', widget: 'Widgets', display: 'Display', layout: 'Layout', app: 'App pieces', block: 'Blocks' };
+const CATEGORIES = { input: 'Form controls', navigation: 'Navigation', widget: 'Widgets', data: 'Data', display: 'Display', layout: 'Layout', section: 'Page sections', app: 'App pieces', block: 'Blocks' };
 for (const component of components) {
   if (!CATEGORIES[component.category]) throw new Error(`${component.name}: no nav section for category "${component.category}"`);
 }
@@ -152,9 +152,11 @@ function frame({ prefix, title, description, current, body, scripts = [] }) {
       html.dataset.pm = ['npm', 'pnpm', 'yarn', 'bun'].includes(pm) ? pm : 'npm';
       const look = localStorage.getItem('zubra-ui:look');
       if (look && look !== 'zinc') html.dataset.theme = look;
+      // A theme made in the studio and chosen for this site.
+      if (look === 'custom') document.getElementById('user-theme').textContent = localStorage.getItem('zubra-ui:custom-css') || '';
       const preset = localStorage.getItem('zubra-ui:preset');
       if (preset && preset !== 'zinc') html.classList.add('theme-' + preset);
-      document.getElementById('user-theme').textContent = localStorage.getItem('zubra-ui:theme') || '';
+      document.getElementById('user-theme').textContent += localStorage.getItem('zubra-ui:theme') || '';
     } catch {}
   </script>
   <script type="importmap">${importMap(prefix)}</script>
@@ -181,6 +183,8 @@ function frame({ prefix, title, description, current, body, scripts = [] }) {
       <div class="nav-search"><input type="search" id="nav-search" placeholder="Search  ( / )" aria-label="Search components" aria-keyshortcuts="/" autocomplete="off"><p class="nav-none" id="nav-none" role="status"></p></div>
       <a class="side-home" href="${prefix}"${current ? '' : ' aria-current="page"'}>Getting started</a>
       <a class="side-home" href="${prefix}themes/"${current === 'themes' ? ' aria-current="page"' : ''}>Themes</a>
+      <a class="side-home" href="${prefix}studio/"${current === 'studio' ? ' aria-current="page"' : ''}>Theme studio</a>
+      <a class="side-home" href="${prefix}compose/"${current === 'compose' ? ' aria-current="page"' : ''}>Page composer</a>
       ${nav}
     </nav>
     <main id="main" tabindex="-1">
@@ -240,10 +244,16 @@ function preview(name, demo) {
   return `<div class="stage" data-preview="${name}">${opener}<${name}${attributes}>${demo.html ?? ''}</${name}></div>
       <p class="event" data-events="${name}" aria-live="polite">${demo.events?.length ? `Try it: events appear here (${demo.events.map((event) => `<code>${event}</code>`).join(', ')}).` : 'This one has no events: it shows what it\'s given.'}</p>`;
 }
+// Components a demo puts inside this one (an action-button in its actions slot, say) load with it.
+function nestedIn(name, demo) {
+  const html = [demo.html ?? '', demo.variants?.html ?? ''].join(' ');
+  return [...new Set([...html.matchAll(/<([a-z]+-[a-z-]+)/g)].map(([, tag]) => tag))]
+    .filter((tag) => tag !== name && components.some((component) => component.name === tag));
+}
 function previewScript(prefix, name, demo) {
   return `  <script type="module">
     import '${prefix}preview/${name}.js';
-    import { wire } from '${prefix}assets/site.js';
+${nestedIn(name, demo).map((tag) => `    import '${prefix}preview/${tag}.js';\n`).join('')}    import { wire } from '${prefix}assets/site.js';
     wire(${JSON.stringify(name)}, ${JSON.stringify({ props: demo.props ?? {}, events: demo.events ?? [], opener: Boolean(demo.opener), trigger: demo.trigger ?? null })});
   </script>`;
 }
@@ -295,7 +305,7 @@ for (const component of components) {
   write(`components/${name}/index.html`, frame({ prefix, title: `${name} · Zubra UI`, description: component.description, current: name, body, scripts: [previewScript(prefix, name, demo)] }));
 }
 
-// ---- the themes page: the same small app in every theme, then an editor for your own
+// ---- the themes page: the same small app in every theme
 
 const LOOK_COMPONENTS = ['backdrop-pattern', 'content-card', 'text-field', 'toggle-switch', 'action-button', 'status-badge', 'alert-banner', 'user-avatar', 'check-box'];
 const lookApp = (label) => `<div class="look-grid">
@@ -331,30 +341,7 @@ ${themeIndex.map((theme) => `        <section class="look" data-theme="${theme.n
           <div class="install look-install"><span>Add the ${escape(theme.label)} theme</span>${code(`npx shadcn@latest add ${baseUrl}/r/themes/${theme.name}.json`, 'sh', 'Terminal')}</div>
         </section>`).join('\n')}
         <h2 id="make">Make your own</h2>
-        <p>Start from a theme, change what you like, and copy the result. The accent applies in light and dark; the page and text colours are the light ones, and dark keeps the starting theme's. Copy the JSON to keep in <code>themes/sets/</code> (it compiles with the rest), or the CSS to use as it is.</p>
-        <form class="editor" id="editor">
-          <select-field id="editor-base" label="Start from" name="base"></select-field>
-          <label class="editor-colour">Accent, light and dark <input type="color" id="editor-primary" name="primary" value="#7c3aed"></label>
-          <label class="editor-colour">Page, in light <input type="color" id="editor-background" name="background" value="#ffffff"></label>
-          <label class="editor-colour">Text, in light <input type="color" id="editor-foreground" name="foreground" value="#18181b"></label>
-          <label class="editor-range">Corners <input type="range" id="editor-radius" name="radius" min="0" max="1.5" step="0.05" value="0.6"> <output id="editor-radius-out">0.6rem</output></label>
-          <select-field id="editor-font" label="Font" name="font"></select-field>
-          <radio-group id="editor-motion" label="Motion" name="motion" orientation="horizontal"></radio-group>
-        </form>
-        <section class="look" data-theme="custom" aria-labelledby="look-custom">
-          <backdrop-pattern pattern="mesh">
-            <div class="look-inner">
-              <div class="look-head"><h2 id="look-custom">Yours</h2><status-badge variant="outline">live</status-badge></div>
-              ${lookApp('Your theme')}
-            </div>
-          </backdrop-pattern>
-        </section>
-        <style id="custom-theme"></style>
-        <p id="editor-status" class="hint" role="status"></p>
-        <div class="editor-out">
-          <div class="code"><div class="code-head"><span>themes/sets/custom.json</span><button type="button" class="copy" data-copy>Copy</button></div><pre tabindex="0"><code id="editor-json"></code></pre></div>
-          <div class="code"><div class="code-head"><span>custom.css</span><button type="button" class="copy" data-copy>Copy</button></div><pre tabindex="0"><code id="editor-css"></code></pre></div>
-        </div>
+        <p>The <a href="../studio/">theme studio</a> designs one from scratch or from any of these: every colour in light and dark with contrast checks, fonts, corners and motion, previewed on real components, then copied as a theme file or CSS.</p>
       </section>`;
 write('themes/index.html', frame({
   prefix: '../',
@@ -363,9 +350,143 @@ write('themes/index.html', frame({
   current: 'themes',
   body: themesBody,
   scripts: [`  <script type="module">
-${[...LOOK_COMPONENTS, 'select-field', 'radio-group'].map((name) => `    import '../preview/${name}.js';`).join('\n')}
-    import { startEditor } from '../assets/themes.js';
-    startEditor();
+${LOOK_COMPONENTS.map((name) => `    import '../preview/${name}.js';`).join('\n')}
+  </script>`],
+}));
+
+// ---- the theme studio: design a theme on real components, check its contrast, copy it
+
+const STUDIO_COMPONENTS = [...new Set([...LOOK_COMPONENTS, 'select-field', 'segmented-control', 'range-slider', 'stat-card', 'progress-bar', 'tab-list'])];
+const studioPreview = `<div class="studio-sample">
+                ${lookApp('Your theme')}
+                <div class="studio-row">
+                  <stat-card label="Revenue" value="$48,210" period="this month"></stat-card>
+                  <stat-card label="Refunds" value="12" period="this month"></stat-card>
+                  <div class="studio-buttons"><action-button>Primary</action-button><action-button variant="secondary">Secondary</action-button><action-button variant="outline">Outline</action-button><action-button variant="destructive">Delete</action-button></div>
+                </div>
+                <progress-bar label="Storage used" value="68"></progress-bar>
+              </div>`;
+const studioBody = `      <section class="studio">
+        <h1>Theme studio</h1>
+        <p class="lead">Design a theme on real components: every colour for light and dark, the fonts, the corners and the motion. Contrast is checked as you go. When it's right, copy it as a theme file or as CSS, share it as a link, or use it on this site.</p>
+        <div class="studio-layout">
+          <form class="studio-controls" id="studio" aria-label="Theme settings">
+            <fieldset><legend>Start</legend>
+              <select-field id="studio-base" label="Start from" name="base"></select-field>
+              <text-field id="studio-label" label="Name" name="label" value="My theme" required></text-field>
+            </fieldset>
+            <fieldset><legend>Colours</legend>
+              <segmented-control id="studio-scheme" label="Editing the colours for"></segmented-control>
+              <p class="hint" id="studio-scheme-hint"></p>
+              <div class="studio-colours" id="studio-colours"></div>
+              <button type="button" class="button" id="studio-derive">Make dark from light</button>
+            </fieldset>
+            <fieldset><legend>Type, corners and motion</legend>
+              <select-field id="studio-font" label="Body font" name="font"></select-field>
+              <select-field id="studio-heading" label="Heading font" name="heading"></select-field>
+              <range-slider id="studio-radius" label="Corners" unit="rem" name="radius"></range-slider>
+              <select-field id="studio-motion" label="Motion" name="motion"></select-field>
+              <select-field id="studio-backdrop" label="Background pattern (preview)" name="backdrop"></select-field>
+            </fieldset>
+          </form>
+          <div class="studio-stage">
+            <div class="studio-previews">
+              <section class="look studio-look" data-theme="preview-light" aria-label="Preview in light" id="studio-light">
+                <backdrop-pattern pattern="mesh"><div class="look-inner"><p class="studio-tag">Light</p>${studioPreview}</div></backdrop-pattern>
+              </section>
+              <section class="look studio-look" data-theme="preview-dark" aria-label="Preview in dark" id="studio-dark">
+                <backdrop-pattern pattern="mesh"><div class="look-inner"><p class="studio-tag">Dark</p>${studioPreview}</div></backdrop-pattern>
+              </section>
+            </div>
+            <h2 id="contrast">Contrast</h2>
+            <p class="hint">Text against what's behind it, for each pair the components use. 4.5:1 is the WCAG AA minimum for body text. Field borders are better at 3:1 or more, so people can find the fields; lighter is common, so it's a warning, not a failure. When you change Primary, Secondary or Hover, the text on it changes too if it would be hard to read (unless you set that text yourself).</p>
+            <div class="table"><table id="studio-contrast"><caption>Contrast in light and dark</caption><thead><tr><th scope="col">Text on</th><th scope="col">Light</th><th scope="col">Dark</th></tr></thead><tbody></tbody></table></div>
+            <h2 id="export">Take it with you</h2>
+            <p class="studio-actions"><button type="button" class="button primary" id="studio-use">Use on this site</button><button type="button" class="button" id="studio-share">Copy a link to this theme</button><button type="button" class="button" id="studio-reset">Start over</button></p>
+            <p class="studio-warning" id="studio-warning" aria-live="polite"></p>
+            <p class="hint" id="studio-status" role="status"></p>
+            <div class="editor-out">
+              <div class="code"><div class="code-head"><span id="studio-json-name">themes/sets/my-theme.json</span><button type="button" class="copy" data-copy>Copy</button></div><pre tabindex="0"><code id="studio-json"></code></pre></div>
+              <div class="code"><div class="code-head"><span>theme.css</span><button type="button" class="copy" data-copy>Copy</button></div><pre tabindex="0"><code id="studio-css"></code></pre></div>
+            </div>
+            <p class="hint">The CSS applies wherever <code>data-theme="<span id="studio-slug">my-theme</span>"</code> is set. The JSON goes in Zubra UI's <code>themes/sets/</code>, where it compiles with the others.</p>
+          </div>
+        </div>
+        <style id="custom-theme"></style>
+      </section>`;
+write('studio/index.html', frame({
+  prefix: '../',
+  title: 'Theme studio · Zubra UI',
+  description: 'Design a Zubra UI theme on real components: colours for light and dark with contrast checks, fonts, corners and motion.',
+  current: 'studio',
+  body: studioBody,
+  scripts: [`  <script type="module">
+${STUDIO_COMPONENTS.map((name) => `    import '../preview/${name}.js';`).join('\n')}
+    import { startStudio } from '../assets/studio.js';
+    startStudio();
+  </script>`],
+}));
+
+// ---- the page composer: put components and sections together into a page, then take it home
+
+const catalog = components.map((component) => {
+  const { props, slots } = api(component);
+  return {
+    name: component.name,
+    category: component.category,
+    section: CATEGORIES[component.category],
+    summary: component.description.split(/(?<=\.)\s/)[0],
+    props: props.map((prop) => ({ name: prop.name, attribute: prop.attribute ?? null, type: prop.type?.text ?? '', default: prop.default ?? '' })),
+    slots: slots.map((slot) => slot.name || 'default'),
+    demo: demos[component.name] ?? {},
+    plain: Boolean(sizes[component.name].plain),
+  };
+});
+write('compose/catalog.json', JSON.stringify({ baseUrl, importMap: JSON.parse(importMap(`${baseUrl}/`)), categories: CATEGORIES, themes: themeIndex.map(({ name, label }) => ({ name, label })), components: catalog }));
+const composeBody = `      <section class="composer">
+        <h1>Page composer</h1>
+        <p class="lead">Put a page together from the components and sections: add them, arrange them, change their text and settings, pick a theme, and see it at desktop, tablet and phone widths. Then copy it as a page that runs as it is, as React or Vue, or as the install commands.</p>
+        <div class="composer-bar" role="toolbar" aria-label="Page">
+          <select-field id="compose-template" label="Start from"></select-field>
+          <select-field id="compose-theme" label="Theme"></select-field>
+          <segmented-control id="compose-mode" label="Mode"></segmented-control>
+          <segmented-control id="compose-width" label="Width"></segmented-control>
+          <button type="button" class="button" id="compose-undo" aria-keyshortcuts="Control+Z Meta+Z">Undo</button>
+          <p class="hint composer-status" id="compose-status" role="status"></p>
+        </div>
+        <div class="composer-layout">
+          <aside class="composer-library" aria-labelledby="library-heading">
+            <h2 id="library-heading">Add</h2>
+            <input type="search" id="compose-search" placeholder="Find a component" aria-label="Find a component" autocomplete="off">
+            <div id="compose-library"></div>
+          </aside>
+          <div class="composer-canvas-wrap">
+            <h2 class="composer-hidden" id="canvas-heading">The page</h2>
+            <div class="composer-frame" id="compose-frame">
+              <div class="composer-canvas" id="compose-canvas" data-theme="compose-canvas" aria-labelledby="canvas-heading"></div>
+            </div>
+          </div>
+          <aside class="composer-inspector" aria-labelledby="inspector-heading">
+            <div class="composer-inspector-head"><h2 id="inspector-heading">Settings</h2><button type="button" class="button composer-done" id="compose-done">Done</button></div>
+            <div id="compose-inspector"><p class="hint">Choose something on the page to change it.</p></div>
+          </aside>
+        </div>
+        <h2 id="take">Take it home</h2>
+        <p class="studio-actions"><button type="button" class="button primary" id="compose-download">Download the page</button><button type="button" class="button" id="compose-share">Copy a link to this page</button><button type="button" class="button" id="compose-clear">Clear the page</button></p>
+        <segmented-control id="compose-format" label="Code for"></segmented-control>
+        <div class="code"><div class="code-head"><span id="compose-file">index.html</span><button type="button" class="copy" data-copy>Copy</button></div><pre tabindex="0"><code id="compose-code"></code></pre></div>
+        <div class="code"><div class="code-head"><span>Terminal</span><button type="button" class="copy" data-copy>Copy</button></div><pre tabindex="0"><code id="compose-install"></code></pre></div>
+      </section>`;
+write('compose/index.html', frame({
+  prefix: '../',
+  title: 'Page composer · Zubra UI',
+  description: 'Put a page together from Zubra UI components and sections, theme it, and copy it as HTML, React or Vue.',
+  current: 'compose',
+  body: composeBody,
+  scripts: [`  <script type="module">
+    import '../preview/select-field.js';
+    import { startComposer } from '../assets/compose.js';
+    startComposer();
   </script>`],
 }));
 

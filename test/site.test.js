@@ -3,7 +3,7 @@
 // mode, theme presets and a pasted shadcn theme all work and are remembered.
 import { after, before, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readdirSync, readFileSync } from 'node:fs';
+import { mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { chromium } from 'playwright';
 import { serve } from '../scripts/serve.mjs';
@@ -19,6 +19,8 @@ after(async () => { await browser?.close(); site?.close(); });
 const ELEMENTS = process.env.ZUBRA_UI_EMIT === 'element'
   ? new Set(readdirSync(join(root, 'dist/elements')).filter((file) => file.endsWith('.js')).map((file) => file.slice(0, -3)))
   : new Set();
+// The pages that are tools rather than a component: no component preview of their own.
+const TOOL_PAGES = ['/themes/', '/studio/', '/compose/'];
 async function open(path, { context } = {}) {
   const page = await (context ?? browser).newPage();
   if (ELEMENTS.size) {
@@ -38,7 +40,7 @@ async function open(path, { context } = {}) {
 
 test('every page loads cleanly and its previews render', async () => {
   const context = await browser.newContext();
-  const pages = ['/', '/themes/', ...components.map(({ name }) => `/components/${name}/`)];
+  const pages = ['/', ...TOOL_PAGES, ...components.map(({ name }) => `/components/${name}/`)];
   const failures = [];
   await Promise.all(pages.map(async (path) => {
     const { page, problems } = await open(path, { context });
@@ -55,7 +57,7 @@ test('every page loads cleanly and its previews render', async () => {
         return { name, defined: !!customElements.get(name), rendered: !!element && (element.shadowRoot?.childElementCount ?? element.childElementCount) > 0 };
       });
     });
-    if (!previews.length && path !== '/themes/') problems.push('no previews');
+    if (!previews.length && !TOOL_PAGES.includes(path)) problems.push('no previews');
     for (const preview of previews) if (!preview.defined || !preview.rendered) problems.push(`preview ${preview.name}: ${JSON.stringify(preview)}`);
     if (problems.length) failures.push(`${path}\n  ${problems.join('\n  ')}`);
     await page.close();
@@ -170,7 +172,7 @@ test('preview text is readable in light and dark', async () => {
 test('on a phone nothing scrolls sideways, and the nav lists every component', async () => {
   const context = await browser.newContext({ viewport: { width: 320, height: 740 } });
   const failures = [];
-  await Promise.all(['/', '/themes/', ...components.map(({ name }) => `/components/${name}/`)].map(async (path) => {
+  await Promise.all(['/', ...TOOL_PAGES, ...components.map(({ name }) => `/components/${name}/`)].map(async (path) => {
     const { page } = await open(path, { context });
     const { scroll, width, nav } = await page.evaluate(() => ({ scroll: document.documentElement.scrollWidth, width: innerWidth, nav: document.querySelectorAll('.site-nav a[href*="components/"]').length }));
     if (scroll > width) failures.push(`${path}: ${scroll}px wide in ${width}px`);
@@ -187,7 +189,7 @@ test('axe finds no serious or critical problems on any page, light or dark', asy
   const axe = readFileSync(join(root, 'node_modules/axe-core/axe.min.js'), 'utf8');
   const context = await browser.newContext({ reducedMotion: 'reduce' });
   const failures = [];
-  await Promise.all(['/', '/themes/', ...components.map(({ name }) => `/components/${name}/`)].map(async (path) => {
+  await Promise.all(['/', ...TOOL_PAGES, ...components.map(({ name }) => `/components/${name}/`)].map(async (path) => {
     const { page } = await open(path, { context });
     await page.addScriptTag({ content: axe });
     for (const mode of ['light', 'dark']) {
@@ -212,7 +214,7 @@ test('previews report their events', async () => {
   await page.close();
 });
 
-test('themes: each section takes its theme; the look picker themes the whole site; the editor makes one live', async () => {
+test('themes: each section takes its theme, and the look picker themes the whole site', async () => {
   const context = await browser.newContext({ reducedMotion: 'reduce' });
   // (Reduced motion: colours are read after a change, not halfway through its transition.)
   const { page, problems } = await open('/themes/', { context });
@@ -222,20 +224,11 @@ test('themes: each section takes its theme; the look picker themes the whole sit
     font: getComputedStyle(section.querySelector('content-card')).fontFamily,
     radius: getComputedStyle(section.querySelector('text-field input')).borderRadius,
   })));
-  assert.deepEqual(looks.map((look) => look.theme), ['zinc', 'paper', 'terminal', 'candy', 'midnight', 'custom']);
+  assert.deepEqual(looks.map((look) => look.theme), ['zinc', 'paper', 'terminal', 'candy', 'midnight']);
   assert.equal(new Set(looks.slice(0, 5).map((look) => look.primary)).size, 5, 'five different accents');
   assert.match(looks.find((look) => look.theme === 'paper').font, /Iowan|Palatino|Georgia/);
   assert.match(looks.find((look) => look.theme === 'terminal').font, /monospace/);
   assert.equal(looks.find((look) => look.theme === 'terminal').radius, '0px', 'square corners all the way down');
-
-  // The editor: a new accent and square corners show on "Yours" at once, and in the CSS to copy.
-  await page.locator('#editor-primary').evaluate((input) => { input.value = '#0f766e'; input.dispatchEvent(new Event('input', { bubbles: true })); });
-  await page.locator('#editor-radius').fill('0');
-  const custom = page.locator('section.look[data-theme="custom"]');
-  assert.equal(await custom.locator('action-button button').first().evaluate((button) => getComputedStyle(button).backgroundColor), 'rgb(15, 118, 110)');
-  assert.equal(await custom.locator('text-field input').evaluate((input) => getComputedStyle(input).borderRadius), '0px');
-  assert.match(await page.textContent('#editor-css'), /\[data-theme="custom"\][^}]*--primary: #0f766e/);
-  assert.match(await page.textContent('#editor-json'), /"extends": "zinc"/);
 
   // The look picker: the whole site, remembered on the next page.
   await page.click('#theme-open');
@@ -281,6 +274,145 @@ test('search filters the nav, "/" focuses it, and install commands follow the ch
   const next = await context.newPage();
   await next.goto(`${site.url}/`, { waitUntil: 'networkidle' });
   assert.match(await next.locator('.steps pre').first().innerText(), /^pnpm dlx shadcn/, 'remembered across pages');
+  assert.deepEqual(problems, []);
+  await context.close();
+});
+
+test('theme studio: colours change the light and dark previews, contrast is checked, and the theme travels', async () => {
+  const context = await browser.newContext({ reducedMotion: 'reduce' });
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  const { page, problems } = await open('/studio/', { context });
+  const button = (scheme) => page.locator(`#studio-${scheme} action-button button`).first().evaluate((el) => getComputedStyle(el).backgroundColor);
+  // A new primary for light.
+  await page.locator('#studio-colours [data-key=primary]').evaluate((input) => { input.value = '#0f766e'; input.dispatchEvent(new Event('input', { bubbles: true })); });
+  assert.equal(await button('light'), 'rgb(15, 118, 110)');
+  assert.notEqual(await button('dark'), 'rgb(15, 118, 110)', 'dark keeps its own until changed');
+  // Typed CSS colours are checked.
+  await page.locator('#studio-colours [data-css=primary]').fill('not a colour');
+  await page.locator('#studio-colours [data-css=primary]').dispatchEvent('change');
+  assert.match(await page.textContent('#studio-status'), /isn't a CSS colour/);
+  assert.equal(await page.locator('#studio-colours [data-css=primary]').getAttribute('aria-invalid'), 'true');
+  // A light primary gets dark text on it, so it stays readable.
+  await page.locator('#studio-colours [data-css=primary]').fill('#ffee00');
+  await page.locator('#studio-colours [data-css=primary]').dispatchEvent('change');
+  assert.match(await page.locator('#studio-contrast tbody tr', { hasText: 'Text on primary' }).locator('td').first().textContent(), /Passes/);
+  assert.equal(await page.textContent('#studio-warning'), '');
+  await page.locator('#studio-colours [data-css=primary]').blur();
+  await page.locator('#studio-colours [data-key=primary]').evaluate((input) => { input.value = '#0f766e'; input.dispatchEvent(new Event('input', { bubbles: true })); });
+  // Dark made from light keeps the hue, lifted for a dark page.
+  await page.click('#studio-derive');
+  const dark = await button('dark');
+  assert.notEqual(dark, 'rgb(15, 118, 110)');
+  assert.match(await page.textContent('#studio-json'), /"dark": \{/);
+  // Contrast: a row per pair, each judged.
+  assert.equal(await page.locator('#studio-contrast tbody tr').count(), 8);
+  assert.ok((await page.locator('#studio-contrast status-badge').count()) >= 14);
+  // Name, corners and the CSS to copy.
+  await page.getByLabel('Name').fill('Sea Glass');
+  await page.getByLabel('Name').press('Tab');
+  assert.match(await page.textContent('#studio-css'), /\[data-theme="sea-glass"\]/);
+  assert.equal(await page.textContent('#studio-json-name'), 'themes/sets/sea-glass.json');
+  // A link carries it to another page; "Use on this site" makes it the site's look.
+  await page.click('#studio-share');
+  const link = page.url();
+  assert.match(link, /#theme=/);
+  const other = await (await browser.newContext()).newPage();
+  await other.goto(link, { waitUntil: 'networkidle' });
+  await other.waitForFunction(() => document.querySelector('#studio-css')?.textContent.includes('sea-glass'));
+  await other.context().close();
+  await page.click('#studio-use');
+  const next = await context.newPage();
+  await next.goto(`${site.url}/components/action-button/`, { waitUntil: 'networkidle' });
+  assert.equal(await next.evaluate(() => document.documentElement.dataset.theme), 'custom');
+  assert.equal(await next.locator('[data-preview] action-button button').evaluate((el) => getComputedStyle(el).backgroundColor), 'rgb(15, 118, 110)');
+  assert.deepEqual(problems, []);
+  await context.close();
+});
+
+test('page composer: add, change, move and remove; the theme and mode apply; the exported page runs as it is', async () => {
+  const context = await browser.newContext({ reducedMotion: 'reduce', viewport: { width: 1500, height: 1000 } });
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  const { page, problems } = await open('/compose/', { context });
+  await page.waitForSelector('.composer[data-ready]');
+  // Each change redraws the canvas (loading a component first if it's new): wait for that.
+  const settled = () => page.waitForFunction(() => !document.querySelector('.composer').dataset.busy);
+  const names = async () => { await settled(); return page.locator('#compose-canvas .composer-item').evaluateAll((items) => items.map((item) => item.querySelector('.composer-name').textContent)); };
+  assert.deepEqual((await names()).slice(0, 3), ['nav-bar', 'hero-section', 'logo-cloud'], 'starts from the landing page');
+  // Add after the selected item, then change it in the inspector.
+  await page.locator('#compose-canvas [data-uid]').first().click({ position: { x: 5, y: 5 } });
+  await page.getByRole('button', { name: 'Add stat-card' }).click();
+  assert.equal((await names())[1], 'stat-card');
+  await page.locator('#compose-inspector input[data-attribute=label]').fill('Loaves sold');
+  await page.locator('#compose-inspector input[data-attribute=label]').press('Tab');
+  await settled();
+  assert.match(await page.locator('#compose-canvas stat-card').textContent(), /Loaves sold/);
+  await page.locator('#compose-inspector [data-prop=change]').fill('8');
+  await page.locator('#compose-inspector [data-prop=change]').press('Tab');
+  await settled();
+  assert.match(await page.locator('#compose-canvas stat-card').textContent(), /up 8%/);
+  // Bad JSON keeps the last good value and says so.
+  await page.locator('#compose-canvas [data-uid]').nth(0).focus();
+  await page.keyboard.press('Enter');
+  await page.locator('#compose-inspector [data-prop=links]').fill('[not json');
+  await page.locator('#compose-inspector [data-prop=links]').press('Tab');
+  assert.match(await page.textContent('#inspector-problem'), /Not valid JSON/);
+  // Keyboard: Alt+Down moves the focused item; Delete removes it.
+  const statCard = page.locator('#compose-canvas .composer-item', { has: page.locator('stat-card') });
+  await statCard.focus();
+  await page.keyboard.press('Alt+ArrowDown');
+  assert.equal((await names())[2], 'stat-card');
+  assert.match(await page.textContent('#compose-status'), /Moved stat-card down/);
+  // Focus stays on the block, so moves chain.
+  await page.keyboard.press('Alt+ArrowDown');
+  assert.equal((await names())[3], 'stat-card');
+  assert.ok(await page.evaluate(() => document.activeElement.matches('.composer-item') && Boolean(document.activeElement.querySelector('stat-card'))));
+  await page.keyboard.press('Delete');
+  assert.ok(!(await names()).includes('stat-card'));
+  // Undo brings it back where it was.
+  await page.keyboard.press('Control+z');
+  assert.equal((await names())[3], 'stat-card');
+  await page.keyboard.press('Control+z');
+  assert.equal((await names())[2], 'stat-card');
+  await statCard.focus();
+  await page.keyboard.press('Delete');
+  assert.ok(!(await names()).includes('stat-card'));
+  // Theme and mode reach the canvas only.
+  await page.locator('#compose-theme select').selectOption('terminal');
+  await page.locator('#compose-mode').getByText('Dark', { exact: true }).click();
+  await settled();
+  const canvasFont = await page.locator('#compose-canvas').evaluate((el) => getComputedStyle(el).fontFamily);
+  assert.match(canvasFont, /monospace/);
+  assert.notEqual(await page.evaluate(() => getComputedStyle(document.body).fontFamily), canvasFont, 'the site itself is untouched');
+  // The exported page: script tags for every component used (and ones used inside others), and it runs.
+  const html = await page.textContent('#compose-code');
+  assert.match(html, /data-theme="terminal"/);
+  assert.match(html, /\/cdn\/action-button\.js/, 'an action-button inside the hero is loaded too');
+  assert.match(await page.textContent('#compose-install'), /r\/themes\/terminal\.json/);
+  const exported = html.replaceAll('http://127.0.0.1:4174', site.url);
+  mkdirSync(join(root, 'dist/test-compose'), { recursive: true });
+  writeFileSync(join(root, 'dist/test-compose/index.html'), exported);
+  const run = await context.newPage();
+  const runProblems = [];
+  run.on('pageerror', (error) => runProblems.push(error.message));
+  run.on('console', (message) => message.type() === 'error' && runProblems.push(message.text()));
+  await run.goto(`${site.url}/test-compose/`, { waitUntil: 'networkidle' });
+  const names2 = await run.evaluate(() => [...document.querySelectorAll('main > *')].map((el) => el.localName));
+  const undefinedOnes = await run.evaluate((list) => list.filter((name) => !customElements.get(name)), names2);
+  assert.deepEqual(undefinedOnes, [], 'every component in the exported page is defined');
+  assert.match(await run.locator('nav-bar').textContent(), /Recipes/, 'its properties were set');
+  assert.deepEqual(runProblems, []);
+  // A shared link brings the page back, with anything that could run removed from its HTML.
+  await page.click('#compose-share');
+  const shared = new URL(page.url());
+  const evil = { theme: 'zinc', mode: 'light', items: [{ name: 'alert-banner', width: 'full', attrs: { heading: 'Hi' }, props: {}, html: '<img src=x onerror="window.pwned=1"><script>window.pwned=2</script><a href="javascript:window.pwned=3">x</a>Safe text' }] };
+  const encoded = Buffer.from(JSON.stringify(evil)).toString('base64url');
+  const other = await context.newPage();
+  await other.goto(`${site.url}/compose/#page=${encoded}`, { waitUntil: 'networkidle' });
+  await other.waitForSelector('.composer[data-ready]');
+  assert.match(await other.locator('#compose-canvas alert-banner').textContent(), /Safe text/);
+  assert.equal(await other.evaluate(() => window.pwned), undefined);
+  assert.equal(await other.locator('#compose-canvas a').first().getAttribute('href'), null);
+  assert.ok(shared.hash.startsWith('#page='));
   assert.deepEqual(problems, []);
   await context.close();
 });

@@ -1,0 +1,29 @@
+<!--
+  A labelled date on the native `<input type="date">`: the platform's own calendar on every
+  device, typed entry in the visitor's own date format, `min` and `max`, form submission under
+  `name` and the browser's validation. The value is "YYYY-MM-DD" (or "" when empty). `value` is
+  two-way.
+  @fires valuechange - The date changed; `detail` is "YYYY-MM-DD", or "".
+-->
+<script>
+  import { id } from '@zubra/runtime'
+
+  const inputId = id()
+  const helpId = id()
+</script>
+<style>
+  :host { display: block; }
+  .datefield { display: grid; gap: 0.4rem; }
+  label { font-weight: 600; font-size: 0.925rem; }
+  .datefield-help { margin: 0; font-size: 0.85rem; color: color-mix(in oklab, var(--muted-foreground, #71717a) 75%, var(--foreground, #18181b)); }
+  input { width: 100%; box-sizing: border-box; padding: 0.5rem 0.75rem; border: 1px solid var(--input, #e4e4e7); border-radius: calc(var(--radius, 0.625rem) - 2px); background: var(--background, #fff); color: var(--foreground, #18181b); font: inherit; color-scheme: inherit; }
+  input:focus-visible { outline: none; border-color: var(--ring, #a1a1aa); box-shadow: 0 0 0 3px color-mix(in oklab, var(--ring, #a1a1aa) 40%, transparent); }
+  input:user-invalid { border-color: var(--destructive, #dc2626); }
+</style>
+<date-field value:model="" label="Date" description="" name="" min="" max="" required={false} disabled={false}>
+  <div class="datefield">
+    <label for={inputId}>{label}</label>
+    <p zb-if={description} class="datefield-help" id={helpId}>{description}</p>
+    <input id={inputId} type="date" name={name || null} min={min || null} max={max || null} required={required} disabled={disabled} aria-describedby={description ? helpId : null} value={value} onchange={(event) => (value = event.target.value)}>
+  </div>
+</date-field>

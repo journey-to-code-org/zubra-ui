@@ -99,7 +99,7 @@ export const demos = {
     attrs: { label: 'Delete project' },
     props: { open: false },
     events: ['openchange'],
-    html: '<p>This deletes the project and its 14 files. You can\'t undo it.</p>\n<button slot="actions" type="button" data-close>Cancel</button>\n<button slot="actions" type="button" data-close>Delete project</button>',
+    html: '<p>This deletes the project and its 14 files. You can\'t undo it.</p>\n<action-button slot="actions" variant="ghost" data-close>Cancel</action-button>\n<action-button slot="actions" variant="destructive" data-close>Delete project</action-button>',
     // The page adds a button that sets `open`; the snippets show that too.
     opener: 'Delete project…',
   },
@@ -320,5 +320,128 @@ export const demos = {
     attrs: { item: '11rem', gap: '0.75rem', label: 'Upcoming events' },
     props: { controls: true },
     html: ['Bake sale', 'Choir night', 'Plant swap', 'Book club', 'Quiz night', 'Litter pick'].map((name) => `<div class="demo-box">${name}</div>`).join('\n'),
+  },
+  'breadcrumb-trail': {
+    props: { items: [{ label: 'Home', href: '#home' }, { label: 'Recipes', href: '#recipes' }, { label: 'Breads', href: '#breads' }, { label: 'Sourdough' }] },
+  },
+  'page-nav': {
+    props: { page: 6, pages: 20 },
+    events: ['pagechange'],
+  },
+  'side-sheet': {
+    attrs: { label: 'Filters', side: 'right' },
+    props: { open: false },
+    events: ['openchange'],
+    html: '<p>Show only what you need.</p>\n<action-button slot="actions" variant="ghost" data-close>Clear</action-button>\n<action-button slot="actions" data-close>Show 24 results</action-button>',
+    opener: 'Filters',
+  },
+  'popover-panel': {
+    attrs: { label: 'Share' },
+    events: ['openchange'],
+    html: '<p><strong>Share this recipe</strong></p>\n<p><a href="#copy">Copy link</a></p>\n<p><a href="#email">Email it</a></p>',
+  },
+  'command-palette': {
+    props: {
+      open: false,
+      items: [
+        { id: 'new', label: 'New project', group: 'Actions', hint: 'N' },
+        { id: 'invite', label: 'Invite a teammate', group: 'Actions' },
+        { id: 'theme', label: 'Switch theme', group: 'Actions' },
+        { id: 'home', label: 'Dashboard', group: 'Pages', href: '#dashboard' },
+        { id: 'billing', label: 'Billing', group: 'Pages', href: '#billing' },
+        { id: 'settings', label: 'Settings', group: 'Pages', href: '#settings' },
+      ],
+    },
+    events: ['select', 'openchange'],
+    opener: 'Search (Ctrl K)',
+  },
+  'nav-bar': {
+    attrs: { brand: 'Bakehouse', href: '#home' },
+    props: { links: [{ label: 'Recipes', href: '#recipes', current: true }, { label: 'Classes', href: '#classes' }, { label: 'Shop', href: '#shop' }, { label: 'About', href: '#about' }] },
+    html: '<a slot="actions" href="#signin">Sign in</a>',
+  },
+  'data-table': {
+    attrs: { label: 'Invoices', currency: 'USD' },
+    props: {
+      selectable: true,
+      columns: [
+        { key: 'number', label: 'Invoice', sortable: true },
+        { key: 'customer', label: 'Customer', sortable: true },
+        { key: 'status', label: 'Status', sortable: true },
+        { key: 'amount', label: 'Amount', sortable: true, format: 'currency' },
+      ],
+      rows: [
+        { id: 1, number: 'INV-1042', customer: 'Northwind', status: 'Paid', amount: 1250 },
+        { id: 2, number: 'INV-1043', customer: 'Acme Bakery', status: 'Due', amount: 310.5 },
+        { id: 3, number: 'INV-1044', customer: 'Globex', status: 'Overdue', amount: 4800 },
+        { id: 4, number: 'INV-1045', customer: 'Initech', status: 'Paid', amount: 99 },
+        { id: 5, number: 'INV-1046', customer: 'Umbrella', status: 'Due', amount: 2075 },
+      ],
+    },
+    events: ['selectedchange', 'sortchange'],
+  },
+  'progress-bar': {
+    attrs: { label: 'Uploading photos' },
+    props: { value: 64 },
+  },
+  'empty-state': {
+    attrs: { heading: 'No invoices yet' },
+    html: 'Invoices you send show up here, with who has paid.\n<action-button slot="actions">Create an invoice</action-button>',
+  },
+  'stat-card': {
+    attrs: { label: 'Monthly revenue', value: '$48,210', period: 'vs last month' },
+    props: { change: 12.4 },
+  },
+  'bar-chart': {
+    attrs: { label: 'Visits by source', unit: '%' },
+    props: { sorted: true, items: [{ label: 'Search', value: 42 }, { label: 'Direct', value: 23 }, { label: 'Social', value: 18 }, { label: 'Email', value: 11 }, { label: 'Referral', value: 6 }] },
+  },
+  'range-slider': {
+    attrs: { label: 'Budget', unit: '', name: 'budget' },
+    props: { value: 400, min: 0, max: 1000, step: 50 },
+    events: ['valuechange'],
+  },
+  'file-drop': {
+    attrs: { label: 'Attachments', name: 'files', accept: '.pdf,image/*' },
+    props: { maxSize: 10 },
+    events: ['fileschange'],
+  },
+  'code-input': {
+    attrs: { label: 'Enter the 6-digit code we sent you', name: 'code' },
+    events: ['valuechange', 'complete'],
+  },
+  'date-field': {
+    attrs: { label: 'Delivery date', description: 'We deliver Monday to Friday.', name: 'delivery', min: '2026-01-01' },
+    props: { value: '2026-12-04' },
+    events: ['valuechange'],
+  },
+  'hero-section': {
+    attrs: { eyebrow: 'New: spring classes', heading: 'Bake bread you are proud of', align: 'start' },
+    html: 'Small classes, real ovens, and a starter to take home. Weekends in Portland and online.\n<action-button slot="actions" size="lg">Book a class</action-button>\n<a slot="actions" href="#menu">See the schedule</a>',
+  },
+  'feature-grid': {
+    attrs: { heading: 'Everything for your bakery' },
+    props: { items: [{ icon: '🥖', title: 'Recipes that scale', text: 'Change the batch size and every amount follows.' }, { icon: '⏱', title: 'Timers per step', text: 'Proofs and bakes run side by side, with alerts.' }, { icon: '🧾', title: 'Costs per loaf', text: 'Ingredient prices turn into a price per item.' }] },
+  },
+  'testimonial-card': {
+    attrs: { name: 'Priya Raman', byline: 'Owner, Rise & Crumb' },
+    html: 'We cut our morning prep by an hour. The timers alone paid for it in a week.',
+  },
+  'faq-list': {
+    attrs: { heading: 'Questions' },
+    props: { single: true, items: [{ question: 'Do I need my own starter?', answer: 'No. Every class gives you a starter to take home, with a feeding schedule.' }, { question: 'Can I cancel?', answer: 'Yes, up to 48 hours before the class, for a full refund.' }, { question: 'Are classes accessible?', answer: 'The kitchen is step-free, and benches can be lowered.' }] },
+  },
+  'site-footer': {
+    attrs: { brand: 'Bakehouse', legal: '© 2026 Bakehouse. All rights reserved.' },
+    props: { columns: [{ heading: 'Learn', links: [{ label: 'Classes', href: '#classes' }, { label: 'Recipes', href: '#recipes' }] }, { heading: 'Company', links: [{ label: 'About', href: '#about' }, { label: 'Careers', href: '#careers' }] }, { heading: 'Help', links: [{ label: 'Contact', href: '#contact' }, { label: 'Refunds', href: '#refunds' }] }] },
+    html: 'Bread classes and recipes since 2019.',
+  },
+  'newsletter-signup': {
+    attrs: { heading: 'Get the weekly loaf', text: 'One recipe and one technique, every Friday.', note: 'No spam. Unsubscribe any time.' },
+    events: ['subscribe'],
+  },
+  'logo-cloud': {
+    attrs: { heading: 'Trusted by bakeries in 40 cities' },
+    props: { items: [{ name: 'Northwind' }, { name: 'Rise & Crumb' }, { name: 'Globex' }, { name: 'Initech' }, { name: 'Umbrella' }] },
   },
 };

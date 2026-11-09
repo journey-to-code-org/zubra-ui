@@ -50,7 +50,10 @@ export async function start({ stacks, stackKey, looks = [] }) {
   const userTheme = document.querySelector('#user-theme');
   // A look: one of the scoped themes (data-theme on <html>), with its fonts, corners and motion.
   const look = document.querySelector('#look');
-  look.options = looks;
+  // A theme made in the theme studio joins the list, as "Yours".
+  const custom = store.get('zubra-ui:custom-css');
+  look.options = custom ? [...looks, { value: 'custom', label: 'Yours' }] : looks;
+  if (custom && !document.querySelector('#custom-look')) document.head.append(Object.assign(document.createElement('style'), { id: 'custom-look', textContent: custom }));
   look.value = html.dataset.theme ?? 'zinc';
   look.addEventListener('valuechange', (event) => {
     if (event.detail === 'zinc') delete html.dataset.theme;
@@ -209,7 +212,12 @@ export function wire(name, { props, events, opener, trigger }) {
       log.replaceChildren(`${type}: `, Object.assign(document.createElement('output'), { textContent: show(event.detail) }));
     });
   }
-  if (opener) stage.querySelector('[data-open]').addEventListener('click', () => { element.open = true; });
+  if (opener) {
+    const button = stage.querySelector('[data-open]');
+    // Shortcuts written for Windows and Linux read as the Mac's on a Mac.
+    if (/Mac|iPhone|iPad/.test(navigator.userAgentData?.platform ?? navigator.platform)) button.textContent = button.textContent.replace('Ctrl K', '⌘K');
+    button.addEventListener('click', () => { element.open = true; });
+  }
   // A component driven by a document event (toast-region): the button dispatches it.
   if (trigger) stage.querySelector('[data-trigger]').addEventListener('click', () => document.dispatchEvent(new CustomEvent(trigger.event, { detail: trigger.detail })));
 }

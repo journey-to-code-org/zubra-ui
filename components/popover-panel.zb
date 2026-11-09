@@ -1,0 +1,53 @@
+<!--
+  A button that opens a small panel beside it: filters, a share menu, a colour picker, a few
+  settings. On the native `popover`: a click outside or Escape closes it and focus returns to the
+  button. It's placed below the button by CSS anchor positioning (flipping above when there's no
+  room), or by script where that isn't supported. `align` is start or end. `open` is two-way.
+  @slot - The panel's content.
+-->
+<script>
+  import { effect, id, onMount } from '@zubra/runtime'
+
+  const panelId = id()
+  const anchored = typeof CSS !== "undefined" && CSS.supports("position-area: bottom")
+  let button = null
+  let panel = null
+
+  // Without anchor positioning: below the button, or above it if there's no room.
+  function place() {
+    if (anchored || !panel || !button) return
+    const trigger = button.getBoundingClientRect()
+    const own = panel.getBoundingClientRect()
+    const below = trigger.bottom + 6 + own.height <= innerHeight
+    panel.style.top = `${below ? trigger.bottom + 6 : Math.max(4, trigger.top - own.height - 6)}px`
+    panel.style.left = `${Math.min(Math.max(4, align === "end" ? trigger.right - own.width : trigger.left), innerWidth - own.width - 4)}px`
+  }
+  function toggled(event) {
+    open = event.newState === "open"
+    if (open) place()
+  }
+  onMount(() => button.style.setProperty("anchor-name", `--${panelId}`))
+  // Follow `open` set from outside.
+  effect(() => {
+    if (!panel?.showPopover) return
+    const showing = panel.matches(":popover-open")
+    if (open && !showing) panel.showPopover()
+    else if (!open && showing) panel.hidePopover()
+  })
+</script>
+<style>
+  :host { display: inline-block; }
+  .popover-trigger { display: inline-flex; align-items: center; gap: 0.45rem; height: 2.5rem; padding: 0 0.9rem; border: 1px solid var(--border, #e4e4e7); border-radius: calc(var(--radius, 0.625rem) * 0.8); background: var(--background, #fff); color: var(--foreground, #18181b); font: inherit; font-size: 0.925rem; font-weight: 600; cursor: pointer; }
+  .popover-trigger::after { content: ""; width: 0.4rem; height: 0.4rem; border: solid currentColor; border-width: 0 1.5px 1.5px 0; transform: translateY(-2px) rotate(45deg); }
+  .popover-trigger:hover { background: var(--accent, #f4f4f5); }
+  .popover-trigger:focus-visible { outline: 2px solid var(--ring, #a1a1aa); outline-offset: 2px; }
+  .popover-panel { position: fixed; inset: auto; margin: 0; min-width: 14rem; max-width: min(22rem, calc(100vw - 1rem)); padding: 0.9rem 1rem; border: 1px solid var(--border, #e4e4e7); border-radius: var(--radius, 0.625rem); background: var(--popover, #fff); color: var(--popover-foreground, #18181b); box-shadow: 0 10px 30px #0000001f; }
+  @supports (position-area: bottom) {
+    .popover-panel { position-area: bottom span-right; position-try-fallbacks: flip-block, flip-inline; margin-top: 6px; }
+    .popover-end { position-area: bottom span-left; }
+  }
+</style>
+<popover-panel open:model={false} label="Options" align="start">
+  <button type="button" class="popover-trigger" ref={button} popovertarget={panelId} aria-expanded={open ? "true" : "false"}>{label}</button>
+  <div popover="auto" id={panelId} ref={panel} class="popover-panel" class:popover-end={align === "end"} role="group" aria-label={label} style:position-anchor={`--${panelId}`} ontoggle={toggled}><zb-slot></zb-slot></div>
+</popover-panel>

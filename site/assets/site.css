@@ -49,7 +49,8 @@ html.dark { color-scheme: dark; }
 body { margin: 0; background: var(--background); color: var(--foreground); font: 400 1rem/1.6 var(--font-body, var(--font)); -webkit-font-smoothing: antialiased; }
 a { color: inherit; text-underline-offset: 0.18em; text-decoration-color: color-mix(in oklch, currentColor 40%, transparent); }
 a:hover { text-decoration-color: currentColor; }
-:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+/* In the base layer, so a component that draws its own focus (in the components layer) wins. */
+@layer base { :focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; } }
 code { font-family: var(--mono); font-size: 0.86em; }
 :not(pre) > code { padding: 0.1em 0.35em; border-radius: calc(var(--radius) - 6px); background: var(--muted); color: var(--foreground); }
 .skip { position: absolute; left: -999px; top: 0.5rem; z-index: 20; padding: 0.5rem 0.75rem; background: var(--background); color: var(--foreground); }
@@ -203,7 +204,7 @@ masonry-grid article p { margin: 0; color: var(--muted-foreground); font-size: 0
 .demo-box { padding: 0.75rem 0.9rem; border: 1px dashed color-mix(in oklab, var(--primary) 45%, var(--border)); border-radius: calc(var(--radius) - 2px); background: color-mix(in oklab, var(--primary) 6%, var(--card)); color: var(--foreground); font-size: 0.9rem; }
 .demo-chip { padding: 0.3rem 0.75rem; border-radius: 999px; background: var(--secondary); color: var(--secondary-foreground); font-size: 0.875rem; font-weight: 500; }
 .stage :is(stack-layout, cluster-layout, auto-grid, sidebar-layout, switcher-layout, reel-layout, backdrop-pattern) { inline-size: 100%; }
-.stage :is(signin-block, settings-block, pricing-block, dashboard-shell) { inline-size: 100%; }
+.stage :is(signin-block, settings-block, pricing-block, dashboard-shell, nav-bar, hero-section, feature-grid, site-footer, faq-list, bar-chart, progress-bar, logo-cloud, newsletter-signup, data-table, testimonial-card, empty-state, file-drop) { inline-size: 100%; }
 .demo-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr)); gap: 0.75rem; }
 .demo-stats strong { display: block; font-size: 1.5rem; }
 
@@ -266,3 +267,97 @@ html[data-pm=npm] .pm-only[data-pm=npm], html[data-pm=pnpm] .pm-only[data-pm=pnp
 
 .demo-hero { padding: 3rem 1.5rem; text-align: center; }
 .demo-hero h2 { margin: 0; }
+
+/* ---- the theme studio */
+.studio-layout { display: grid; grid-template-columns: minmax(16rem, 22rem) minmax(0, 1fr); gap: 1.5rem; align-items: start; margin-top: 1rem; }
+@media (max-width: 64rem) { .studio-layout { grid-template-columns: minmax(0, 1fr); } }
+.studio-controls { display: grid; gap: 1rem; position: sticky; top: calc(var(--bar-height) + 1rem); max-height: calc(100dvh - var(--bar-height) - 2rem); overflow: auto; padding-right: 0.25rem; }
+/* A scrolling column says there's more below: a fade over the bottom edge, with nothing under it at the end. */
+@media (min-width: 64.01rem) { .studio-controls::after { content: ""; position: sticky; bottom: 0; display: block; height: 2.5rem; margin-top: -1.5rem; background: linear-gradient(to bottom, transparent, var(--background)); pointer-events: none; } }
+.studio-css[aria-invalid=true] { border-color: var(--destructive); }
+.studio-warning { margin: 0.5rem 0; color: var(--destructive); font-weight: 600; }
+.studio-warning:empty { display: none; }
+@media (max-width: 40rem) { #studio-contrast { min-width: 0; } #studio-contrast td { white-space: normal; } }
+@media (max-width: 64rem) { .studio-controls { position: static; max-height: none; } }
+.studio-controls fieldset { display: grid; gap: 0.85rem; margin: 0; padding: 1rem; border: 1px solid var(--border); border-radius: var(--radius); }
+.studio-controls legend { padding: 0 0.35rem; font-weight: 700; }
+.studio-group { display: grid; gap: 0.35rem; }
+.studio-group-name { margin: 0.4rem 0 0; font-size: 0.8rem; font-weight: 700; color: var(--muted-foreground); }
+.studio-colour { display: grid; grid-template-columns: 2.25rem minmax(0, 1fr) minmax(0, 11rem); align-items: center; gap: 0.5rem; font-size: 0.875rem; }
+.studio-colour input[type=color] { width: 2.25rem; height: 1.9rem; padding: 0.1rem; border: 1px solid var(--input); border-radius: calc(var(--radius) * 0.5); background: var(--background); cursor: pointer; }
+.studio-css { min-width: 0; padding: 0.3rem 0.45rem; border: 1px solid var(--input); border-radius: calc(var(--radius) * 0.5); background: var(--background); color: var(--foreground); font: 0.75rem/1.2 var(--mono); }
+.studio-changed > span { font-weight: 700; }
+.studio-changed > span::after { content: "\00a0·"; color: var(--primary); }
+.studio-previews { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr)); gap: 1rem; }
+.studio-look { margin: 0 !important; }
+.studio-tag { margin: 0 0 0.75rem; font-size: 0.8rem; font-weight: 700; color: var(--muted-foreground); }
+.studio-sample { display: grid; gap: 1rem; }
+.studio-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr)); gap: 0.75rem; align-items: start; }
+.studio-buttons { display: flex; flex-wrap: wrap; gap: 0.4rem; grid-column: 1 / -1; }
+.studio-swatch { display: inline-grid; place-items: center; width: 1.9rem; height: 1.5rem; border-radius: calc(var(--radius) * 0.4); font-weight: 700; font-size: 0.8rem; box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--foreground) 12%, transparent); }
+.studio-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+#studio-contrast td { white-space: nowrap; }
+main > .studio, main > .composer { max-width: 96rem; }
+#studio-contrast { min-width: 34rem; }
+#studio-contrast th[scope=row] { white-space: normal; min-width: 9rem; }
+
+/* ---- the page composer */
+.composer-bar { display: flex; flex-wrap: wrap; align-items: end; gap: 0.75rem 1.25rem; margin: 0 0 1rem; }
+.composer-bar select-field { width: 14rem; }
+.composer-layout { display: grid; grid-template-columns: 14rem minmax(0, 1fr) 18rem; gap: 1rem; align-items: start; }
+@media (max-width: 72rem) { .composer-layout { grid-template-columns: 12rem minmax(0, 1fr); } }
+@media (max-width: 48rem) { .composer-layout { grid-template-columns: minmax(0, 1fr); } }
+.composer-library, .composer-inspector { position: sticky; top: calc(var(--bar-height) + 1rem); max-height: calc(100dvh - var(--bar-height) - 2rem); overflow: auto; padding: 0.9rem; border: 1px solid var(--border); border-radius: var(--radius); }
+@media (max-width: 72rem) {
+  .composer-library { position: static; max-height: 28rem; }
+  /* Narrower, the settings are a sheet from the bottom while a block is being changed. */
+  .composer-inspector { display: none; }
+  .composer[data-editing] .composer-inspector { display: grid; position: fixed; inset: auto 0 0 0; z-index: 40; max-height: 60dvh; border-radius: var(--radius) var(--radius) 0 0; background: var(--background); box-shadow: 0 -8px 30px color-mix(in oklab, var(--foreground) 18%, transparent); }
+  .composer[data-editing] { padding-bottom: 60dvh; }
+}
+@media (min-width: 72.01rem) { .composer-done { display: none; } }
+.composer-inspector-head { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+.composer-inspector-head h2 { margin: 0; }
+.composer-status { margin: 0 0 0 auto; align-self: center; }
+.composer-problem { margin: 0; color: var(--destructive); font-size: 0.85rem; }
+.composer-problem:empty { display: none; }
+.composer-field [aria-invalid=true] { border-color: var(--destructive); }
+/* The composer needs the room: its own lists replace the component list at the side. */
+.layout:has(> main > .composer) { grid-template-columns: minmax(0, 1fr); }
+.layout:has(> main > .composer) > .site-nav { display: none; }
+.composer-library h2, .composer-inspector h2 { margin: 0 0 0.6rem; font-size: 1rem; }
+.composer-library h3 { margin: 0.9rem 0 0.3rem; font-size: 0.775rem; color: var(--muted-foreground); }
+.composer-library ul { margin: 0; padding: 0; list-style: none; }
+#compose-search { width: 100%; box-sizing: border-box; padding: 0.4rem 0.6rem; border: 1px solid var(--input); border-radius: calc(var(--radius) - 2px); background: var(--background); color: var(--foreground); font: inherit; font-size: 0.875rem; }
+.composer-add { display: flex; gap: 0.4rem; width: 100%; padding: 0.3rem 0.45rem; border: 0; border-radius: calc(var(--radius) * 0.5); background: none; color: var(--foreground); font: inherit; font-size: 0.85rem; text-align: left; cursor: pointer; }
+.composer-add span { color: var(--muted-foreground); font-weight: 700; }
+.composer-add:hover { background: var(--accent); }
+.composer-add:focus-visible, .composer-item:focus-visible, .composer-tools button:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.composer-frame { margin: 0 auto; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; transition: max-width var(--duration-slow) var(--ease-out); }
+.composer-canvas { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 1rem; min-height: 24rem; padding: 1rem; background: var(--background); color: var(--foreground); container-type: inline-size; }
+.composer-item { position: relative; grid-column: span 6; min-width: 0; padding-top: 1.9rem; border-radius: calc(var(--radius) * 0.6); outline: 1px dashed transparent; outline-offset: 4px; }
+.composer-half { grid-column: span 3; }
+.composer-third { grid-column: span 2; }
+@container (max-width: 34rem) { .composer-half, .composer-third { grid-column: span 6; } }
+.composer-item:hover { outline-color: color-mix(in oklab, var(--foreground) 25%, transparent); }
+.composer-selected, .composer-selected:hover { outline: 2px solid var(--primary); }
+.composer-tools { position: absolute; top: 0; left: 0; right: 0; display: flex; align-items: center; gap: 0.2rem; height: 1.5rem; font-size: 0.75rem; }
+.composer-tools button { opacity: 0.6; }
+.composer-item:hover .composer-tools button, .composer-selected .composer-tools button, .composer-item:focus-within .composer-tools button { opacity: 1; }
+.composer-name { margin-right: auto; font-family: var(--mono); color: color-mix(in oklab, var(--muted-foreground) 70%, var(--foreground)); }
+.composer-tools button { width: 1.75rem; height: 1.5rem; padding: 0; border: 1px solid var(--border); border-radius: calc(var(--radius) * 0.4); background: var(--background); color: var(--foreground); font-size: 0.8rem; line-height: 1; cursor: pointer; }
+.composer-tools button:disabled { opacity: 0.35; cursor: default; }
+.composer-empty { grid-column: 1 / -1; display: grid; place-content: center; text-align: center; color: var(--muted-foreground); }
+.composer-inspector { display: grid; gap: 0.7rem; }
+#compose-inspector { display: grid; gap: 0.75rem; }
+.composer-picked { display: flex; justify-content: space-between; margin: 0; }
+.composer-field { display: grid; gap: 0.3rem; font-size: 0.85rem; font-weight: 600; }
+.composer-field small { font-weight: 400; color: var(--muted-foreground); }
+.composer-field input, .composer-field textarea, .composer-field select { width: 100%; box-sizing: border-box; padding: 0.4rem 0.55rem; border: 1px solid var(--input); border-radius: calc(var(--radius) - 2px); background: var(--background); color: var(--foreground); font: 400 0.85rem/1.4 var(--font); }
+.composer-field textarea { font-family: var(--mono); font-size: 0.775rem; resize: vertical; }
+.composer-check { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; font-weight: 600; }
+.composer-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+#compose-code { white-space: pre; }
+.composer .code pre { max-height: 26rem; overflow: auto; }
+@media (pointer: coarse) { .composer-item { padding-top: 3.1rem; } .composer-tools { height: 2.75rem; } .composer-tools button { width: 2.75rem; height: 2.75rem; } }
+@media (prefers-reduced-motion: reduce) { .composer-frame { transition: none; } }

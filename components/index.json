@@ -463,6 +463,204 @@
         "reel-layout.zb"
       ],
       "dependencies": []
+    },
+    {
+      "name": "breadcrumb-trail",
+      "category": "navigation",
+      "description": "Where this page sits: a trail of links from the top, ending at the current page (marked `aria-current=\"page\"`, not a link). `items` is `[{ label, href }]`; the last is the current page.",
+      "files": [
+        "breadcrumb-trail.zb"
+      ],
+      "dependencies": []
+    },
+    {
+      "name": "page-nav",
+      "category": "navigation",
+      "description": "Pagination: previous and next, the first and last page, and the pages around the current one, with gaps shown as \"…\". The current page is marked `aria-current=\"page\"`. `page` is two-way.",
+      "files": [
+        "page-nav.zb"
+      ],
+      "dependencies": []
+    },
+    {
+      "name": "side-sheet",
+      "category": "navigation",
+      "description": "A panel that slides in from the edge of the screen (`side`: right, left or bottom), on the native <dialog>: the page behind is inert, focus moves in and back, and Escape, the close button or a click outside closes it. For filters, a cart, settings, or a menu on a phone. `open` is two-way.",
+      "files": [
+        "side-sheet.zb"
+      ],
+      "dependencies": []
+    },
+    {
+      "name": "popover-panel",
+      "category": "navigation",
+      "description": "A button that opens a small panel beside it: filters, a share menu, a colour picker, a few settings. On the native `popover`: a click outside or Escape closes it and focus returns to the button. It's placed below the button by CSS anchor positioning (flipping above when there's no room), or by script where that isn't supported. `align` is start or end. `open` is two-way.",
+      "files": [
+        "popover-panel.zb"
+      ],
+      "dependencies": []
+    },
+    {
+      "name": "command-palette",
+      "category": "navigation",
+      "description": "A search box for actions and pages, opened with ⌘K or Ctrl+K (`hotkey`). Type to filter, arrow keys to move, Enter to run, Escape to close. `items` is `[{ id, label, group?, hint?, href? }]`; an item with `href` is followed. It's a modal <dialog> with a combobox and a listbox, so screen readers hear the active item as it moves. `open` is two-way.",
+      "files": [
+        "command-palette.zb"
+      ],
+      "dependencies": []
+    },
+    {
+      "name": "nav-bar",
+      "category": "navigation",
+      "description": "The bar across the top of a site: the brand, the main links, and actions such as Sign in. The current page's link is marked `aria-current=\"page\"`. When the bar is too narrow for the links (its own width, not the screen's), they fold behind a Menu button. `links` is `[{ label, href, current? }]`.",
+      "files": [
+        "nav-bar.zb"
+      ],
+      "dependencies": []
+    },
+    {
+      "name": "data-table",
+      "category": "data",
+      "description": "A table of records you can sort, filter and select from. Click a column's heading to sort by it (again to reverse; announced with `aria-sort`), type in the box to filter every column, and with `selectable` tick rows (the heading's box selects every shown row). `columns` is `[{ key, label, sortable?, align?, format? }]` (`format`: \"number\", \"currency\", \"date\"); `rows` is an array of objects with an `id`. `selected` (an array of ids) is two-way. Long tables page by `pageSize`.",
+      "files": [
+        "data-table.zb"
+      ],
+      "dependencies": []
+    },
+    {
+      "name": "progress-bar",
+      "category": "data",
+      "description": "How far along something is: an upload, a setup checklist, a quota. A labelled progressbar with its value as a percentage, or (without `value`, or with `indeterminate`) a moving bar that says something is happening (still, for visitors who asked for less motion).",
+      "files": [
+        "progress-bar.zb"
+      ],
+      "dependencies": []
+    },
+    {
+      "name": "empty-state",
+      "category": "data",
+      "description": "What a list or page shows when there's nothing in it yet: a heading that says what's missing, a line on what it's for, and the action that fills it. Turns an empty screen into a next step.",
+      "files": [
+        "empty-state.zb"
+      ],
+      "dependencies": []
+    },
+    {
+      "name": "stat-card",
+      "category": "data",
+      "description": "One number that matters, with what it is and how it changed: revenue this month, active users, open tickets. `change` is the change as a percentage (positive or negative), said in words for screen readers (\"up 12%\"); `good` says which direction is good (\"up\" or \"down\"), so a falling error rate shows as good news.",
+      "files": [
+        "stat-card.zb"
+      ],
+      "dependencies": []
+    },
+    {
+      "name": "bar-chart",
+      "category": "data",
+      "description": "Values compared side by side as horizontal bars, longest-to-shortest if `sorted`. Each bar has its label and value in text, and the chart is a list screen readers read in order, so nothing depends on seeing the bars. `items` is `[{ label, value }]`; `unit` goes after each value (\"%\", \" visits\"). `max` sets the full length (defaults to the largest value).",
+      "files": [
+        "bar-chart.zb"
+      ],
+      "dependencies": []
+    },
+    {
+      "name": "range-slider",
+      "category": "input",
+      "description": "Pick a number by dragging, on a native `<input type=\"range\">`: arrow keys, Page Up and Down, Home and End work as the browser's own, and it submits under `name`. The value shows beside the label, with `unit` after it. `value` is two-way.",
+      "files": [
+        "range-slider.zb"
+      ],
+      "dependencies": []
+    },
+    {
+      "name": "file-drop",
+      "category": "input",
+      "description": "A place to drop files, or click to choose them, on a native `<input type=\"file\">`, so the chosen files submit with the form under `name` and the keyboard opens the picker as usual. Files are listed with their size and can be removed. `accept` limits the types (\".pdf,image/*\"), `multiple` allows several, and `max-size` (in MB) turns away files that are too big, saying so.",
+      "files": [
+        "file-drop.zb"
+      ],
+      "dependencies": []
+    },
+    {
+      "name": "code-input",
+      "category": "input",
+      "description": "A one-time code (from an email or text message), shown as boxes but typed into one native field: phones offer the code from the message (`autocomplete=\"one-time-code\"`), pasting the whole code works, and Backspace goes back. `length` is the number of characters; `numeric` keeps it to digits. `value` is two-way.",
+      "files": [
+        "code-input.zb"
+      ],
+      "dependencies": []
+    },
+    {
+      "name": "date-field",
+      "category": "input",
+      "description": "A labelled date on the native `<input type=\"date\">`: the platform's own calendar on every device, typed entry in the visitor's own date format, `min` and `max`, form submission under `name` and the browser's validation. The value is \"YYYY-MM-DD\" (or \"\" when empty). `value` is two-way.",
+      "files": [
+        "date-field.zb"
+      ],
+      "dependencies": []
+    },
+    {
+      "name": "hero-section",
+      "category": "section",
+      "description": "The top of a landing page: a short eyebrow line, the headline, a sentence under it, the main actions, and a picture or demo beside (or under) it. Side by side when there's room, stacked when there isn't (by its own width). `align` is start or center.",
+      "files": [
+        "hero-section.zb"
+      ],
+      "dependencies": []
+    },
+    {
+      "name": "feature-grid",
+      "category": "section",
+      "description": "What a product does, as a grid of short features: an icon or emoji, a title and a line each. As many columns as fit (`min` wide each). `items` is `[{ title, text, icon? }]`.",
+      "files": [
+        "feature-grid.zb"
+      ],
+      "dependencies": []
+    },
+    {
+      "name": "testimonial-card",
+      "category": "section",
+      "description": "A quote from a customer, with who said it: their name, their role or company (`byline`), and their picture (or initials). Marked up as a <figure> with a <blockquote> and a <figcaption>.",
+      "files": [
+        "testimonial-card.zb"
+      ],
+      "dependencies": []
+    },
+    {
+      "name": "faq-list",
+      "category": "section",
+      "description": "Frequently asked questions, each opening to its answer, on native <details>: the browser does the keyboard, find-in-page opens the right answer, and with `single` only one is open at a time. `items` is `[{ question, answer }]`.",
+      "files": [
+        "faq-list.zb"
+      ],
+      "dependencies": []
+    },
+    {
+      "name": "site-footer",
+      "category": "section",
+      "description": "The bottom of a site: the brand and a line about it, columns of links, and the small print (copyright, legal links). Columns wrap as space runs out. `columns` is `[{ heading, links: [{ label, href }] }]`.",
+      "files": [
+        "site-footer.zb"
+      ],
+      "dependencies": []
+    },
+    {
+      "name": "newsletter-signup",
+      "category": "section",
+      "description": "An email signup: a heading, a line on what people get, one email field and a button. It checks the address with the browser's own validation, fires `subscribe` with it, and says thank you in place (announced). Without JavaScript it's a plain form that posts to `action`.",
+      "files": [
+        "newsletter-signup.zb"
+      ],
+      "dependencies": []
+    },
+    {
+      "name": "logo-cloud",
+      "category": "section",
+      "description": "\"Trusted by\": a row of logos, muted so they don't shout, coming to full colour on hover. Each logo's alt text is its name; with `href` it's a link. `items` is `[{ name, src, href? }]`.",
+      "files": [
+        "logo-cloud.zb"
+      ],
+      "dependencies": []
     }
   ]
 }

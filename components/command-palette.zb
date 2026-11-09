@@ -1,0 +1,94 @@
+<!--
+  A search box for actions and pages, opened with ⌘K or Ctrl+K (`hotkey`). Type to filter,
+  arrow keys to move, Enter to run, Escape to close. `items` is `[{ id, label, group?, hint?, href? }]`;
+  an item with `href` is followed. It's a modal <dialog> with a combobox and a listbox, so screen
+  readers hear the active item as it moves. `open` is two-way.
+  @fires select - An item was chosen; `detail` is its id.
+  @fires openchange - It opened or closed; `detail` is the new state.
+-->
+<script>
+  import { effect, emit, id } from '@zubra/runtime'
+
+  const listId = id()
+  const optionId = id()
+  let dialog = null
+  let input = null
+  let query = ""
+  let active = 0
+
+  const matches = items.filter((item) => {
+    const words = query.toLowerCase().split(/\s+/).filter(Boolean)
+    const text = `${item.label} ${item.group ?? ""} ${item.hint ?? ""}`.toLowerCase()
+    return words.every((word) => text.includes(word))
+  })
+  // Rows in order, with a group heading where the group changes.
+  const rows = matches.map((item, index) => ({ item, index, heading: index === 0 || matches[index - 1].group !== item.group ? item.group ?? "" : "" }))
+
+  effect(() => {
+    if (!dialog) return
+    if (open && !dialog.open) { query = ""; active = 0; dialog.showModal(); input?.focus() }
+    else if (!open && dialog.open) dialog.close()
+  })
+  function key(event) {
+    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+      event.preventDefault()
+      if (!matches.length) return
+      active = (active + (event.key === "ArrowDown" ? 1 : -1) + matches.length) % matches.length
+      dialog.querySelector(`#${optionId}-${active}`)?.scrollIntoView({ block: "nearest" })
+    } else if (event.key === "Enter") {
+      event.preventDefault()
+      if (matches[active]) run(matches[active])
+    }
+  }
+  function run(item) {
+    open = false
+    emit('select', item.id)
+    if (item.href) location.href = item.href
+  }
+  function shortcut(event) {
+    if (hotkey && (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === hotkey.toLowerCase()) {
+      event.preventDefault()
+      open = !open
+    }
+  }
+</script>
+<style>
+  dialog { width: min(36rem, calc(100vw - 2rem)); margin: 12vh auto auto; padding: 0; border: 1px solid var(--border, #e4e4e7); border-radius: calc(var(--radius, 0.625rem) * 1.4); background: var(--popover, #fff); color: var(--popover-foreground, #18181b); box-shadow: 0 24px 64px #0d122040; }
+  dialog::backdrop { background: #0d122059; }
+  .palette-search { display: flex; align-items: center; gap: 0.6rem; padding: 0 1rem; border-bottom: 1px solid var(--border, #e4e4e7); }
+  .palette-search svg { flex: none; color: var(--muted-foreground, #71717a); }
+  /* The focus ring is the search row's bottom edge: an outline on the field would be cut off by the dialog. */
+  .palette-search:focus-within { box-shadow: inset 0 -2px 0 var(--ring, #a1a1aa); }
+  .palette-search input:focus-visible { outline: none; }
+  input { flex: 1; min-width: 0; height: 3.25rem; border: 0; outline: 0; background: none; color: inherit; font: inherit; font-size: 1rem; }
+  input::placeholder { color: var(--muted-foreground, #71717a); }
+  ul { max-height: min(22rem, 55vh); overflow: auto; margin: 0; padding: 0.4rem; list-style: none; }
+  .palette-group { padding: 0.6rem 0.6rem 0.25rem; font-size: 0.775rem; font-weight: 600; color: color-mix(in oklab, var(--muted-foreground, #71717a) 75%, var(--foreground, #18181b)); }
+  .palette-option { display: flex; align-items: center; gap: 0.75rem; padding: 0.55rem 0.6rem; border-radius: calc(var(--radius, 0.625rem) * 0.7); cursor: pointer; }
+  .palette-option[aria-selected=true] { background: var(--accent, #f4f4f5); color: var(--accent-foreground, #18181b); }
+  .palette-label { flex: 1; }
+  kbd, .palette-hint { font: inherit; font-size: 0.8rem; color: color-mix(in oklab, var(--muted-foreground, #71717a) 75%, var(--foreground, #18181b)); }
+  .palette-empty { padding: 1.5rem; text-align: center; color: var(--muted-foreground, #71717a); }
+  footer { display: flex; gap: 1rem; padding: 0.55rem 1rem; border-top: 1px solid var(--border, #e4e4e7); font-size: 0.775rem; color: color-mix(in oklab, var(--muted-foreground, #71717a) 75%, var(--foreground, #18181b)); }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: 0s !important; animation-duration: 0s !important; animation-iteration-count: 1 !important; } }
+</style>
+<command-palette open:model={false} items={[]} placeholder="Search actions and pages…" hotkey="k" label="Command palette">
+  <zb-document onkeydown={shortcut}></zb-document>
+  <dialog ref={dialog} aria-label={label} onclose={() => (open = false)} onclick.self={() => (open = false)}>
+    <div class="palette-search">
+      <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+      <input ref={input} type="text" role="combobox" aria-expanded="true" aria-controls={listId} aria-autocomplete="list" aria-activedescendant={matches.length ? `${optionId}-${active}` : null} placeholder={placeholder} autocomplete="off" spellcheck="false" value={query} oninput={(event) => { query = event.target.value; active = 0 }} onkeydown={key}>
+    </div>
+    <ul id={listId} role="listbox" aria-label={label}>
+      <zb-each items={rows} as="row" key={row.item.id}>
+        <li zb-if={row.heading} class="palette-group" role="presentation">{row.heading}</li>
+        <li class="palette-option" role="option" id={`${optionId}-${row.index}`} aria-selected={row.index === active ? "true" : "false"} onpointermove={() => (active = row.index)} onclick={() => run(row.item)}>
+          <span class="palette-label">{row.item.label}</span>
+          <span zb-if={row.item.hint} class="palette-hint">{row.item.hint}</span>
+        </li>
+      </zb-each>
+      <li zb-if={!matches.length} class="palette-empty" role="presentation">Nothing matches "{query}".</li>
+    </ul>
+    <footer aria-hidden="true"><span><kbd>↑</kbd> <kbd>↓</kbd> to move</span><span><kbd>Enter</kbd> to run</span><span><kbd>Esc</kbd> to close</span></footer>
+  </dialog>
+</command-palette>

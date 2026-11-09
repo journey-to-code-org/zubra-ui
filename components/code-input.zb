@@ -1,0 +1,41 @@
+<!--
+  A one-time code (from an email or text message), shown as boxes but typed into one native
+  field: phones offer the code from the message (`autocomplete="one-time-code"`), pasting the
+  whole code works, and Backspace goes back. `length` is the number of characters; `numeric`
+  keeps it to digits. `value` is two-way.
+  @fires valuechange - The code changed; `detail` is the text so far.
+  @fires complete - Every box is filled; `detail` is the code.
+-->
+<script>
+  import { emit, id } from '@zubra/runtime'
+
+  const inputId = id()
+  let focused = false
+  const boxes = Array.from({ length: length }, (_, i) => ({ i, char: value[i] ?? "", current: focused && (i === Math.min(value.length, length - 1)) }))
+
+  function input(event) {
+    const clean = event.target.value.replace(numeric ? /\D/g : /\s/g, "").slice(0, length)
+    event.target.value = clean
+    if (clean === value) return
+    value = clean
+    if (clean.length === length) emit('complete', clean)
+  }
+</script>
+<style>
+  :host { display: block; }
+  label { display: block; margin-bottom: 0.5rem; font-weight: 600; font-size: 0.925rem; }
+  .code-row { position: relative; display: inline-flex; gap: 0.4rem; max-width: 100%; }
+  .code-box { display: grid; place-items: center; width: clamp(1.9rem, 11vw, 2.6rem); height: 3rem; border: 1px solid var(--input, #d4d4d8); border-radius: calc(var(--radius, 0.625rem) * 0.8); background: var(--background, #fff); font-size: 1.35rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .code-current { border-color: var(--ring, #a1a1aa); box-shadow: 0 0 0 3px color-mix(in oklab, var(--ring, #a1a1aa) 40%, transparent); }
+  /* The real field sits over the boxes, transparent, so taps, paste and the keyboard reach it. */
+  input { position: absolute; inset: 0; width: 100%; height: 100%; padding: 0; border: 0; opacity: 0; font-size: 16px; cursor: text; }
+</style>
+<code-input value:model="" length={6} numeric={true} label="Verification code" name="">
+  <label for={inputId}>{label}</label>
+  <div class="code-row">
+    <zb-each items={boxes} as="box" key={box.i}>
+      <span class="code-box" class:code-current={box.current} aria-hidden="true">{box.char}</span>
+    </zb-each>
+    <input id={inputId} name={name || null} value={value} maxlength={length} inputmode={numeric ? "numeric" : "text"} pattern={numeric ? `\\d{${length}}` : null} autocomplete="one-time-code" spellcheck="false" oninput={input} onfocus={() => (focused = true)} onblur={() => (focused = false)}>
+  </div>
+</code-input>
