@@ -237,7 +237,8 @@ test('image-gallery: the lightbox opens on a photo, steps with the arrows, and c
   await page.keyboard.press('ArrowLeft');
   assert.equal(await count.textContent(), '8 of 8', 'it wraps around');
   await page.keyboard.press('Escape');
-  assert.equal(await prop(element, 'index'), -1);
+  // The dialog's close event comes in a later task: wait for it, not a race.
+  await element.evaluate((el) => new Promise((resolve) => { const check = () => (el.index === -1 ? resolve() : setTimeout(check, 10)); check(); }));
   assert.equal(await element.locator('.lightbox').evaluate((dialog) => dialog.open), false);
   assert.equal(await thumb.evaluate((button) => button === document.activeElement), true, 'focus is back on the photo it opened from');
   await element.evaluate((el) => { el.index = 4; });

@@ -14,7 +14,7 @@
     "build": "node scripts/build.mjs && node scripts/site.mjs",
     "serve": "node scripts/serve.mjs",
     "test": "npm run build && node --test \"test/*.test.js\" \"imager/test/*.test.js\"",
-    "test:vanilla": "node scripts/vanilla.mjs toggle-switch quantity-stepper tag-input && node scripts/run-vanilla.mjs"
+    "test:vanilla": "node scripts/vanilla.mjs accordion-panel auto-grid chat-message choice-cards cluster-layout color-swatches combo-box dashboard-shell date-range donut-chart dropdown-menu flip-card image-gallery kanban-column line-chart masonry-grid message-composer modal-dialog money-input pricing-block progress-ring quantity-stepper segmented-control settings-block sidebar-layout signin-block spark-line stack-layout star-rating step-indicator streak-grid tab-list tag-input toggle-switch tool-tip && node scripts/run-vanilla.mjs"
   },
   "devDependencies": {
     "@fontsource-variable/instrument-sans": "5.2.8",

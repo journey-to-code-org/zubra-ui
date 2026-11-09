@@ -105,6 +105,8 @@ bootstrapApplication(App).catch((error) => console.error(error));
   }
   // The components as `npx shadcn add` writes them (test/shadcn.test.js covers the CLI itself).
   cpSync(join(root, 'dist/modules'), join(dir, 'src/components/zubra'), { recursive: true });
+  // ZUBRA_UI_EMIT=vanilla: the L5 spike's plain elements instead, where there's one.
+  if (process.env.ZUBRA_UI_EMIT === 'vanilla') cpSync(join(root, 'dist/vanilla'), join(dir, 'src/components/zubra'), { recursive: true, filter: (path) => !path.endsWith('.json') });
   cpSync(join(root, 'themes/default.css'), join(dir, 'src/components/zubra/theme.css'));
   // The image-gallery snippet reads gallery/gallery.json, as `npx zubra-imager` writes it.
   cpSync(join(root, 'dist/gallery'), join(dir, 'public/gallery'), { recursive: true });
