@@ -33,7 +33,9 @@ const indent = (text, pad) => text.split('\n').map((line) => (line ? pad + line 
 const camel = (name) => name.replace(/-(\w)/g, (_, c) => c.toUpperCase());
 const pascal = (name) => camel(name).replace(/^\w/, (c) => c.toUpperCase());
 const handlerName = (event) => `on${event[0].toUpperCase()}${event.slice(1)}`;
-const importLine = (name) => `import './components/zubra/${name}.js';`;
+// The component, then any other components its demo puts inside it (an action-button in a slot).
+const importLine = (name, demo = {}) => [name, ...new Set([...(demo.html ?? '').matchAll(/<([a-z]+-[a-z-]+)/g)].map(([, tag]) => tag))]
+  .filter((tag, index, all) => all.indexOf(tag) === index).map((tag) => `import './components/zubra/${tag}.js';`).join('\n');
 // A component driven by a document event (toast-region): its demo's button dispatches the event.
 const dispatch = (trigger, pad = '') => `document.dispatchEvent(new CustomEvent('${trigger.event}', { detail: ${js(trigger.detail, pad)} }))`;
 
@@ -53,7 +55,7 @@ function element(name, demo, { bind, on, pad = '' }) {
 
 export function html(name, demo) {
   const props = Object.entries(demo.props ?? {});
-  const lines = [importLine(name)];
+  const lines = [importLine(name, demo)];
   if (props.length || demo.events?.length || demo.opener) {
     lines.push('', `const element = document.querySelector('${name}');`);
     for (const [prop, value] of props) lines.push(`element.${prop} = ${js(value)};`);
@@ -74,7 +76,7 @@ export function react(name, demo) {
     pad: demo.opener || demo.trigger ? '      ' : '    ',
   });
   const values = Object.entries(demo.props ?? {}).filter(([prop]) => !(demo.opener && prop === 'open'));
-  const lines = [importLine(name), demo.opener ? "import { useState } from 'react';" : null, ''].filter((line) => line !== null);
+  const lines = [importLine(name, demo), demo.opener ? "import { useState } from 'react';" : null, ''].filter((line) => line !== null);
   for (const [prop, value] of values) lines.push(`const ${prop} = ${js(value)};`);
   if (values.length) lines.push('');
   lines.push(`export function ${component}() {`);
@@ -92,7 +94,7 @@ export function react(name, demo) {
 }
 
 export function vue(name, demo) {
-  const script = [importLine(name)];
+  const script = [importLine(name, demo)];
   const props = Object.entries(demo.props ?? {});
   if (demo.opener) script.unshift("import { ref } from 'vue';");
   for (const [prop, value] of props) script.push(demo.opener && prop === 'open' ? 'const open = ref(false);' : `const ${prop} = ${js(value)};`);
@@ -109,7 +111,7 @@ export function vue(name, demo) {
 }
 
 export function svelte(name, demo) {
-  const script = [importLine(name)];
+  const script = [importLine(name, demo)];
   for (const [prop, value] of Object.entries(demo.props ?? {})) script.push(demo.opener && prop === 'open' ? 'let open = $state(false);' : `const ${prop} = ${js(value)};`);
   const body = element(name, demo, {
     bind: (prop) => `{${prop}}`,
@@ -136,7 +138,7 @@ export function angular(name, demo) {
   if (demo.trigger) handlers.push(`  show() {\n    ${dispatch(demo.trigger, '    ')};\n  }`);
   return [
     "import { Component, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';",
-    importLine(name),
+    importLine(name, demo),
     '',
     '@Component({',
     `  selector: 'app-${name}-example',`,

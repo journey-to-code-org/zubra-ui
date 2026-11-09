@@ -244,10 +244,16 @@ function preview(name, demo) {
   return `<div class="stage" data-preview="${name}">${opener}<${name}${attributes}>${demo.html ?? ''}</${name}></div>
       <p class="event" data-events="${name}" aria-live="polite">${demo.events?.length ? `Try it: events appear here (${demo.events.map((event) => `<code>${event}</code>`).join(', ')}).` : 'This one has no events: it shows what it\'s given.'}</p>`;
 }
+// Components a demo puts inside this one (an action-button in its actions slot, say) load with it.
+function nestedIn(name, demo) {
+  const html = [demo.html ?? '', demo.variants?.html ?? ''].join(' ');
+  return [...new Set([...html.matchAll(/<([a-z]+-[a-z-]+)/g)].map(([, tag]) => tag))]
+    .filter((tag) => tag !== name && components.some((component) => component.name === tag));
+}
 function previewScript(prefix, name, demo) {
   return `  <script type="module">
     import '${prefix}preview/${name}.js';
-    import { wire } from '${prefix}assets/site.js';
+${nestedIn(name, demo).map((tag) => `    import '${prefix}preview/${tag}.js';\n`).join('')}    import { wire } from '${prefix}assets/site.js';
     wire(${JSON.stringify(name)}, ${JSON.stringify({ props: demo.props ?? {}, events: demo.events ?? [], opener: Boolean(demo.opener), trigger: demo.trigger ?? null })});
   </script>`;
 }
@@ -393,10 +399,11 @@ const studioBody = `      <section class="studio">
               </section>
             </div>
             <h2 id="contrast">Contrast</h2>
-            <p class="hint">Text against what's behind it, for each pair the components use. 4.5:1 is the WCAG AA minimum for body text; 3:1 for large text and controls.</p>
+            <p class="hint">Text against what's behind it, for each pair the components use. 4.5:1 is the WCAG AA minimum for body text. Field borders are better at 3:1 or more, so people can find the fields; lighter is common, so it's a warning, not a failure. When you change Primary, Secondary or Hover, the text on it changes too if it would be hard to read (unless you set that text yourself).</p>
             <div class="table"><table id="studio-contrast"><caption>Contrast in light and dark</caption><thead><tr><th scope="col">Text on</th><th scope="col">Light</th><th scope="col">Dark</th></tr></thead><tbody></tbody></table></div>
             <h2 id="export">Take it with you</h2>
             <p class="studio-actions"><button type="button" class="button primary" id="studio-use">Use on this site</button><button type="button" class="button" id="studio-share">Copy a link to this theme</button><button type="button" class="button" id="studio-reset">Start over</button></p>
+            <p class="studio-warning" id="studio-warning" aria-live="polite"></p>
             <p class="hint" id="studio-status" role="status"></p>
             <div class="editor-out">
               <div class="code"><div class="code-head"><span id="studio-json-name">themes/sets/my-theme.json</span><button type="button" class="copy" data-copy>Copy</button></div><pre tabindex="0"><code id="studio-json"></code></pre></div>
@@ -444,6 +451,8 @@ const composeBody = `      <section class="composer">
           <select-field id="compose-theme" label="Theme"></select-field>
           <segmented-control id="compose-mode" label="Mode"></segmented-control>
           <segmented-control id="compose-width" label="Width"></segmented-control>
+          <button type="button" class="button" id="compose-undo" aria-keyshortcuts="Control+Z Meta+Z">Undo</button>
+          <p class="hint composer-status" id="compose-status" role="status"></p>
         </div>
         <div class="composer-layout">
           <aside class="composer-library" aria-labelledby="library-heading">
@@ -458,11 +467,10 @@ const composeBody = `      <section class="composer">
             </div>
           </div>
           <aside class="composer-inspector" aria-labelledby="inspector-heading">
-            <h2 id="inspector-heading">Settings</h2>
+            <div class="composer-inspector-head"><h2 id="inspector-heading">Settings</h2><button type="button" class="button composer-done" id="compose-done">Done</button></div>
             <div id="compose-inspector"><p class="hint">Choose something on the page to change it.</p></div>
           </aside>
         </div>
-        <p class="hint" id="compose-status" role="status"></p>
         <h2 id="take">Take it home</h2>
         <p class="studio-actions"><button type="button" class="button primary" id="compose-download">Download the page</button><button type="button" class="button" id="compose-share">Copy a link to this page</button><button type="button" class="button" id="compose-clear">Clear the page</button></p>
         <segmented-control id="compose-format" label="Code for"></segmented-control>

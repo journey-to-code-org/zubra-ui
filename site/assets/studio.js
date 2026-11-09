@@ -27,15 +27,20 @@ const GROUPS = [
   ['Brand', [['primary', 'Primary'], ['primaryForeground', 'Text on primary'], ['secondary', 'Secondary'], ['secondaryForeground', 'Text on secondary'], ['accent', 'Hover'], ['accentForeground', 'Text on hover'], ['ring', 'Focus ring'], ['destructive', 'Danger']]],
   ['Charts', [['chart1', 'Chart 1'], ['chart2', 'Chart 2'], ['chart3', 'Chart 3']]],
 ];
-const PAIRS = [['foreground', 'background', 'Text on the page'], ['mutedForeground', 'background', 'Muted text on the page'], ['cardForeground', 'card', 'Text on a card'], ['popoverForeground', 'popover', 'Text in a menu'], ['primaryForeground', 'primary', 'Text on primary'], ['secondaryForeground', 'secondary', 'Text on secondary'], ['accentForeground', 'accent', 'Text on hover'], ['border', 'background', 'Borders against the page (3:1 for controls)']];
+const PAIRS = [['foreground', 'background', 'Text on the page'], ['mutedForeground', 'background', 'Muted text on the page'], ['cardForeground', 'card', 'Text on a card'], ['popoverForeground', 'popover', 'Text in a menu'], ['primaryForeground', 'primary', 'Text on primary'], ['secondaryForeground', 'secondary', 'Text on secondary'], ['accentForeground', 'accent', 'Text on hover'], ['input', 'background', 'Field borders against the page']];
+// A brand colour and the text on it: when the text stops being readable, the studio picks it again.
+const TEXT_ON = { primary: 'primaryForeground', secondary: 'secondaryForeground', accent: 'accentForeground', destructive: null };
 const STORE = 'zubra-ui:studio';
 const store = { get: (key) => { try { return localStorage.getItem(key); } catch { return null; } }, set: (key, value) => { try { value == null ? localStorage.removeItem(key) : localStorage.setItem(key, value); } catch {} } };
 
 // ---- colours: any CSS colour to sRGB through a canvas, then hex, OKLCH and contrast
 
 const canvas = document.createElement('canvas').getContext('2d', { willReadFrequently: true });
-function rgb(css) {
+// A see-through colour is measured as it shows: over what's behind it.
+function rgb(css, over = '#fff') {
   canvas.clearRect(0, 0, 1, 1);
+  canvas.fillStyle = over;
+  canvas.fillRect(0, 0, 1, 1);
   canvas.fillStyle = '#000';
   canvas.fillStyle = css;
   canvas.fillRect(0, 0, 1, 1);
@@ -43,8 +48,13 @@ function rgb(css) {
 }
 const hex = (css) => `#${rgb(css).map((v) => v.toString(16).padStart(2, '0')).join('')}`;
 const linear = (v) => { v /= 255; return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; };
-function luminance(css) { const [r, g, b] = rgb(css).map(linear); return 0.2126 * r + 0.7152 * g + 0.0722 * b; }
-function ratio(a, b) { const [x, y] = [luminance(a), luminance(b)].sort((m, n) => n - m); return (x + 0.05) / (y + 0.05); }
+function luminance(rgbValue) { const [r, g, b] = rgbValue.map(linear); return 0.2126 * r + 0.7152 * g + 0.0722 * b; }
+/** Contrast of a colour on a background (the colour laid over it, if it's see-through). */
+function ratio(front, back) {
+  const behind = `rgb(${rgb(back).join(' ')})`;
+  const [x, y] = [luminance(rgb(front, behind)), luminance(rgb(behind))].sort((m, n) => n - m);
+  return (x + 0.05) / (y + 0.05);
+}
 /** sRGB → OKLCH [L, C, H], for deriving a dark scheme from a light one. */
 function oklch(css) {
   const [r, g, b] = rgb(css).map(linear);
@@ -79,17 +89,18 @@ export async function startStudio() {
   const $ = (selector) => document.querySelector(selector);
   const index = await (await fetch('../themes/sets/index.json')).json();
   const themes = Object.fromEntries(await Promise.all(index.map(async ({ name }) => [name, await (await fetch(`../themes/sets/${name}.json`)).json()])));
-  const fresh = () => ({ base: 'zinc', label: 'My theme', colors: { light: {}, dark: {} }, font: 'inherit', heading: 'inherit', radius: null, motion: 'inherit', backdrop: 'mesh' });
+  const fresh = () => ({ auto: { light: {}, dark: {} }, base: 'zinc', label: 'My theme', colors: { light: {}, dark: {} }, font: 'inherit', heading: 'inherit', radius: null, motion: 'inherit', backdrop: 'mesh' });
   let state = fresh();
   try {
     const shared = location.hash.match(/theme=([\w-]+)/)?.[1];
     state = { ...state, ...(shared ? decode(shared) : JSON.parse(store.get(STORE) ?? 'null') ?? {}) };
   } catch {}
+  state.auto ??= { light: {}, dark: {} };
   let scheme = 'light';
 
   /** The theme as a theme file: what differs from where it started. */
   const themeFile = () => {
-    const file = { label: state.label, extends: state.base };
+    const file = { label: state.label, description: `Made in the theme studio from ${themes[state.base]?.label ?? state.base}.`, extends: state.base };
     const colors = Object.fromEntries(['light', 'dark'].filter((s) => Object.keys(state.colors[s]).length).map((s) => [s, state.colors[s]]));
     if (Object.keys(colors).length) file.colors = colors;
     if (FONTS[state.font]?.[1] || FONTS[state.heading]?.[1]) file.fonts = { ...(FONTS[state.font]?.[1] ? { body: FONTS[state.font][1] } : {}), ...(FONTS[state.heading]?.[1] ? { heading: FONTS[state.heading][1] } : {}) };
@@ -117,9 +128,28 @@ export async function startStudio() {
   const colours = $('#studio-colours');
   colours.innerHTML = GROUPS.map(([heading, keys]) => `<div class="studio-group"><p class="studio-group-name">${heading}</p>${keys.map(([key, text]) => `<label class="studio-colour"><input type="color" data-key="${key}" aria-label="${text}"><span>${text}</span><input type="text" class="studio-css" data-css="${key}" aria-label="${text} (CSS colour)" spellcheck="false"></label>`).join('')}</div>`).join('');
 
+  const status = (text) => { $('#studio-status').textContent = text; };
+  const flash = (button, text) => {
+    button.dataset.label ??= button.textContent;
+    button.textContent = text;
+    clearTimeout(button.flashing);
+    button.flashing = setTimeout(() => { button.textContent = button.dataset.label; }, 2500);
+  };
   function setColour(key, value) {
     if (!value) delete state.colors[scheme][key];
     else state.colors[scheme][key] = value;
+    delete state.auto[scheme][key];
+    // A new brand colour gets readable text on it, unless that text was chosen by hand.
+    const textKey = TEXT_ON[key];
+    if (textKey && (!(textKey in state.colors[scheme]) || state.auto[scheme][textKey])) {
+      const c = resolved().colors?.[scheme] ?? {};
+      if (c[key] && c[textKey] && ratio(c[textKey], c[key]) < 4.5) {
+        const best = [c.foreground, c.background, '#fff', '#000'].filter(Boolean).sort((a, b) => ratio(b, c[key]) - ratio(a, c[key]))[0];
+        state.colors[scheme][textKey] = best;
+        state.auto[scheme][textKey] = true;
+        status(`Changed the text on ${key} so it stays readable.`);
+      }
+    }
     render();
   }
   colours.addEventListener('input', (event) => { if (event.target.dataset.key) setColour(event.target.dataset.key, event.target.value); });
@@ -128,7 +158,14 @@ export async function startStudio() {
     if (!key) return;
     const value = event.target.value.trim();
     // Only a value the browser reads as a colour (and nothing that could end the declaration).
-    if (value && (!CSS.supports('color', value) || /[;{}<>]/.test(value))) { $('#studio-status').textContent = `"${value}" isn't a CSS colour.`; return; }
+    if (value && (!CSS.supports('color', value) || /[;{}<>]/.test(value))) {
+      event.target.setAttribute('aria-invalid', 'true');
+      event.target.title = `"${value}" isn't a CSS colour: try #1d4ed8, rgb(29 78 216) or oklch(0.5 0.2 260).`;
+      status(event.target.title);
+      return;
+    }
+    event.target.removeAttribute('aria-invalid');
+    event.target.removeAttribute('title');
     setColour(key, value);
   });
   base.addEventListener('valuechange', (event) => { state.base = event.detail; render(); });
@@ -139,11 +176,24 @@ export async function startStudio() {
   $('#studio-motion').addEventListener('valuechange', (event) => { state.motion = event.detail; render(); });
   $('#studio-backdrop').addEventListener('valuechange', (event) => { state.backdrop = event.detail; render(); });
   radius.addEventListener('valuechange', (event) => { state.radius = event.detail; render(); });
-  $('#studio-derive').addEventListener('click', () => {
+  // Dark colours set by hand are replaced only on a second press.
+  const derive = $('#studio-derive');
+  derive.addEventListener('click', () => {
+    if (Object.keys(state.colors.dark).length && !derive.dataset.confirm) {
+      derive.dataset.confirm = '';
+      flash(derive, 'Replace your dark colours? Press again');
+      setTimeout(() => delete derive.dataset.confirm, 2500);
+      return;
+    }
+    delete derive.dataset.confirm;
+    clearTimeout(derive.flashing);
+    if (derive.dataset.label) derive.textContent = derive.dataset.label;
     state.colors.dark = deriveDark(resolved().colors.light);
+    state.auto.dark = {};
     scheme = 'dark';
     render();
-    $('#studio-status').textContent = 'Made the dark colours from the light ones. Adjust any of them under Dark.';
+    status('Made the dark colours from the light ones. They show in the dark preview; change any of them here.');
+    $('#studio-dark').scrollIntoView({ block: 'nearest', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
   });
   $('#studio-reset').addEventListener('click', () => {
     state = fresh();
@@ -154,13 +204,14 @@ export async function startStudio() {
   $('#studio-share').addEventListener('click', async () => {
     const url = `${location.origin}${location.pathname}#theme=${encode(state)}`;
     history.replaceState(null, '', url);
-    try { await navigator.clipboard.writeText(url); $('#studio-status').textContent = 'Copied a link to this theme.'; } catch { $('#studio-status').textContent = 'The link is in the address bar.'; }
+    try { await navigator.clipboard.writeText(url); status('Copied a link to this theme.'); flash($('#studio-share'), 'Copied'); } catch { status('The link is in the address bar: copy it from there.'); }
   });
   $('#studio-use').addEventListener('click', () => {
     store.set('zubra-ui:custom-css', compileTheme({ ...themes, custom: themeFile() }, 'custom'));
     store.set('zubra-ui:look', 'custom');
     document.documentElement.dataset.theme = 'custom';
-    $('#studio-status').textContent = `${state.label} is now the look for this site, in this browser. Pick another under Theme to switch back.`;
+    status(`${state.label} is now the look for this site, in this browser. Pick another under Theme to switch back.`);
+    flash($('#studio-use'), 'In use on this site');
   });
 
   function render() {
@@ -189,16 +240,23 @@ export async function startStudio() {
     }
     for (const input of colours.querySelectorAll('[data-css]')) if (document.activeElement !== input) input.value = values[input.dataset.css] ?? '';
     // Contrast, both schemes.
+    // Text needs 4.5:1. Field borders are advice: 3:1 helps people find the fields, and many themes
+    // (shadcn's own) go lighter, so a low one is a warning rather than a failure.
+    let failing = 0;
     $('#studio-contrast tbody').innerHTML = PAIRS.map(([text, back, name]) => {
       const cells = ['light', 'dark'].map((s) => {
         const c = theme.colors?.[s] ?? {};
         if (!c[text] || !c[back]) return '<td>–</td>';
         const value = ratio(c[text], c[back]);
-        const need = text === 'border' ? 3 : 4.5;
-        return `<td><span class="studio-swatch" aria-hidden="true" style="background:${c[back]};color:${c[text]}">${text === "border" ? "▬" : "Aa"}</span> ${value.toFixed(2)}:1 <status-badge variant="${value >= need ? 'success' : 'danger'}">${value >= need ? 'Passes' : 'Too low'}</status-badge></td>`;
+        const border = text === 'input';
+        const passes = value >= (border ? 3 : 4.5);
+        if (!passes && !border) failing += 1;
+        const badge = passes ? '<status-badge variant="success">Passes</status-badge>' : border ? '<status-badge variant="warning">Faint</status-badge>' : '<status-badge variant="danger">Too low</status-badge>';
+        return `<td><span class="studio-swatch" aria-hidden="true" style="background:${c[back]};color:${c[text]}">${border ? '▬' : 'Aa'}</span> ${value.toFixed(2)}:1 ${badge}</td>`;
       });
       return `<tr><th scope="row">${name}</th>${cells.join('')}</tr>`;
     }).join('');
+    $('#studio-warning').textContent = failing ? `${failing === 1 ? 'One pair is' : `${failing} pairs are`} too low to read under Contrast: fix ${failing === 1 ? 'it' : 'them'} before you use this theme.` : '';
     // What to take away.
     const file = themeFile();
     $('#studio-json').textContent = `${JSON.stringify(file, null, 2)}\n`;

@@ -44,7 +44,7 @@
   .drop-label { display: block; margin-bottom: 0.5rem; font-weight: 600; font-size: 0.925rem; }
   .drop-zone { display: grid; justify-items: center; gap: 0.35rem; padding: 1.75rem 1rem; border: 2px dashed var(--border, #d4d4d8); border-radius: var(--radius, 0.625rem); background: color-mix(in oklab, var(--muted, #f4f4f5) 40%, var(--background, #fff)); text-align: center; cursor: pointer; transition: border-color var(--duration-fast, 150ms), background var(--duration-fast, 150ms); }
   .drop-zone:hover, .drop-over { border-color: var(--primary, #18181b); background: color-mix(in oklab, var(--primary, #18181b) 5%, var(--background, #fff)); }
-  .drop-zone:focus-within { outline: 2px solid var(--ring, #a1a1aa); outline-offset: 2px; }
+  .drop-zone:focus-within { border-style: solid; border-color: var(--ring, #a1a1aa); box-shadow: 0 0 0 3px color-mix(in oklab, var(--ring, #a1a1aa) 40%, transparent); }
   .drop-disabled { opacity: 0.55; cursor: not-allowed; }
   .drop-main { font-weight: 600; }
   .drop-main u { text-underline-offset: 3px; }

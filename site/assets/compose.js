@@ -88,6 +88,47 @@ export async function startComposer() {
 
   const status = (text) => { $('#compose-status').textContent = text; };
   const save = () => store.set(STORE, JSON.stringify(page));
+  // A button that copies says so on itself, for a moment, as well as in the status line.
+  const flash = (button, text) => {
+    button.dataset.label ??= button.textContent;
+    button.textContent = text;
+    clearTimeout(button.flashing);
+    button.flashing = setTimeout(() => { button.textContent = button.dataset.label; }, 2000);
+  };
+
+  // ---- undo: every change keeps the page as it was before it (Ctrl+Z or the Undo button)
+  const past = [];
+  const remember = () => { past.push(JSON.stringify(page)); if (past.length > 100) past.shift(); $('#compose-undo').disabled = false; };
+  async function undo() {
+    if (!past.length) { status('Nothing to undo.'); return; }
+    page = JSON.parse(past.pop());
+    $('#compose-undo').disabled = !past.length;
+    if (!page.items.some((item) => item.uid === selected)) selected = page.items[0]?.uid ?? null;
+    await render();
+    status('Undid the last change.');
+  }
+  $('#compose-undo').disabled = true;
+  $('#compose-undo').addEventListener('click', undo);
+  document.addEventListener('keydown', (event) => {
+    // Text fields keep their own undo.
+    if (!(event.ctrlKey || event.metaKey) || event.shiftKey || event.key.toLowerCase() !== 'z' || event.target.closest?.('input, textarea, [contenteditable]')) return;
+    event.preventDefault();
+    undo();
+  });
+
+  // ---- editing: beside the canvas on a wide screen; on a narrow one, a sheet from the bottom
+  const root = document.querySelector('.composer');
+  const edit = () => {
+    root.dataset.editing = '';
+    $('#compose-inspector input, #compose-inspector textarea, #compose-inspector select')?.focus();
+  };
+  const doneEditing = () => {
+    if (!('editing' in root.dataset)) return;
+    delete root.dataset.editing;
+    $(`[data-uid="${selected}"]`)?.focus();
+  };
+  $('#compose-done').addEventListener('click', doneEditing);
+  $('.composer-inspector').addEventListener('keydown', (event) => { if (event.key === 'Escape') doneEditing(); });
 
   // ---- the bar
   const template = $('#compose-template');
@@ -95,6 +136,7 @@ export async function startComposer() {
   template.value = '';
   template.addEventListener('valuechange', (event) => {
     if (!event.detail) return;
+    remember();
     page = fromTemplate(event.detail);
     selected = page.items[0]?.uid ?? null;
     template.value = '';
@@ -103,10 +145,10 @@ export async function startComposer() {
   });
   const theme = $('#compose-theme');
   theme.options = data.themes.map(({ name, label }) => ({ value: name, label }));
-  theme.addEventListener('valuechange', (event) => { page.theme = event.detail; render(); });
+  theme.addEventListener('valuechange', (event) => { if (event.detail === page.theme) return; remember(); page.theme = event.detail; render(); });
   const mode = $('#compose-mode');
   mode.options = [{ value: 'light', label: 'Light' }, { value: 'dark', label: 'Dark' }];
-  mode.addEventListener('valuechange', (event) => { page.mode = event.detail; render(); });
+  mode.addEventListener('valuechange', (event) => { if (event.detail === (page.mode ?? 'light')) return; remember(); page.mode = event.detail; render(); });
   const width = $('#compose-width');
   width.options = Object.keys(VIEWPORTS).map((value) => ({ value, label: value[0].toUpperCase() + value.slice(1) }));
   width.value = viewport;
@@ -128,40 +170,45 @@ export async function startComposer() {
     library.innerHTML = groups || '<p class="hint">Nothing matches.</p>';
   };
   $('#compose-search').addEventListener('input', drawLibrary);
-  library.addEventListener('click', (event) => {
+  library.addEventListener('click', async (event) => {
     const name = event.target.closest('[data-add]')?.dataset.add;
     if (!name) return;
+    remember();
     const item = make(name);
     const at = page.items.findIndex((other) => other.uid === selected);
     page.items.splice(at === -1 ? page.items.length : at + 1, 0, item);
     selected = item.uid;
-    render();
+    await render();
     status(`Added ${name}.`);
     $(`[data-uid="${item.uid}"]`)?.focus();
   });
 
   // ---- the canvas
   const canvas = $('#compose-canvas');
-  const moveItem = (uid, by) => {
+  // After a change the canvas is drawn again, so focus goes back to the block once it's there.
+  const moveItem = async (uid, by) => {
     const at = page.items.findIndex((item) => item.uid === uid);
     const to = at + by;
     if (at === -1 || to < 0 || to >= page.items.length) return;
+    remember();
     const [item] = page.items.splice(at, 1);
     page.items.splice(to, 0, item);
-    render();
+    await render();
     status(`Moved ${item.name} ${by < 0 ? 'up' : 'down'}.`);
     $(`[data-uid="${uid}"]`)?.focus();
   };
-  const removeItem = (uid) => {
+  const removeItem = async (uid) => {
     const at = page.items.findIndex((item) => item.uid === uid);
     if (at === -1) return;
+    remember();
     const [item] = page.items.splice(at, 1);
     selected = page.items[Math.min(at, page.items.length - 1)]?.uid ?? null;
-    render();
-    status(`Removed ${item.name}.`);
+    delete root.dataset.editing;
+    await render();
+    status(`Removed ${item.name}. Ctrl+Z brings it back.`);
     (selected ? $(`[data-uid="${selected}"]`) : library.querySelector('button'))?.focus();
   };
-  canvas.addEventListener('click', (event) => {
+  canvas.addEventListener('click', async (event) => {
     const tool = event.target.closest('[data-tool]');
     const wrapper = event.target.closest('[data-uid]');
     if (!wrapper) return;
@@ -173,18 +220,21 @@ export async function startComposer() {
       else if (action === 'down') moveItem(uid, 1);
       else if (action === 'remove') removeItem(uid);
       else if (action === 'copy') {
+        remember();
         const at = page.items.findIndex((item) => item.uid === uid);
         const copy = { ...JSON.parse(JSON.stringify(page.items[at])), uid: next++ };
         page.items.splice(at + 1, 0, copy);
         selected = copy.uid;
-        render();
+        await render();
         status(`Duplicated ${copy.name}.`);
+        $(`[data-uid="${copy.uid}"]`)?.focus();
       }
       return;
     }
     // Links and buttons inside a component don't navigate or submit while composing.
     if (event.target.closest('a[href], button[type=submit], form')) event.preventDefault();
     if (selected !== uid) { selected = uid; renderInspector(); markSelected(); }
+    root.dataset.editing = '';
   });
   canvas.addEventListener('submit', (event) => event.preventDefault(), true);
   canvas.addEventListener('keydown', (event) => {
@@ -193,7 +243,7 @@ export async function startComposer() {
     const uid = Number(wrapper.dataset.uid);
     if (event.altKey && (event.key === 'ArrowUp' || event.key === 'ArrowDown')) { event.preventDefault(); moveItem(uid, event.key === 'ArrowUp' ? -1 : 1); }
     else if (event.key === 'Delete' || event.key === 'Backspace') { event.preventDefault(); removeItem(uid); }
-    else if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); selected = uid; renderInspector(); markSelected(); $('#compose-inspector input, #compose-inspector textarea, #compose-inspector select')?.focus(); }
+    else if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); selected = uid; renderInspector(); markSelected(); edit(); }
   });
   canvas.addEventListener('focusin', (event) => {
     const wrapper = event.target.closest('[data-uid]');
@@ -213,6 +263,7 @@ export async function startComposer() {
     const target = event.target.closest('[data-uid]');
     if (dragging == null || !target) return;
     event.preventDefault();
+    remember();
     const from = page.items.findIndex((item) => item.uid === dragging);
     const [item] = page.items.splice(from, 1);
     const to = page.items.findIndex((other) => other.uid === Number(target.dataset.uid));
@@ -266,30 +317,44 @@ export async function startComposer() {
       const type = prop.type;
       if (/boolean/.test(type)) return `<label class="composer-check"><input type="checkbox" id="${id}" data-prop="${prop.name}" data-kind="boolean" ${value === true || value === '' || (value === undefined && prop.default === 'true') ? 'checked' : ''}> ${prop.name}</label>`;
       if (/^number/.test(type)) return `<label class="composer-field" for="${id}">${prop.name}<input type="number" id="${id}" data-prop="${prop.name}" data-kind="number" value="${escapeHtml(value ?? prop.default ?? '')}" step="any"></label>`;
-      if (/\[\]|\{|unknown|any|object/.test(type) || (value !== undefined && typeof value === 'object')) return `<label class="composer-field" for="${id}">${prop.name} <small>(JSON)</small><textarea id="${id}" rows="5" data-prop="${prop.name}" data-kind="json" spellcheck="false">${escapeHtml(JSON.stringify(value ?? JSON.parse(prop.default || 'null'), null, 2))}</textarea></label>`;
+      if (/\[\]|\{|unknown|any|object/.test(type) || (value !== undefined && typeof value === 'object')) return `<label class="composer-field" for="${id}">${prop.name} <small>(JSON)</small><textarea id="${id}" rows="5" data-prop="${prop.name}" data-kind="json" spellcheck="false" aria-describedby="inspector-problem">${escapeHtml(JSON.stringify(value ?? JSON.parse(prop.default || 'null'), null, 2))}</textarea></label>`;
       return `<label class="composer-field" for="${id}">${prop.name}<input type="text" id="${id}" data-prop="${prop.name}" data-kind="text" data-attribute="${prop.attribute ?? ''}" value="${escapeHtml(value ?? String(prop.default ?? '').replace(/^"|"$/g, ''))}"></label>`;
     }).join('');
     const slots = component.slots.length ? `<label class="composer-field" for="prop-html">Content <small>(HTML, for its slots${component.slots.filter((slot) => slot !== 'default').length ? `: ${component.slots.filter((slot) => slot !== 'default').map((slot) => `slot="${slot}"`).join(', ')}` : ''})</small><textarea id="prop-html" rows="6" data-kind="html" spellcheck="false">${escapeHtml(item.html)}</textarea></label>` : '';
     inspector.innerHTML = `<p class="composer-picked"><strong>${item.name}</strong> <a href="../components/${item.name}/">Docs</a></p><p class="hint">${escapeHtml(component.summary)}</p>
       <label class="composer-field" for="prop-width">Width in its row<select id="prop-width" data-kind="width">${Object.entries(WIDTHS).map(([value, label]) => `<option value="${value}" ${item.width === value ? 'selected' : ''}>${label}</option>`).join('')}</select></label>
-      ${rows}${slots}<p class="hint" id="inspector-problem" role="alert"></p>`;
+      ${rows}${slots}<p class="composer-problem" id="inspector-problem" aria-live="polite"></p>`;
   }
-  inspector.addEventListener('change', (event) => {
-    const field = event.target;
+  // Text applies as it's typed (a moment after the last key); a whole edit of one field is one undo.
+  let typing;
+  const apply = (field) => {
     const item = page.items.find((other) => other.uid === selected);
     if (!item || !field.dataset.kind) return;
+    if (!('remembered' in field.dataset)) { remember(); field.dataset.remembered = ''; }
     const problem = $('#inspector-problem');
     if (problem) problem.textContent = '';
+    field.removeAttribute('aria-invalid');
     if (field.dataset.kind === 'width') item.width = field.value;
     else if (field.dataset.kind === 'html') item.html = clean(field.value);
     else if (field.dataset.kind === 'boolean') item.props[field.dataset.prop] = field.checked;
     else if (field.dataset.kind === 'number') item.props[field.dataset.prop] = field.value === '' ? null : Number(field.value);
     else if (field.dataset.kind === 'json') {
-      try { item.props[field.dataset.prop] = JSON.parse(field.value); } catch { problem.textContent = `That isn't valid JSON for ${field.dataset.prop}; the last good value is kept.`; return; }
+      try { item.props[field.dataset.prop] = JSON.parse(field.value); } catch {
+        field.setAttribute('aria-invalid', 'true');
+        problem.textContent = `Not valid JSON for ${field.dataset.prop}, so the page keeps the last good value.`;
+        return;
+      }
     } else if (field.dataset.attribute) item.attrs[field.dataset.attribute] = field.value;
     else item.props[field.dataset.prop] = field.value;
     render({ inspector: false });
+  };
+  inspector.addEventListener('input', (event) => {
+    if (event.target.type === 'checkbox' || event.target.tagName === 'SELECT') return;
+    clearTimeout(typing);
+    typing = setTimeout(() => apply(event.target), 300);
   });
+  inspector.addEventListener('change', (event) => { clearTimeout(typing); apply(event.target); });
+  inspector.addEventListener('focusout', (event) => { delete event.target.dataset?.remembered; });
 
   // ---- taking it home
   const used = () => [...new Set(page.items.flatMap((item) => [item.name, ...nested(item.html)]))];
@@ -365,19 +430,20 @@ ${assignments ? `<script type="module">\n${indent(assignments, '  ')}\n</script>
   $('#compose-share').addEventListener('click', async () => {
     const url = `${location.origin}${location.pathname}#page=${encode({ theme: page.theme, mode: page.mode, items: page.items.map(({ uid, ...item }) => item) })}`;
     history.replaceState(null, '', url);
-    try { await navigator.clipboard.writeText(url); status('Copied a link to this page.'); } catch { status('The link is in the address bar.'); }
+    try { await navigator.clipboard.writeText(url); status('Copied a link to this page.'); flash($('#compose-share'), 'Copied'); } catch { status('The link is in the address bar: copy it from there.'); }
   });
-  $('#compose-clear').addEventListener('click', () => {
+  $('#compose-clear').addEventListener('click', async () => {
+    if (!page.items.length) return;
+    remember();
     page = fromTemplate('blank');
     selected = null;
-    render();
-    status('Cleared the page.');
+    await render();
+    status('Cleared the page. Undo brings it back.');
   });
 
   // While a render is under way (it may load a component first), the composer says so: data-busy.
   let renders = 0;
   async function render({ inspector: redrawInspector = true } = {}) {
-    const root = document.querySelector('.composer');
     root.dataset.busy = String(++renders);
     theme.value = page.theme;
     mode.value = page.mode ?? 'light';

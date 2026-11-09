@@ -291,6 +291,14 @@ test('theme studio: colours change the light and dark previews, contrast is chec
   await page.locator('#studio-colours [data-css=primary]').fill('not a colour');
   await page.locator('#studio-colours [data-css=primary]').dispatchEvent('change');
   assert.match(await page.textContent('#studio-status'), /isn't a CSS colour/);
+  assert.equal(await page.locator('#studio-colours [data-css=primary]').getAttribute('aria-invalid'), 'true');
+  // A light primary gets dark text on it, so it stays readable.
+  await page.locator('#studio-colours [data-css=primary]').fill('#ffee00');
+  await page.locator('#studio-colours [data-css=primary]').dispatchEvent('change');
+  assert.match(await page.locator('#studio-contrast tbody tr', { hasText: 'Text on primary' }).locator('td').first().textContent(), /Passes/);
+  assert.equal(await page.textContent('#studio-warning'), '');
+  await page.locator('#studio-colours [data-css=primary]').blur();
+  await page.locator('#studio-colours [data-key=primary]').evaluate((input) => { input.value = '#0f766e'; input.dispatchEvent(new Event('input', { bubbles: true })); });
   // Dark made from light keeps the hue, lifted for a dark page.
   await page.click('#studio-derive');
   const dark = await button('dark');
@@ -347,14 +355,25 @@ test('page composer: add, change, move and remove; the theme and mode apply; the
   await page.keyboard.press('Enter');
   await page.locator('#compose-inspector [data-prop=links]').fill('[not json');
   await page.locator('#compose-inspector [data-prop=links]').press('Tab');
-  assert.match(await page.textContent('#inspector-problem'), /isn't valid JSON/);
+  assert.match(await page.textContent('#inspector-problem'), /Not valid JSON/);
   // Keyboard: Alt+Down moves the focused item; Delete removes it.
   const statCard = page.locator('#compose-canvas .composer-item', { has: page.locator('stat-card') });
   await statCard.focus();
   await page.keyboard.press('Alt+ArrowDown');
   assert.equal((await names())[2], 'stat-card');
   assert.match(await page.textContent('#compose-status'), /Moved stat-card down/);
-  await page.locator('#compose-canvas .composer-item', { has: page.locator('stat-card') }).focus();
+  // Focus stays on the block, so moves chain.
+  await page.keyboard.press('Alt+ArrowDown');
+  assert.equal((await names())[3], 'stat-card');
+  assert.ok(await page.evaluate(() => document.activeElement.matches('.composer-item') && Boolean(document.activeElement.querySelector('stat-card'))));
+  await page.keyboard.press('Delete');
+  assert.ok(!(await names()).includes('stat-card'));
+  // Undo brings it back where it was.
+  await page.keyboard.press('Control+z');
+  assert.equal((await names())[3], 'stat-card');
+  await page.keyboard.press('Control+z');
+  assert.equal((await names())[2], 'stat-card');
+  await statCard.focus();
   await page.keyboard.press('Delete');
   assert.ok(!(await names()).includes('stat-card'));
   // Theme and mode reach the canvas only.

@@ -99,7 +99,7 @@ export const demos = {
     attrs: { label: 'Delete project' },
     props: { open: false },
     events: ['openchange'],
-    html: '<p>This deletes the project and its 14 files. You can\'t undo it.</p>\n<button slot="actions" type="button" data-close>Cancel</button>\n<button slot="actions" type="button" data-close>Delete project</button>',
+    html: '<p>This deletes the project and its 14 files. You can\'t undo it.</p>\n<action-button slot="actions" variant="ghost" data-close>Cancel</action-button>\n<action-button slot="actions" variant="destructive" data-close>Delete project</action-button>',
     // The page adds a button that sets `open`; the snippets show that too.
     opener: 'Delete project…',
   },
@@ -332,7 +332,7 @@ export const demos = {
     attrs: { label: 'Filters', side: 'right' },
     props: { open: false },
     events: ['openchange'],
-    html: '<p>Show only what you need.</p>\n<button slot="actions" type="button" data-close>Clear</button>\n<button slot="actions" type="button" data-close>Show 24 results</button>',
+    html: '<p>Show only what you need.</p>\n<action-button slot="actions" variant="ghost" data-close>Clear</action-button>\n<action-button slot="actions" data-close>Show 24 results</action-button>',
     opener: 'Filters',
   },
   'popover-panel': {
@@ -353,7 +353,7 @@ export const demos = {
       ],
     },
     events: ['select', 'openchange'],
-    opener: 'Search (⌘K)',
+    opener: 'Search (Ctrl K)',
   },
   'nav-bar': {
     attrs: { brand: 'Bakehouse', href: '#home' },
@@ -386,7 +386,7 @@ export const demos = {
   },
   'empty-state': {
     attrs: { heading: 'No invoices yet' },
-    html: 'Invoices you send show up here, with who has paid.\n<button slot="actions" type="button">Create an invoice</button>',
+    html: 'Invoices you send show up here, with who has paid.\n<action-button slot="actions">Create an invoice</action-button>',
   },
   'stat-card': {
     attrs: { label: 'Monthly revenue', value: '$48,210', period: 'vs last month' },
@@ -417,7 +417,7 @@ export const demos = {
   },
   'hero-section': {
     attrs: { eyebrow: 'New: spring classes', heading: 'Bake bread you are proud of', align: 'start' },
-    html: 'Small classes, real ovens, and a starter to take home. Weekends in Portland and online.\n<button slot="actions" type="button">Book a class</button>\n<a slot="actions" href="#menu">See the schedule</a>',
+    html: 'Small classes, real ovens, and a starter to take home. Weekends in Portland and online.\n<action-button slot="actions" size="lg">Book a class</action-button>\n<a slot="actions" href="#menu">See the schedule</a>',
   },
   'feature-grid': {
     attrs: { heading: 'Everything for your bakery' },

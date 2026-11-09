@@ -212,7 +212,12 @@ export function wire(name, { props, events, opener, trigger }) {
       log.replaceChildren(`${type}: `, Object.assign(document.createElement('output'), { textContent: show(event.detail) }));
     });
   }
-  if (opener) stage.querySelector('[data-open]').addEventListener('click', () => { element.open = true; });
+  if (opener) {
+    const button = stage.querySelector('[data-open]');
+    // Shortcuts written for Windows and Linux read as the Mac's on a Mac.
+    if (/Mac|iPhone|iPad/.test(navigator.userAgentData?.platform ?? navigator.platform)) button.textContent = button.textContent.replace('Ctrl K', '⌘K');
+    button.addEventListener('click', () => { element.open = true; });
+  }
   // A component driven by a document event (toast-region): the button dispatches it.
   if (trigger) stage.querySelector('[data-trigger]').addEventListener('click', () => document.dispatchEvent(new CustomEvent(trigger.event, { detail: trigger.detail })));
 }

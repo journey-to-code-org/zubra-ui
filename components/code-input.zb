@@ -24,7 +24,7 @@
 <style>
   :host { display: block; }
   label { display: block; margin-bottom: 0.5rem; font-weight: 600; font-size: 0.925rem; }
-  .code { position: relative; display: inline-flex; gap: 0.4rem; max-width: 100%; }
+  .code-row { position: relative; display: inline-flex; gap: 0.4rem; max-width: 100%; }
   .code-box { display: grid; place-items: center; width: clamp(1.9rem, 11vw, 2.6rem); height: 3rem; border: 1px solid var(--input, #d4d4d8); border-radius: calc(var(--radius, 0.625rem) * 0.8); background: var(--background, #fff); font-size: 1.35rem; font-weight: 700; font-variant-numeric: tabular-nums; }
   .code-current { border-color: var(--ring, #a1a1aa); box-shadow: 0 0 0 3px color-mix(in oklab, var(--ring, #a1a1aa) 40%, transparent); }
   /* The real field sits over the boxes, transparent, so taps, paste and the keyboard reach it. */
@@ -32,7 +32,7 @@
 </style>
 <code-input value:model="" length={6} numeric={true} label="Verification code" name="">
   <label for={inputId}>{label}</label>
-  <div class="code">
+  <div class="code-row">
     <zb-each items={boxes} as="box" key={box.i}>
       <span class="code-box" class:code-current={box.current} aria-hidden="true">{box.char}</span>
     </zb-each>
