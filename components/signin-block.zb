@@ -1,18 +1,27 @@
 <!--
   A sign-in form: email, password (with show and hide), "keep me signed in", links to reset the
   password and to sign up, and a place for an error. Submitting fires `signin` with
-  `{ email, password, remember }`; with an `action`, the form also posts there, as a plain form.
-  Set `error` to show what went wrong (the fields are marked invalid and it's announced), and
-  `busy` while you check.
+  `{ email, password, remember }`; with an `action`, the form also posts there, as a plain form
+  (`email`, `password` and `remember`). Set `error` to show what went wrong: it's announced, and
+  `error-field` ("email", "password" or "both", the default) marks which field until it's edited.
+  Set `busy` while you check.
   @fires signin - The form was submitted; `detail` is `{ email, password, remember }`.
 -->
 <script>
-  import { emit, id } from '@zubra/runtime'
+  import { effect, emit, id } from '@zubra/runtime'
   import './toggle-switch.zb'
 
   const errorId = id()
+  const emailId = id()
+  const passwordId = id()
   let showPassword = false
   let remember = true
+  // Which fields have been edited since the error was set: they're no longer marked.
+  let edited = { email: false, password: false }
+  effect(() => {
+    if (error) edited = { email: false, password: false }
+  })
+  const invalid = (field) => Boolean(error) && (errorField === "both" || errorField === field) && !edited[field]
 
   function submit(event) {
     const data = new FormData(event.currentTarget)
@@ -22,43 +31,52 @@
 </script>
 <style>
   :host { display: block; max-width: 24rem; margin-inline: auto; }
-  form { display: grid; gap: 1rem; padding: 1.75rem; border: 1px solid var(--border, #e4e4e7); border-radius: calc(var(--radius, 0.625rem) + 4px); background: var(--card, #fff); color: var(--card-foreground, #09090b); }
-  h2 { margin: 0; font-size: 1.4rem; letter-spacing: -0.01em; }
-  .intro { margin: -0.6rem 0 0.25rem; color: var(--muted-foreground, #71717a); }
-  label { display: grid; gap: 0.35rem; font-size: 0.875rem; font-weight: 600; }
-  .row { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
-  input { box-sizing: border-box; width: 100%; padding: 0.6rem 0.7rem; border: 1px solid var(--input, var(--border, #e4e4e7)); border-radius: calc(var(--radius, 0.625rem) - 2px); background: var(--background, #fff); color: inherit; font: inherit; font-size: 1rem; font-weight: 400; }
+  form { padding: 1.75rem; border: 1px solid var(--border, #e4e4e7); border-radius: calc(var(--radius, 0.625rem) + 4px); background: var(--card, #fff); color: var(--card-foreground, #09090b); }
+  fieldset { display: grid; gap: 1rem; margin: 0; padding: 0; border: 0; min-width: 0; }
+  h2 { margin: 0; font-size: 1.4rem; line-height: 1.25; letter-spacing: -0.01em; }
+  .signin-intro { margin: -0.6rem 0 0.25rem; color: var(--muted-foreground, #71717a); }
+  .signin-field { display: grid; gap: 0.35rem; }
+  .signin-label-row { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+  label { font-size: 0.875rem; font-weight: 600; }
+  input { box-sizing: border-box; width: 100%; padding: 0.6rem 0.7rem; border: 1px solid var(--input, var(--border, #e4e4e7)); border-radius: calc(var(--radius, 0.625rem) - 2px); background: var(--background, #fff); color: inherit; font: inherit; font-size: 1rem; }
   input:focus-visible { outline: 2px solid var(--ring, #18181b); outline-offset: 1px; }
   input[aria-invalid=true] { border-color: var(--destructive, #dc2626); }
-  .password { position: relative; }
-  .password input { padding-right: 4.5rem; }
-  .reveal { position: absolute; top: 50%; right: 0.35rem; transform: translateY(-50%); padding: 0.3rem 0.55rem; border: 0; border-radius: calc(var(--radius, 0.625rem) - 4px); background: none; color: var(--muted-foreground, #71717a); font: inherit; font-size: 0.8125rem; font-weight: 600; cursor: pointer; }
-  .reveal:hover { background: var(--accent, #f4f4f5); color: var(--accent-foreground, #18181b); }
-  a { color: var(--primary, #18181b); font-size: 0.875rem; font-weight: 500; text-underline-offset: 3px; }
-  .error { margin: 0; padding: 0.6rem 0.75rem; border-radius: calc(var(--radius, 0.625rem) - 2px); background: color-mix(in oklab, var(--destructive, #dc2626) 12%, transparent); color: var(--foreground, #09090b); font-size: 0.9rem; }
-  .submit { padding: 0.65rem 1rem; border: 0; border-radius: calc(var(--radius, 0.625rem) - 2px); background: var(--primary, #18181b); color: var(--primary-foreground, #fafafa); font: inherit; font-weight: 600; cursor: pointer; }
-  .submit:hover { opacity: 0.92; }
-  .submit:disabled { opacity: 0.6; cursor: progress; }
-  .submit:focus-visible { outline: 2px solid var(--ring, #18181b); outline-offset: 2px; }
-  .signup { margin: 0; text-align: center; color: var(--muted-foreground, #71717a); font-size: 0.875rem; }
+  .signin-password { position: relative; }
+  .signin-password input { padding-right: 4.5rem; }
+  .signin-reveal { position: absolute; top: 50%; right: 0.35rem; transform: translateY(-50%); min-height: 1.75rem; padding: 0.3rem 0.6rem; border: 0; border-radius: calc(var(--radius, 0.625rem) - 4px); background: none; color: var(--muted-foreground, #71717a); font: inherit; font-size: 0.8125rem; font-weight: 600; cursor: pointer; }
+  .signin-reveal:hover { background: var(--accent, #f4f4f5); color: var(--accent-foreground, #18181b); }
+  .signin-reveal:focus-visible { outline: 2px solid var(--ring, #18181b); outline-offset: 1px; }
+  a { display: inline-block; padding-block: 0.25rem; color: var(--primary, #18181b); font-size: 0.875rem; font-weight: 500; text-underline-offset: 3px; }
+  .signin-error { margin: 0; padding: 0.6rem 0.75rem; border-radius: calc(var(--radius, 0.625rem) - 2px); background: color-mix(in oklab, var(--destructive, #dc2626) 12%, transparent); color: var(--foreground, #09090b); font-size: 0.9rem; }
+  .signin-submit { padding: 0.65rem 1rem; border: 0; border-radius: calc(var(--radius, 0.625rem) - 2px); background: var(--primary, #18181b); color: var(--primary-foreground, #fafafa); font: inherit; font-weight: 600; cursor: pointer; }
+  .signin-submit:hover { opacity: 0.92; }
+  .signin-submit:disabled { opacity: 0.6; cursor: progress; }
+  .signin-submit:focus-visible { outline: 2px solid var(--ring, #18181b); outline-offset: 2px; }
+  .signin-signup { margin: 0; text-align: center; color: var(--muted-foreground, #71717a); font-size: 0.875rem; }
 </style>
-<signin-block heading="Sign in" intro="" action="" error="" busy={false} forgot-href="" signup-href="">
-  <form method="post" action={action || null} onsubmit={submit} aria-describedby={error ? errorId : null}>
-    <h2>{heading}</h2>
-    <p zb-if={intro} class="intro">{intro}</p>
-    <p zb-if={error} class="error" id={errorId} role="alert">{error}</p>
-    <label>Email
-      <input type="email" name="email" autocomplete="username" required aria-invalid={error ? "true" : "false"}>
-    </label>
-    <label>
-      <span class="row"><span>Password</span><a zb-if={forgotHref} href={forgotHref}>Forgot password?</a></span>
-      <span class="password">
-        <input type={showPassword ? "text" : "password"} name="password" autocomplete="current-password" required aria-invalid={error ? "true" : "false"}>
-        <button type="button" class="reveal" aria-pressed={showPassword ? "true" : "false"} onclick={() => (showPassword = !showPassword)}>{showPassword ? "Hide" : "Show"}</button>
-      </span>
-    </label>
-    <toggle-switch label="Keep me signed in" checked={remember} oncheckedchange={(event) => (remember = event.detail)}></toggle-switch>
-    <button type="submit" class="submit" disabled={busy}>{busy ? "Signing in…" : heading}</button>
-    <p zb-if={signupHref} class="signup">New here? <a href={signupHref}>Create an account</a></p>
+<signin-block heading="Sign in" intro="" action="" error="" error-field="both" busy={false} forgot-href="" signup-href="">
+  <form method="post" action={action || null} onsubmit={submit} aria-busy={busy ? "true" : "false"} aria-describedby={error ? errorId : null}>
+    <fieldset disabled={busy}>
+      <h2>{heading}</h2>
+      <p zb-if={intro} class="signin-intro">{intro}</p>
+      <p zb-if={error} class="signin-error" id={errorId} role="alert">{error}</p>
+      <div class="signin-field">
+        <label for={emailId}>Email</label>
+        <input id={emailId} type="email" name="email" autocomplete="username" required aria-invalid={invalid("email") ? "true" : "false"} oninput={() => (edited = { ...edited, email: true })}>
+      </div>
+      <div class="signin-field">
+        <div class="signin-label-row">
+          <label for={passwordId}>Password</label>
+          <a zb-if={forgotHref} href={forgotHref}>Forgot password?</a>
+        </div>
+        <div class="signin-password">
+          <input id={passwordId} type={showPassword ? "text" : "password"} name="password" autocomplete="current-password" required aria-invalid={invalid("password") ? "true" : "false"} oninput={() => (edited = { ...edited, password: true })}>
+          <button type="button" class="signin-reveal" aria-controls={passwordId} aria-label={showPassword ? "Hide password" : "Show password"} aria-pressed={showPassword ? "true" : "false"} onclick={() => (showPassword = !showPassword)}>{showPassword ? "Hide" : "Show"}</button>
+        </div>
+      </div>
+      <toggle-switch name="remember" label="Keep me signed in" checked={remember} oncheckedchange={(event) => (remember = event.detail)}></toggle-switch>
+      <button type="submit" class="signin-submit">{busy ? "Signing in…" : heading}</button>
+      <p zb-if={signupHref} class="signin-signup">New here? <a href={signupHref}>Create an account</a></p>
+    </fieldset>
   </form>
 </signin-block>

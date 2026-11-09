@@ -3,7 +3,8 @@
   dark or system) and a danger zone whose delete asks first. `value` is
   `{ name, email, notifications: { [id]: boolean }, theme }` and is two-way; `notifications` lists
   the switches as `[{ id, label, description? }]`. Save fires `save` with the value; confirming the
-  delete fires `delete`.
+  delete fires `delete`. While you save, set `busy`; then set `status` to what happened ("Saved.",
+  or what went wrong). Without a `status`, it says "Saved." itself.
   @fires valuechange - A field changed; `detail` is the new value.
   @fires save - The form was saved; `detail` is the value.
   @fires delete - The delete was confirmed.
@@ -32,6 +33,7 @@
     emit('save', value)
     saved = true
   }
+  const message = status || (saved && !busy ? "Saved." : "")
 </script>
 <style>
   :host { display: block; max-width: 42rem; }
@@ -39,33 +41,35 @@
   section { display: grid; gap: 0.9rem; padding: 1.25rem; border: 1px solid var(--border, #e4e4e7); border-radius: calc(var(--radius, 0.625rem) + 2px); background: var(--card, #fff); color: var(--card-foreground, #09090b); }
   h2 { margin: 0 0 0.25rem; font-size: 1.5rem; letter-spacing: -0.01em; }
   h3 { margin: 0; font-size: 1.05rem; }
-  .hint { margin: -0.6rem 0 0; color: var(--muted-foreground, #71717a); font-size: 0.875rem; }
-  .fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr)); gap: 0.9rem; }
+  .settings-hint { margin: -0.6rem 0 0; color: var(--muted-foreground, #71717a); font-size: 0.875rem; }
+  .settings-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr)); gap: 0.9rem; }
   label { display: grid; gap: 0.35rem; font-size: 0.875rem; font-weight: 600; }
   input { box-sizing: border-box; width: 100%; padding: 0.55rem 0.7rem; border: 1px solid var(--input, var(--border, #e4e4e7)); border-radius: calc(var(--radius, 0.625rem) - 2px); background: var(--background, #fff); color: inherit; font: inherit; font-weight: 400; }
   input:focus-visible { outline: 2px solid var(--ring, #18181b); outline-offset: 1px; }
-  .appearance { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem; }
-  .danger { border-color: color-mix(in oklab, var(--destructive, #dc2626) 45%, var(--border, #e4e4e7)); }
-  .danger-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem; }
-  .danger-row p { margin: 0; color: var(--muted-foreground, #71717a); font-size: 0.875rem; }
-  .actions { display: flex; align-items: center; justify-content: flex-end; gap: 0.75rem; }
-  .status { color: var(--muted-foreground, #71717a); font-size: 0.875rem; }
-  .button { padding: 0.55rem 1rem; border: 1px solid var(--border, #e4e4e7); border-radius: calc(var(--radius, 0.625rem) - 2px); background: var(--background, #fff); color: var(--foreground, #09090b); font: inherit; font-weight: 600; cursor: pointer; }
-  .button:hover { background: var(--accent, #f4f4f5); }
-  .primary { border-color: var(--primary, #18181b); background: var(--primary, #18181b); color: var(--primary-foreground, #fafafa); }
-  .primary:hover { background: var(--primary, #18181b); opacity: 0.92; }
-  .destructive { border-color: var(--destructive, #dc2626); background: var(--destructive, #dc2626); color: #fff; }
-  .destructive:hover { background: var(--destructive, #dc2626); opacity: 0.92; }
-  .button:focus-visible { outline: 2px solid var(--ring, #18181b); outline-offset: 2px; }
-  .confirm-actions { display: flex; justify-content: flex-end; gap: 0.5rem; }
+  .settings-appearance { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem; }
+  .settings-danger { border-color: color-mix(in oklab, var(--destructive, #dc2626) 45%, var(--border, #e4e4e7)); }
+  .settings-danger-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem; }
+  .settings-danger-row p { margin: 0; color: var(--muted-foreground, #71717a); font-size: 0.875rem; }
+  .settings-actions { display: flex; align-items: center; justify-content: flex-end; gap: 0.75rem; }
+  .settings-status { color: var(--muted-foreground, #71717a); font-size: 0.875rem; }
+  .settings-button { padding: 0.55rem 1rem; border: 1px solid var(--border, #e4e4e7); border-radius: calc(var(--radius, 0.625rem) - 2px); background: var(--background, #fff); color: var(--foreground, #09090b); font: inherit; font-weight: 600; cursor: pointer; }
+  .settings-button:hover { background: var(--accent, #f4f4f5); }
+  .settings-primary { border-color: var(--primary, #18181b); background: var(--primary, #18181b); color: var(--primary-foreground, #fafafa); }
+  .settings-primary:hover { background: var(--primary, #18181b); opacity: 0.92; }
+  /* White on the theme's red, darkened a little: readable in light and dark (shadcn's dark red is light). */
+  .settings-destructive { border-color: transparent; background: color-mix(in oklab, var(--destructive, #dc2626) 78%, black); color: #fff; }
+  .settings-destructive:hover { background: color-mix(in oklab, var(--destructive, #dc2626) 78%, black); opacity: 0.92; }
+  .settings-button:disabled { opacity: 0.6; cursor: progress; }
+  .settings-button:focus-visible { outline: 2px solid var(--ring, #18181b); outline-offset: 2px; }
+  .settings-confirm { display: flex; justify-content: flex-end; gap: 0.5rem; }
 </style>
-<settings-block value:model={{ name: "", email: "", notifications: {}, theme: "system" }} notifications={[]} heading="Settings">
-  <form onsubmit={save}>
+<settings-block value:model={{ name: "", email: "", notifications: {}, theme: "system" }} notifications={[]} heading="Settings" busy={false} status="">
+  <form onsubmit={save} aria-busy={busy ? "true" : "false"}>
     <h2>{heading}</h2>
     <section aria-labelledby={nameId}>
       <h3 id={nameId}>Profile</h3>
-      <div class="fields">
-        <label>Name<input name="name" autocomplete="name" value={value.name ?? ""} oninput={(event) => set({ name: event.target.value })}></label>
+      <div class="settings-fields">
+        <label>Name<input name="name" autocomplete="name" required value={value.name ?? ""} oninput={(event) => set({ name: event.target.value })}></label>
         <label>Email<input id={emailId} type="email" name="email" autocomplete="email" value={value.email ?? ""} oninput={(event) => set({ email: event.target.value })}></label>
       </div>
     </section>
@@ -76,28 +80,28 @@
       </zb-each>
     </section>
     <section>
-      <div class="appearance">
+      <div class="settings-appearance">
         <h3>Appearance</h3>
         <segmented-control label="Theme" options={THEMES} value={value.theme ?? "system"} onvaluechange={(event) => set({ theme: event.detail })}></segmented-control>
       </div>
     </section>
-    <section class="danger">
+    <section class="settings-danger">
       <h3>Delete account</h3>
-      <div class="danger-row">
+      <div class="settings-danger-row">
         <p>This removes your account and everything in it. It can't be undone.</p>
-        <button type="button" class="button destructive" onclick={() => (confirming = true)}>Delete account…</button>
+        <button type="button" class="settings-button settings-destructive" onclick={() => (confirming = true)}>Delete account…</button>
       </div>
     </section>
-    <div class="actions">
-      <span class="status" role="status">{saved ? "Saved." : ""}</span>
-      <button type="submit" class="button primary">Save changes</button>
+    <div class="settings-actions">
+      <span class="settings-status" role="status">{message}</span>
+      <button type="submit" class="settings-button settings-primary" disabled={busy}>{busy ? "Saving…" : "Save changes"}</button>
     </div>
   </form>
   <modal-dialog label="Delete your account?" open={confirming} onopenchange={(event) => (confirming = event.detail)}>
     <p>Your account, settings and history will be removed for good.</p>
-    <div slot="actions" class="confirm-actions">
-      <button type="button" class="button" onclick={() => (confirming = false)}>Cancel</button>
-      <button type="button" class="button destructive" onclick={() => { confirming = false; emit('delete') }}>Delete account</button>
+    <div slot="actions" class="settings-confirm">
+      <button type="button" class="settings-button" onclick={() => (confirming = false)}>Cancel</button>
+      <button type="button" class="settings-button settings-destructive" onclick={() => { confirming = false; emit('delete') }}>Delete account</button>
     </div>
   </modal-dialog>
 </settings-block>

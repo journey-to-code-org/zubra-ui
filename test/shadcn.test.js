@@ -176,10 +176,11 @@ test('a block installs with the components it is made of, and works', async () =
   }
   await run(npm, ['install', '--no-audit', '--no-fund', `vite@${VERSIONS.vite}`], dir);
   const { page, problems, close } = await open(dir);
+  await page.getByLabel('Name').fill('Sam');
   await page.getByRole('switch', { name: 'Weekly summary' }).click();
   await page.getByRole('button', { name: 'Dark' }).click();
   await page.getByRole('button', { name: 'Save changes' }).click();
-  assert.deepEqual(JSON.parse(await page.title()), { name: '', email: '', notifications: { digest: true }, theme: 'dark' });
+  assert.deepEqual(JSON.parse(await page.title()), { name: 'Sam', email: '', notifications: { digest: true }, theme: 'dark' });
   await page.getByRole('button', { name: 'Delete account…' }).click();
   assert.equal(await page.locator('modal-dialog dialog').evaluate((dialog) => dialog.open), true, 'the dialog it brought works');
   assert.deepEqual(problems, []);
