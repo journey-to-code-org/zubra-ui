@@ -103,6 +103,41 @@ export const demos = {
     // The page adds a button that sets `open`; the snippets show that too.
     opener: 'Delete project…',
   },
+  'signin-block': {
+    attrs: { heading: 'Sign in', intro: 'Welcome back to the bake sale planner.', 'forgot-href': '#forgot', 'signup-href': '#signup' },
+    events: ['signin'],
+  },
+  'settings-block': {
+    props: {
+      value: { name: 'Maya Chen', email: 'maya@example.com', notifications: { replies: true, digest: false }, theme: 'system' },
+      notifications: [
+        { id: 'replies', label: 'Replies to me', description: 'When someone answers your message.' },
+        { id: 'digest', label: 'Weekly summary', description: 'One email on Mondays.' },
+      ],
+    },
+    events: ['valuechange', 'save', 'delete'],
+  },
+  'pricing-block': {
+    attrs: { heading: 'Simple pricing', intro: 'Start free. Upgrade when your group grows.' },
+    props: {
+      plans: [
+        { id: 'free', name: 'Free', description: 'For trying it out', monthly: 0, yearly: 0, features: ['One project', 'Up to 3 people', 'Community help'], cta: 'Start free' },
+        { id: 'team', name: 'Team', description: 'For small groups', monthly: 12, yearly: 120, features: ['Unlimited projects', 'Up to 10 people', 'Email help'], featured: true },
+        { id: 'org', name: 'Organisation', description: 'For bigger groups', monthly: 49, yearly: 490, features: ['Everything in Team', 'Single sign-on', 'Priority help'], cta: 'Talk to us' },
+      ],
+    },
+    events: ['periodchange', 'choose'],
+  },
+  'dashboard-shell': {
+    attrs: { product: 'Planner', user: 'Maya Chen' },
+    props: {
+      nav: [{ id: 'overview', label: 'Overview' }, { id: 'events', label: 'Events' }, { id: 'people', label: 'People' }, { id: 'settings', label: 'Settings' }],
+      current: 'overview',
+      menu: [{ value: 'profile', label: 'Profile' }, { value: 'signout', label: 'Sign out' }],
+    },
+    events: ['currentchange', 'menuselect'],
+    html: '<div class="demo-stats">\n  <div class="demo-box"><strong>12</strong> events this month</div>\n  <div class="demo-box"><strong>48</strong> people signed up</div>\n  <div class="demo-box"><strong>$1,240</strong> raised</div>\n</div>',
+  },
   'stack-layout': {
     attrs: { gap: '0.75rem' },
     html: '<div class="demo-box">Your name</div>\n<div class="demo-box">Email address</div>\n<div class="demo-box">Message</div>',

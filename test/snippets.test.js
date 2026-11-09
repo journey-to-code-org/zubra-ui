@@ -23,6 +23,7 @@ const run = async (command, args, cwd) => (await exec(command, args, { cwd, enco
 const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
 const { components } = JSON.parse(readFileSync(join(root, 'components/index.json'), 'utf8'));
 const names = components.map(({ name }) => name);
+const isBlock = (name) => components.find((component) => component.name === name).category === 'block';
 
 const ANGULAR = '22.2.5';
 const VERSIONS = {
@@ -64,7 +65,10 @@ export default {
     files[`src/${name}.svelte`] = snippets.svelte(name, demos[name]);
     files[`src/${name}.angular.ts`] = snippets.angular(name, demos[name]);
   }
-  files['html.html'] = page('noop.js', names.map((name) => snippets.html(name, demos[name])).join('\n\n')).replace(/'\.\/components\//g, "'/src/components/");
+  // Blocks last: each HTML snippet finds its element with document.querySelector, which would
+  // otherwise find a block's inner one first (on a real page there's one snippet).
+  const blocksLast = [...names].sort((a, b) => Number(isBlock(a)) - Number(isBlock(b)));
+  files['html.html'] = page('noop.js', blocksLast.map((name) => snippets.html(name, demos[name])).join('\n\n')).replace(/'\.\/components\//g, "'/src/components/");
   files['src/noop.js'] = '';
   files['react.html'] = page('react.jsx');
   files['src/react.jsx'] = `import { createRoot } from 'react-dom/client';
@@ -128,7 +132,9 @@ for (const stack of STACKS) {
     const results = await tab.evaluate(async (expected) => {
       const out = {};
       for (const [name, props] of Object.entries(expected)) {
-        const element = document.querySelector(name);
+        // The snippet's own element, not one inside another component (a block's segmented-control).
+        const inside = Object.keys(expected).filter((other) => other !== name).join(',');
+        const element = [...document.querySelectorAll(name)].find((el) => !el.parentElement?.closest(inside));
         if (!element) { out[name] = 'missing'; continue; }
         if (!customElements.get(name)) { out[name] = 'not defined'; continue; }
         await element.updateComplete;

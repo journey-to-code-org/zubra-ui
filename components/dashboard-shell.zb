@@ -1,0 +1,79 @@
+<!--
+  An app's frame: a sidebar of sections, a top bar with the page title and a user menu, and the page
+  in the middle. In a narrow space (it measures itself, not the screen) the sidebar folds behind a
+  Menu button. `nav` is `[{ id, label, href? }]` and `current` (the open section's id) is two-way:
+  a section with an `href` is a link, one without is a button that sets `current`. `menu` is the
+  user menu's `[{ value, label }]`.
+  @slot - The page's content.
+  @slot actions - Buttons in the top bar, before the user menu.
+  @fires currentchange - A section was chosen; `detail` is its id.
+  @fires menuselect - A user menu item was picked; `detail` is its value.
+-->
+<script>
+  import { emit, hasSlot, id } from '@zubra/runtime'
+  import './dropdown-menu.zb'
+
+  const navId = id()
+  const hasActions = hasSlot('actions')
+  let menuOpen = false
+  const section = nav.find((item) => item.id === current)
+
+  function choose(event, item) {
+    if (!item.href) event.preventDefault()
+    current = item.id
+    menuOpen = false
+  }
+</script>
+<style>
+  :host { display: block; container-type: inline-size; }
+  .shell { display: grid; grid-template-columns: 14rem 1fr; min-height: var(--shell-height, 32rem); border: 1px solid var(--border, #e4e4e7); border-radius: calc(var(--radius, 0.625rem) + 4px); overflow: hidden; background: var(--background, #fff); color: var(--foreground, #09090b); }
+  nav { display: flex; flex-direction: column; gap: 0.25rem; padding: 1rem 0.75rem; border-right: 1px solid var(--border, #e4e4e7); background: var(--muted, #f4f4f5); }
+  .brand { margin: 0 0 0.75rem; padding: 0 0.5rem; font-weight: 750; font-size: 1.05rem; }
+  nav ul { display: grid; gap: 0.15rem; margin: 0; padding: 0; list-style: none; }
+  nav a, nav button { display: block; width: 100%; box-sizing: border-box; padding: 0.5rem 0.65rem; border: 0; border-radius: calc(var(--radius, 0.625rem) - 2px); background: none; color: inherit; font: inherit; font-size: 0.925rem; text-align: left; text-decoration: none; cursor: pointer; }
+  nav a:hover, nav button:hover { background: color-mix(in oklab, var(--foreground, #09090b) 7%, transparent); }
+  nav [aria-current=page] { background: var(--background, #fff); font-weight: 650; box-shadow: 0 1px 2px #0000001a; }
+  nav :focus-visible, .menu-button:focus-visible { outline: 2px solid var(--ring, #18181b); outline-offset: 1px; }
+  .main { display: flex; flex-direction: column; min-width: 0; }
+  header { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1.25rem; border-bottom: 1px solid var(--border, #e4e4e7); }
+  h1 { flex: 1; min-width: 0; margin: 0; overflow: hidden; font-size: 1.15rem; text-overflow: ellipsis; white-space: nowrap; }
+  dropdown-menu { flex-shrink: 0; white-space: nowrap; }
+  .actions { display: flex; align-items: center; gap: 0.5rem; }
+  .menu-button { display: none; padding: 0.4rem 0.7rem; border: 1px solid var(--border, #e4e4e7); border-radius: calc(var(--radius, 0.625rem) - 2px); background: var(--background, #fff); color: inherit; font: inherit; font-weight: 600; cursor: pointer; }
+  .content { flex: 1; padding: 1.25rem; overflow: auto; }
+  @container (max-width: 40rem) {
+    .shell { grid-template-columns: 1fr; }
+    nav { display: none; border-right: 0; border-bottom: 1px solid var(--border, #e4e4e7); }
+    .shell.open nav { display: flex; }
+    .menu-button { display: inline-block; }
+    .brand { display: none; }
+  }
+</style>
+<dashboard-shell product="" heading="" nav={[]} current:model="" menu={[]} user="Account">
+  <div class="shell" class:open={menuOpen}>
+    <nav id={navId} aria-label={product || "Sections"}>
+      <p zb-if={product} class="brand">{product}</p>
+      <ul>
+        <zb-each items={nav} as="item" key={item.id}>
+          <li>
+            <zb-if test={item.href}>
+              <a href={item.href} aria-current={item.id === current ? "page" : null} onclick={(event) => choose(event, item)}>{item.label}</a>
+              <zb-else>
+                <button type="button" aria-current={item.id === current ? "page" : null} onclick={(event) => choose(event, item)}>{item.label}</button>
+              </zb-else>
+            </zb-if>
+          </li>
+        </zb-each>
+      </ul>
+    </nav>
+    <div class="main">
+      <header>
+        <button type="button" class="menu-button" aria-controls={navId} aria-expanded={menuOpen ? "true" : "false"} onclick={() => (menuOpen = !menuOpen)}>Menu</button>
+        <h1>{heading || section?.label || ""}</h1>
+        <div zb-if={hasActions} class="actions"><zb-slot name="actions"></zb-slot></div>
+        <dropdown-menu zb-if={menu.length} label={user} items={menu} onitemselect={(event) => emit('menuselect', event.detail)}></dropdown-menu>
+      </header>
+      <div class="content"><zb-slot></zb-slot></div>
+    </div>
+  </div>
+</dashboard-shell>

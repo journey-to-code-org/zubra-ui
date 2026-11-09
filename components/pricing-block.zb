@@ -1,0 +1,66 @@
+<!--
+  Pricing plans side by side, with a monthly or yearly switch. `plans` is `[{ id, name,
+  description, monthly, yearly, features: [], cta?, featured? }]` (prices as numbers; 0 is
+  "Free"), `currency` is an ISO code, and `period` ("monthly" or "yearly") is two-way. Choosing a
+  plan fires `choose` with `{ plan, period }`.
+  @fires periodchange - The billing period changed; `detail` is "monthly" or "yearly".
+  @fires choose - A plan was chosen; `detail` is `{ plan, period }` (the plan's id).
+-->
+<script>
+  import { emit } from '@zubra/runtime'
+  import './segmented-control.zb'
+
+  const PERIODS = [{ value: "monthly", label: "Monthly" }, { value: "yearly", label: "Yearly" }]
+  const money = (amount) => amount === 0 ? "Free" : new Intl.NumberFormat("en-US", { style: "currency", currency, maximumFractionDigits: amount % 1 ? 2 : 0 }).format(amount)
+  const priceOf = (plan) => (period === "yearly" ? plan.yearly ?? plan.monthly * 12 : plan.monthly)
+  const saving = (plan) => plan.monthly > 0 && plan.yearly != null ? Math.round((1 - plan.yearly / (plan.monthly * 12)) * 100) : 0
+</script>
+<style>
+  :host { display: block; }
+  header { display: grid; justify-items: center; gap: 0.75rem; margin-bottom: 1.75rem; text-align: center; }
+  h2 { margin: 0; font-size: clamp(1.5rem, 1.2rem + 1.5vw, 2.1rem); letter-spacing: -0.02em; }
+  .intro { max-width: 34rem; margin: 0; color: var(--muted-foreground, #71717a); }
+  .plans { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr)); gap: 1rem; align-items: stretch; }
+  article { display: flex; flex-direction: column; gap: 1rem; padding: 1.5rem; border: 1px solid var(--border, #e4e4e7); border-radius: calc(var(--radius, 0.625rem) + 4px); background: var(--card, #fff); color: var(--card-foreground, #09090b); }
+  article.featured { border-color: var(--primary, #18181b); box-shadow: 0 0 0 1px var(--primary, #18181b); }
+  .top { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+  h3 { margin: 0; font-size: 1.1rem; }
+  .badge { padding: 0.15rem 0.55rem; border-radius: 999px; background: var(--primary, #18181b); color: var(--primary-foreground, #fafafa); font-size: 0.75rem; font-weight: 700; }
+  .description { margin: -0.5rem 0 0; color: var(--muted-foreground, #71717a); font-size: 0.9rem; }
+  .price { display: flex; align-items: baseline; gap: 0.35rem; margin: 0; }
+  .amount { font-size: 2.1rem; font-weight: 750; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+  .per { color: var(--muted-foreground, #71717a); font-size: 0.9rem; }
+  .save { margin: -0.6rem 0 0; color: var(--muted-foreground, #71717a); font-size: 0.85rem; }
+  ul { display: grid; align-content: start; gap: 0.5rem; flex: 1; margin: 0; padding: 0; list-style: none; font-size: 0.925rem; }
+  li { display: grid; grid-template-columns: 1.1rem 1fr; gap: 0.4rem; }
+  li::before { content: "✓" / "";  color: var(--primary, #18181b); font-weight: 700; }
+  .choose { padding: 0.6rem 1rem; border: 1px solid var(--border, #e4e4e7); border-radius: calc(var(--radius, 0.625rem) - 2px); background: var(--background, #fff); color: var(--foreground, #09090b); font: inherit; font-weight: 600; cursor: pointer; }
+  .choose:hover { background: var(--accent, #f4f4f5); }
+  .featured .choose { border-color: var(--primary, #18181b); background: var(--primary, #18181b); color: var(--primary-foreground, #fafafa); }
+  .featured .choose:hover { opacity: 0.92; }
+  .choose:focus-visible { outline: 2px solid var(--ring, #18181b); outline-offset: 2px; }
+</style>
+<pricing-block plans={[]} period:model="monthly" currency="USD" heading="Pricing" intro="">
+  <header>
+    <h2>{heading}</h2>
+    <p zb-if={intro} class="intro">{intro}</p>
+    <segmented-control label="Billing period" options={PERIODS} value={period} onvaluechange={(event) => (period = event.detail)}></segmented-control>
+  </header>
+  <div class="plans">
+    <zb-each items={plans} as="plan" key={plan.id}>
+      <article class:featured={plan.featured ?? false} aria-labelledby={`plan-${plan.id}`}>
+        <div class="top">
+          <h3 id={`plan-${plan.id}`}>{plan.name}</h3>
+          <span zb-if={plan.featured} class="badge">Most popular</span>
+        </div>
+        <p zb-if={plan.description} class="description">{plan.description}</p>
+        <p class="price"><span class="amount">{money(priceOf(plan))}</span><span zb-if={priceOf(plan) > 0} class="per">{period === "yearly" ? "a year" : "a month"}</span></p>
+        <p zb-if={period === "yearly" && saving(plan) > 0} class="save">Save {saving(plan)}% compared with monthly</p>
+        <ul aria-label={`${plan.name} includes`}>
+          <zb-each items={plan.features ?? []} as="feature" key={feature}><li>{feature}</li></zb-each>
+        </ul>
+        <button type="button" class="choose" onclick={() => emit('choose', { plan: plan.id, period })}>{plan.cta ?? `Choose ${plan.name}`}</button>
+      </article>
+    </zb-each>
+  </div>
+</pricing-block>

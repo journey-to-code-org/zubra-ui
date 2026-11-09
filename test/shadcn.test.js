@@ -159,3 +159,36 @@ test('the .zb source item installs the component for editing', async () => {
   assert.match(source, /<toggle-switch/);
   assert.match(source, /var\(--primary/, 'on shadcn\'s variable names');
 });
+
+test('a block installs with the components it is made of, and works', async () => {
+  const dir = project('block', {
+    'package.json': JSON.stringify({ name: 'block', private: true, type: 'module' }),
+    'index.html': `<!doctype html><html lang="en"><body><settings-block></settings-block><script type="module" src="/main.js"></script></body></html>`,
+    'main.js': `import './src/components/zubra/theme.css';
+      import './src/components/zubra/settings-block.js';
+      const settings = document.querySelector('settings-block');
+      settings.notifications = [{ id: 'digest', label: 'Weekly summary' }];
+      settings.addEventListener('save', (event) => { document.title = JSON.stringify(event.detail); });`,
+  });
+  await add(dir, 'settings-block');
+  for (const name of ['settings-block', 'toggle-switch', 'segmented-control', 'modal-dialog', 'theme']) {
+    assert.ok(existsSync(join(dir, `src/components/zubra/${name}.${name === 'theme' ? 'css' : 'js'}`)), `${name} came with it`);
+  }
+  await run(npm, ['install', '--no-audit', '--no-fund', `vite@${VERSIONS.vite}`], dir);
+  const { page, problems, close } = await open(dir);
+  await page.getByRole('switch', { name: 'Weekly summary' }).click();
+  await page.getByRole('button', { name: 'Dark' }).click();
+  await page.getByRole('button', { name: 'Save changes' }).click();
+  assert.deepEqual(JSON.parse(await page.title()), { name: '', email: '', notifications: { digest: true }, theme: 'dark' });
+  await page.getByRole('button', { name: 'Delete account…' }).click();
+  assert.equal(await page.locator('modal-dialog dialog').evaluate((dialog) => dialog.open), true, 'the dialog it brought works');
+  assert.deepEqual(problems, []);
+  await close();
+
+  // The .zb source of a block brings its children's sources, which its imports need.
+  const source = project('block-source', { 'package.json': JSON.stringify({ name: 'block-source', private: true, type: 'module' }) });
+  await add(source, 'src/settings-block');
+  for (const name of ['settings-block', 'toggle-switch', 'segmented-control', 'modal-dialog']) {
+    assert.ok(existsSync(join(source, `src/components/${name}.zb`)), `${name}.zb came with it`);
+  }
+});

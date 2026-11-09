@@ -107,7 +107,7 @@ function slotDocs(component) {
 
 // ---- the page frame
 
-const CATEGORIES = { input: 'Form controls', widget: 'Widgets', display: 'Display', layout: 'Layout', app: 'App pieces' };
+const CATEGORIES = { input: 'Form controls', widget: 'Widgets', display: 'Display', layout: 'Layout', app: 'App pieces', block: 'Blocks' };
 for (const component of components) {
   if (!CATEGORIES[component.category]) throw new Error(`${component.name}: no nav section for category "${component.category}"`);
 }

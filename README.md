@@ -48,12 +48,13 @@ So:
 
 ## The components
 
-31, each tested for its roles, accessible names and keyboard behaviour. They include:
+35, each tested for its roles, accessible names and keyboard behaviour. They include:
 - form controls: toggle switch, star rating, choice cards, colour swatches, money input, quantity stepper, tag input, date range, segmented control;
 - widgets: tabs, dropdown menu, combobox (with Zag.js), tooltip, accordion, modal dialog, flip card, step indicator;
 - display: line, donut and spark line charts, progress ring, streak grid, an image gallery with a lightbox, and a masonry grid;
 - layout: stack, cluster, sidebar and auto grid, which adapt to their space with no media queries;
 - app pieces: chat message, message composer, kanban column.
+- blocks, which are components made of components: sign in, settings, pricing, and a dashboard shell. `npx shadcn add` on a block brings the components it uses.
 
 `dist/r/registry.json` lists them all. The `legacy/` folder holds the original wcl, which these replace.
 

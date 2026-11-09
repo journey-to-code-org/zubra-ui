@@ -289,3 +289,93 @@ test('image-gallery: a photo whose srcset has an unsafe URL doesn\'t get one (Zu
   assert.ok(messages.some((message) => message.includes('blocked an unsafe URL')));
   await page.close();
 });
+
+// ---- L4: blocks (components made of components)
+
+/** Records an element's events into window.__events as [type, detail]. */
+const record = (element, types) => element.evaluate((el, types) => {
+  window.__events = [];
+  for (const type of types) el.addEventListener(type, (event) => window.__events.push([type, event.detail]));
+}, types);
+const events = (page) => page.evaluate(() => window.__events);
+
+test('signin-block: submits what was typed, shows the password on request, and announces an error', async () => {
+  const { page, element, problems } = await open('signin-block');
+  await record(element, ['signin']);
+  await element.getByLabel('Email').fill('maya@example.com');
+  const password = element.locator('input[name=password]');
+  await password.fill('correct horse');
+  await element.getByRole('button', { name: 'Show' }).click();
+  assert.equal(await password.getAttribute('type'), 'text');
+  await element.getByRole('button', { name: 'Hide' }).click();
+  assert.equal(await password.getAttribute('type'), 'password');
+  await element.getByRole('switch', { name: 'Keep me signed in' }).click();
+  await element.getByRole('button', { name: 'Sign in' }).click();
+  assert.deepEqual(await events(page), [['signin', { email: 'maya@example.com', password: 'correct horse', remember: false }]]);
+  assert.match(page.url(), /\/components\/signin-block\/$/, 'no action: the page stays');
+  await element.evaluate((el) => { el.error = 'That password doesn\'t match.'; el.busy = true; });
+  assert.equal(await element.getByRole('alert').textContent(), 'That password doesn\'t match.');
+  assert.equal(await password.getAttribute('aria-invalid'), 'true');
+  assert.equal(await element.locator('.submit').isDisabled(), true);
+  assert.deepEqual(problems, []);
+  await page.close();
+});
+
+test('settings-block: edits flow into value, Save sends it, and delete asks first', async () => {
+  const { page, element, problems } = await open('settings-block');
+  await record(element, ['save', 'delete']);
+  await element.getByLabel('Name').fill('Maya C.');
+  await element.getByRole('switch', { name: /Weekly summary/ }).click();
+  await element.getByRole('button', { name: 'Dark' }).click();
+  const value = await prop(element, 'value');
+  assert.deepEqual(value, { name: 'Maya C.', email: 'maya@example.com', notifications: { replies: true, digest: true }, theme: 'dark' });
+  await element.getByRole('button', { name: 'Save changes' }).click();
+  assert.equal(await element.getByRole('status').textContent(), 'Saved.');
+  await element.getByRole('button', { name: 'Delete account…' }).click();
+  const dialog = element.locator('modal-dialog');
+  assert.equal(await prop(dialog, 'open'), true);
+  await dialog.getByRole('button', { name: 'Cancel' }).click();
+  assert.equal(await prop(dialog, 'open'), false);
+  await element.getByRole('button', { name: 'Delete account…' }).click();
+  await dialog.getByRole('button', { name: 'Delete account', exact: true }).click();
+  assert.deepEqual((await events(page)).map(([type]) => type), ['save', 'delete']);
+  assert.deepEqual((await events(page))[0][1], value);
+  assert.deepEqual(problems, []);
+  await page.close();
+});
+
+test('pricing-block: yearly prices and savings, and choosing reports the plan and period', async () => {
+  const { page, element, problems } = await open('pricing-block');
+  await record(element, ['choose', 'periodchange']);
+  const team = element.locator('article').nth(1);
+  assert.equal(await team.locator('.amount').textContent(), '$12');
+  assert.equal(await element.locator('article').first().locator('.amount').textContent(), 'Free');
+  await element.getByRole('button', { name: 'Yearly' }).click();
+  assert.equal(await team.locator('.amount').textContent(), '$120');
+  assert.match(await team.locator('.save').textContent(), /Save 17%/);
+  await team.getByRole('button', { name: 'Choose Team' }).click();
+  assert.deepEqual(await events(page), [['periodchange', 'yearly'], ['choose', { plan: 'team', period: 'yearly' }]]);
+  assert.deepEqual(problems, []);
+  await page.close();
+});
+
+test('dashboard-shell: sections switch, the menu reports, and a narrow space folds the sidebar', async () => {
+  const { page, element, problems } = await open('dashboard-shell');
+  await record(element, ['currentchange', 'menuselect']);
+  await element.getByRole('button', { name: 'Events' }).click();
+  assert.equal(await element.locator('h1').textContent(), 'Events');
+  assert.equal(await element.getByRole('button', { name: 'Events' }).getAttribute('aria-current'), 'page');
+  await element.getByRole('button', { name: 'Maya Chen' }).click();
+  await element.getByRole('menuitem', { name: 'Sign out' }).click();
+  assert.deepEqual(await events(page), [['currentchange', 'events'], ['menuselect', 'signout']]);
+  await page.setViewportSize({ width: 390, height: 800 });
+  const nav = element.locator('nav');
+  assert.equal(await nav.isVisible(), false, 'folded away in a narrow space');
+  await element.getByRole('button', { name: 'Menu' }).click();
+  assert.equal(await nav.isVisible(), true);
+  await element.getByRole('button', { name: 'People' }).click();
+  assert.equal(await nav.isVisible(), false, 'choosing a section folds it again');
+  assert.equal(await element.locator('h1').textContent(), 'People');
+  assert.deepEqual(problems, []);
+  await page.close();
+});
