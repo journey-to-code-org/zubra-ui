@@ -1,0 +1,55 @@
+<!--
+  A panel that slides in from the edge of the screen (`side`: right, left or bottom), on the native
+  <dialog>: the page behind is inert, focus moves in and back, and Escape, the close button or a
+  click outside closes it. For filters, a cart, settings, or a menu on a phone. `open` is two-way.
+  @slot - The panel's content.
+  @slot heading - Its title, which labels it (defaults to `label`).
+  @slot actions - Buttons pinned to the bottom, shown only when given. One with `data-close` closes it.
+-->
+<script>
+  import { effect, hasSlot, id } from '@zubra/runtime'
+
+  const headingId = id()
+  const hasActions = hasSlot('actions')
+  let dialog = null
+  let pressedOutside = false
+
+  effect(() => {
+    if (!dialog) return
+    if (open && !dialog.open) dialog.showModal()
+    else if (!open && dialog.open) dialog.close()
+  })
+</script>
+<style>
+  dialog { position: fixed; inset: 0 0 0 auto; margin: 0; padding: 0; width: min(26rem, 100vw); max-width: 100vw; height: 100dvh; max-height: 100dvh; border: 0; border-left: 1px solid var(--border, #e4e4e7); background: var(--background, #fff); color: var(--foreground, #18181b); box-shadow: -12px 0 40px #0000001f; }
+  .sheet-left { inset: 0 auto 0 0; border-left: 0; border-right: 1px solid var(--border, #e4e4e7); }
+  .sheet-bottom { inset: auto 0 0 0; width: 100vw; height: auto; max-height: 85dvh; border-left: 0; border-top: 1px solid var(--border, #e4e4e7); border-radius: calc(var(--radius, 0.625rem) * 1.6) calc(var(--radius, 0.625rem) * 1.6) 0 0; }
+  dialog[open] { animation: sheet-in var(--duration-slow, 400ms) var(--ease-out, ease-out); }
+  .sheet-left[open] { animation-name: sheet-in-left; }
+  .sheet-bottom[open] { animation-name: sheet-in-bottom; }
+  @keyframes sheet-in { from { transform: translateX(100%); } }
+  @keyframes sheet-in-left { from { transform: translateX(-100%); } }
+  @keyframes sheet-in-bottom { from { transform: translateY(100%); } }
+  dialog::backdrop { background: #0d122059; }
+  .sheet-panel { display: flex; flex-direction: column; height: 100%; max-height: inherit; }
+  header { display: flex; align-items: center; gap: 1rem; padding: 1rem 1.25rem; border-bottom: 1px solid var(--border, #e4e4e7); }
+  h2 { flex: 1; margin: 0; font-size: 1.05rem; }
+  .sheet-close { width: 2rem; height: 2rem; border: 0; border-radius: 50%; background: none; color: inherit; font-size: 1.4rem; line-height: 1; cursor: pointer; }
+  .sheet-close:hover { background: var(--accent, #f4f4f5); }
+  .sheet-close:focus-visible { outline: 2px solid var(--ring, #a1a1aa); outline-offset: 2px; }
+  .sheet-body { flex: 1; overflow: auto; padding: 1rem 1.25rem; }
+  footer { display: flex; justify-content: flex-end; gap: 0.5rem; padding: 0.9rem 1.25rem; border-top: 1px solid var(--border, #e4e4e7); }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: 0s !important; animation-duration: 0s !important; animation-iteration-count: 1 !important; } }
+</style>
+<side-sheet open:model={false} side="right" label="Panel">
+  <dialog ref={dialog} class="sheet-{side}" aria-labelledby={headingId} onclose={() => (open = false)} onpointerdown={(event) => (pressedOutside = event.target === dialog)} onclick.self={() => pressedOutside && (open = false)}>
+    <div class="sheet-panel">
+      <header>
+        <h2 id={headingId}><zb-slot name="heading">{label}</zb-slot></h2>
+        <button type="button" class="sheet-close" aria-label="Close" onclick={() => (open = false)}>×</button>
+      </header>
+      <div class="sheet-body"><zb-slot></zb-slot></div>
+      <footer zb-if={hasActions} onclick={(event) => event.target.closest?.("[data-close]") && (open = false)}><zb-slot name="actions"></zb-slot></footer>
+    </div>
+  </dialog>
+</side-sheet>

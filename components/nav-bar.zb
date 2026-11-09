@@ -1,0 +1,48 @@
+<!--
+  The bar across the top of a site: the brand, the main links, and actions such as Sign in. The
+  current page's link is marked `aria-current="page"`. When the bar is too narrow for the links
+  (its own width, not the screen's), they fold behind a Menu button. `links` is
+  `[{ label, href, current? }]`.
+  @slot brand - The logo or name (defaults to `brand`, linked to `href`).
+  @slot actions - Buttons or links at the end.
+-->
+<script>
+  import { hasSlot, id } from '@zubra/runtime'
+
+  const menuId = id()
+  const actions = hasSlot('actions')
+  let menu = false
+</script>
+<style>
+  :host { display: block; container-type: inline-size; }
+  .navbar { display: flex; align-items: center; gap: 1rem; padding: 0.7rem 1rem; border-bottom: 1px solid var(--border, #e4e4e7); background: var(--background, #fff); }
+  .navbar-brand { font-weight: 800; font-size: 1.05rem; color: var(--foreground, #18181b); text-decoration: none; }
+  .navbar-links { display: flex; align-items: center; gap: 0.25rem; margin: 0 0 0 0.5rem; padding: 0; list-style: none; flex: 1; }
+  .navbar-links a { display: block; padding: 0.45rem 0.7rem; border-radius: calc(var(--radius, 0.625rem) * 0.7); color: color-mix(in oklab, var(--muted-foreground, #71717a) 70%, var(--foreground, #18181b)); text-decoration: none; font-weight: 500; }
+  .navbar-links a:hover { background: var(--accent, #f4f4f5); color: var(--foreground, #18181b); }
+  .navbar-links a[aria-current=page] { color: var(--foreground, #18181b); font-weight: 700; }
+  a:focus-visible, button:focus-visible { outline: 2px solid var(--ring, #a1a1aa); outline-offset: 2px; }
+  .navbar-actions { display: flex; align-items: center; gap: 0.5rem; margin-left: auto; }
+  .navbar-menu { display: none; margin-left: auto; height: 2.25rem; padding: 0 0.8rem; border: 1px solid var(--border, #e4e4e7); border-radius: calc(var(--radius, 0.625rem) * 0.8); background: var(--background, #fff); color: var(--foreground, #18181b); font: inherit; font-weight: 600; cursor: pointer; }
+  @container (max-width: 40rem) {
+    .navbar { flex-wrap: wrap; }
+    .navbar-menu { display: inline-flex; align-items: center; }
+    .navbar-links, .navbar-actions { display: none; }
+    .navbar-open .navbar-links { display: grid; flex-basis: 100%; margin: 0.25rem 0 0; }
+    .navbar-open .navbar-actions { display: flex; flex-basis: 100%; margin: 0; padding-top: 0.5rem; }
+  }
+</style>
+<nav-bar brand="" href="/" links={[]} label="Main">
+  <div class="navbar" class:navbar-open={menu}>
+    <zb-slot name="brand"><a class="navbar-brand" href={href}>{brand}</a></zb-slot>
+    <button type="button" class="navbar-menu" aria-expanded={menu ? "true" : "false"} aria-controls={menuId} onclick={() => (menu = !menu)}>Menu</button>
+    <nav aria-label={label} style="display: contents">
+      <ul class="navbar-links" id={menuId}>
+        <zb-each items={links} as="link" key={link.href}>
+          <li><a href={link.href} aria-current={link.current ? "page" : null}>{link.label}</a></li>
+        </zb-each>
+      </ul>
+    </nav>
+    <div zb-if={actions} class="navbar-actions"><zb-slot name="actions"></zb-slot></div>
+  </div>
+</nav-bar>

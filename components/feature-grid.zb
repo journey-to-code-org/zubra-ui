@@ -1,0 +1,26 @@
+<!--
+  What a product does, as a grid of short features: an icon or emoji, a title and a line each.
+  As many columns as fit (`min` wide each). `items` is `[{ title, text, icon? }]`.
+  @slot heading - A heading above the grid (defaults to `heading`, shown only when set).
+-->
+<style>
+  :host { display: block; }
+  h2 { margin: 0 0 1.25rem; font-size: 1.5rem; letter-spacing: -0.02em; }
+  ul { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--min)), 1fr)); gap: 1rem; margin: 0; padding: 0; list-style: none; }
+  li { display: grid; align-content: start; gap: 0.45rem; padding: 1.2rem; border: 1px solid var(--border, #e4e4e7); border-radius: var(--radius, 0.625rem); background: var(--card, #fff); }
+  .features-icon { display: grid; place-items: center; width: 2.4rem; height: 2.4rem; border-radius: calc(var(--radius, 0.625rem) * 0.9); background: color-mix(in oklab, var(--primary, #18181b) 10%, var(--background, #fff)); font-size: 1.2rem; }
+  h3 { margin: 0.25rem 0 0; font-size: 1rem; }
+  p { margin: 0; color: color-mix(in oklab, var(--muted-foreground, #71717a) 75%, var(--foreground, #18181b)); }
+</style>
+<feature-grid items={[]} heading="" min="15rem">
+  <h2 zb-if={heading}><zb-slot name="heading">{heading}</zb-slot></h2>
+  <ul style:--min={min}>
+    <zb-each items={items} as="item" key={item.title}>
+      <li>
+        <span zb-if={item.icon} class="features-icon" aria-hidden="true">{item.icon}</span>
+        <h3>{item.title}</h3>
+        <p>{item.text}</p>
+      </li>
+    </zb-each>
+  </ul>
+</feature-grid>

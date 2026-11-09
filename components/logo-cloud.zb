@@ -1,0 +1,29 @@
+<!--
+  "Trusted by": a row of logos, muted so they don't shout, coming to full colour on hover. Each
+  logo's alt text is its name; with `href` it's a link. Without `src`, the name is set as a
+  wordmark. `items` is `[{ name, src?, href? }]`.
+-->
+<style>
+  :host { display: block; }
+  p { margin: 0 0 1.25rem; text-align: center; font-size: 0.85rem; font-weight: 600; color: color-mix(in oklab, var(--muted-foreground, #71717a) 75%, var(--foreground, #18181b)); }
+  ul { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 1.5rem 2.5rem; margin: 0; padding: 0; list-style: none; }
+  img { display: block; height: var(--height); width: auto; filter: grayscale(1); opacity: 0.7; transition: filter var(--duration-normal, 200ms), opacity var(--duration-normal, 200ms); }
+  a:hover img, img:hover { filter: none; opacity: 1; }
+  a { display: block; border-radius: 0.25rem; color: inherit; text-decoration: none; }
+  .logos-word { display: block; font-size: calc(var(--height) * 0.62); font-weight: 800; letter-spacing: -0.03em; line-height: var(--height); color: color-mix(in oklab, var(--muted-foreground, #71717a) 80%, var(--foreground, #18181b)); transition: color var(--duration-normal, 200ms); }
+  a:hover .logos-word { color: var(--foreground, #18181b); }
+  a:focus-visible { outline: 2px solid var(--ring, #a1a1aa); outline-offset: 4px; }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: 0s !important; animation-duration: 0s !important; animation-iteration-count: 1 !important; } }
+</style>
+<logo-cloud items={[]} heading="" height="2rem">
+  <p zb-if={heading}>{heading}</p>
+  <ul style:--height={height}>
+    <zb-each items={items} as="item" key={item.name}>
+      <li>
+        <a zb-if={item.href} href={item.href}><img zb-if={item.src} src={item.src} alt={item.name} loading="lazy"><span zb-else class="logos-word">{item.name}</span></a>
+        <img zb-else-if={item.src} src={item.src} alt={item.name} loading="lazy">
+        <span zb-else class="logos-word">{item.name}</span>
+      </li>
+    </zb-each>
+  </ul>
+</logo-cloud>

@@ -1,0 +1,26 @@
+<!--
+  Where this page sits: a trail of links from the top, ending at the current page (marked
+  `aria-current="page"`, not a link). `items` is `[{ label, href }]`; the last is the current page.
+-->
+<style>
+  :host { display: block; }
+  ol { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem; margin: 0; padding: 0; list-style: none; font-size: 0.9rem; }
+  li { display: inline-flex; align-items: center; gap: 0.35rem; }
+  li + li::before { content: ""; width: 0.4rem; height: 0.4rem; border: solid color-mix(in oklab, var(--muted-foreground, #71717a) 70%, transparent); border-width: 1.5px 1.5px 0 0; transform: rotate(45deg); margin-right: 0.2rem; }
+  a { color: color-mix(in oklab, var(--muted-foreground, #71717a) 75%, var(--foreground, #18181b)); text-decoration: none; border-radius: calc(var(--radius, 0.625rem) * 0.3); }
+  a:hover { color: var(--foreground, #18181b); text-decoration: underline; text-underline-offset: 3px; }
+  a:focus-visible { outline: 2px solid var(--ring, #a1a1aa); outline-offset: 2px; }
+  .crumbs-current { color: var(--foreground, #18181b); font-weight: 600; }
+</style>
+<breadcrumb-trail items={[]} label="Breadcrumb">
+  <nav aria-label={label}>
+    <ol>
+      <zb-each items={items} as="item" index="i" key={`${i}-${item.label}`}>
+        <li>
+          <span zb-if={i === items.length - 1} class="crumbs-current" aria-current="page">{item.label}</span>
+          <a zb-else href={item.href}>{item.label}</a>
+        </li>
+      </zb-each>
+    </ol>
+  </nav>
+</breadcrumb-trail>

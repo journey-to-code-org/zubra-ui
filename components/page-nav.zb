@@ -1,0 +1,49 @@
+<!--
+  Pagination: previous and next, the first and last page, and the pages around the current one,
+  with gaps shown as "…". The current page is marked `aria-current="page"`. `page` is two-way.
+  @fires pagechange - Another page was chosen; `detail` is its number.
+-->
+<script>
+  // 1 … 4 5 [6] 7 8 … 20: the first, the last, and `siblings` either side of the current page.
+  // (A function given the props, so the derived list follows them.)
+  function around(current, total, near) {
+    const list = []
+    for (let n = 1; n <= Math.max(1, total); n++) {
+      if (n === 1 || n === total || Math.abs(n - current) <= near) list.push(n)
+      else if (list[list.length - 1] !== "gap") list.push("gap")
+    }
+    return list.map((n, i) => ({ n, key: n === "gap" ? `gap-${i}` : n }))
+  }
+  const shown = around(page, pages, siblings)
+
+  function go(n) {
+    const next = Math.min(Math.max(1, n), Math.max(1, pages))
+    if (next === page) return
+    page = next
+  }
+</script>
+<style>
+  :host { display: block; }
+  ul { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem; margin: 0; padding: 0; list-style: none; }
+  button { min-width: 2.25rem; height: 2.25rem; padding: 0 0.6rem; border: 1px solid transparent; border-radius: calc(var(--radius, 0.625rem) * 0.8); background: none; color: var(--foreground, #18181b); font: inherit; font-size: 0.9rem; cursor: pointer; transition: background var(--duration-fast, 150ms); }
+  button:hover:not(:disabled) { background: var(--accent, #f4f4f5); }
+  button:focus-visible { outline: 2px solid var(--ring, #a1a1aa); outline-offset: 2px; }
+  button[aria-current=page] { border-color: var(--border, #e4e4e7); background: var(--background, #fff); font-weight: 700; }
+  button:disabled { opacity: 0.45; cursor: not-allowed; }
+  .pages-gap { padding: 0 0.35rem; color: var(--muted-foreground, #71717a); }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: 0s !important; animation-duration: 0s !important; animation-iteration-count: 1 !important; } }
+</style>
+<page-nav page:model={1} pages={1} siblings={1} label="Pages">
+  <nav aria-label={label}>
+    <ul>
+      <li><button type="button" disabled={page <= 1} onclick={() => go(page - 1)}>‹ Previous</button></li>
+      <zb-each items={shown} as="item" key={item.key}>
+        <li>
+          <span zb-if={item.n === "gap"} class="pages-gap" aria-hidden="true">…</span>
+          <button zb-else type="button" aria-current={item.n === page ? "page" : null} aria-label={`Page ${item.n}`} onclick={() => go(item.n)}>{item.n}</button>
+        </li>
+      </zb-each>
+      <li><button type="button" disabled={page >= pages} onclick={() => go(page + 1)}>Next ›</button></li>
+    </ul>
+  </nav>
+</page-nav>

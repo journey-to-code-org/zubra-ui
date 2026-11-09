@@ -676,3 +676,187 @@ test('reel-layout: a focusable, labelled region; next and previous move one item
   assert.deepEqual(problems, []);
   await page.close();
 });
+
+// ---- navigation
+
+test('breadcrumb-trail and page-nav: the current place is marked; page-nav shows gaps and moves', async () => {
+  let { page, element, problems } = await open('breadcrumb-trail');
+  assert.equal(await element.locator('[aria-current=page]').textContent(), 'Sourdough');
+  assert.equal(await element.getByRole('link').count(), 3, 'the current page is not a link');
+  await page.close();
+  ({ page, element, problems } = await open('page-nav'));
+  assert.equal(await element.locator('[aria-current=page]').textContent(), '6');
+  assert.deepEqual(await element.locator('li').evaluateAll((items) => items.map((item) => item.textContent.trim())), ['‹ Previous', '1', '…', '5', '6', '7', '…', '20', 'Next ›']);
+  await element.evaluate((el) => el.addEventListener('pagechange', (event) => (window.paged = event.detail)));
+  await element.getByRole('button', { name: 'Next ›' }).click();
+  assert.equal(await page.evaluate(() => window.paged), 7);
+  assert.equal(await element.locator('[aria-current=page]').textContent(), '7');
+  assert.deepEqual(problems, []);
+  await page.close();
+});
+
+test('side-sheet and popover-panel: open, close with Escape, and give focus back', async () => {
+  let { page, element, problems } = await open('side-sheet');
+  const opener = page.locator('[data-preview="side-sheet"] [data-open]');
+  await opener.click();
+  assert.equal(await element.locator('dialog').evaluate((dialog) => dialog.open && dialog.matches(':modal')), true);
+  await page.keyboard.press('Escape');
+  // (A dialog's close event comes a moment after Escape.)
+  await element.evaluate((el) => new Promise((done) => (el.open ? el.addEventListener('openchange', done, { once: true }) : done())));
+  assert.equal(await prop(element, 'open'), false);
+  assert.equal(await page.evaluate(() => document.activeElement?.dataset.open), 'side-sheet', 'focus is back on the button that opened it');
+  await page.close();
+  ({ page, element, problems } = await open('popover-panel'));
+  const trigger = element.getByRole('button', { name: 'Share' });
+  await trigger.click();
+  assert.equal(await element.locator('[popover]').evaluate((panel) => panel.matches(':popover-open')), true);
+  assert.equal(await trigger.getAttribute('aria-expanded'), 'true');
+  await page.keyboard.press('Escape');
+  // (The popover's toggle event comes a moment after it closes.)
+  await element.evaluate((el) => new Promise((done) => (el.open ? el.addEventListener('openchange', done, { once: true }) : done())));
+  assert.equal(await prop(element, 'open'), false);
+  assert.equal(await page.evaluate(() => document.activeElement?.textContent), 'Share', 'focus is back on the button');
+  assert.deepEqual(problems, []);
+  await page.close();
+});
+
+test('command-palette: Ctrl+K opens it; typing filters, arrows move, Enter runs the item', async () => {
+  const { page, element, problems } = await open('command-palette');
+  await element.evaluate((el) => el.addEventListener('select', (event) => (window.chose = event.detail)));
+  await page.keyboard.press('Control+k');
+  const box = element.getByRole('combobox');
+  await box.waitFor();
+  assert.equal(await page.evaluate(() => document.activeElement?.getAttribute('role')), 'combobox');
+  await page.keyboard.type('in');
+  assert.deepEqual(await element.locator('.palette-label').allTextContents(), ['Invite a teammate', 'Billing', 'Settings'], 'filtered');
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('ArrowDown');
+  const active = await box.getAttribute('aria-activedescendant');
+  assert.equal((await element.locator(`[id="${active}"]`).textContent()).trim(), 'Settings');
+  await page.keyboard.press('Enter');
+  assert.equal(await page.evaluate(() => window.chose), 'settings');
+  assert.match(page.url(), /#settings$/);
+  assert.equal(await prop(element, 'open'), false);
+  assert.deepEqual(problems, []);
+  await page.close();
+});
+
+test('nav-bar: the current link is marked, and a narrow bar folds its links behind Menu', async () => {
+  const { page, element, problems } = await open('nav-bar');
+  assert.equal(await element.locator('a[aria-current=page]').textContent(), 'Recipes');
+  await element.evaluate((el) => (el.style.width = '20rem'));
+  const menu = element.getByRole('button', { name: 'Menu' });
+  assert.equal(await menu.isVisible(), true);
+  assert.equal(await element.getByRole('link', { name: 'Classes' }).isVisible(), false);
+  await menu.click();
+  assert.equal(await menu.getAttribute('aria-expanded'), 'true');
+  assert.equal(await element.getByRole('link', { name: 'Classes' }).isVisible(), true);
+  assert.deepEqual(problems, []);
+  await page.close();
+});
+
+// ---- data
+
+test('data-table: sorts by a column, filters every column, and selects rows', async () => {
+  const { page, element, problems } = await open('data-table');
+  const first = () => element.locator('tbody tr').first().locator('td').nth(1).textContent();
+  await element.getByRole('button', { name: 'Amount' }).click();
+  assert.equal(await first(), 'INV-1045', 'smallest amount first');
+  await element.getByRole('button', { name: 'Amount' }).click();
+  assert.equal(await first(), 'INV-1044');
+  assert.equal(await element.locator('th[aria-sort=descending]').count(), 1);
+  await element.getByRole('searchbox').fill('paid');
+  assert.equal(await element.locator('tbody tr').count(), 2);
+  await element.evaluate((el) => el.addEventListener('selectedchange', (event) => (window.picked = event.detail)));
+  await element.getByLabel('Select all shown rows').check();
+  assert.deepEqual((await page.evaluate(() => window.picked)).sort(), [1, 4]);
+  await element.getByRole('searchbox').fill('');
+  assert.equal(await element.getByLabel('Select all shown rows').evaluate((box) => box.indeterminate), true, 'some of the shown rows');
+  assert.match(await element.getByRole('status').textContent(), /2 selected · 5 rows/);
+  assert.deepEqual(problems, []);
+  await page.close();
+});
+
+test('progress-bar, stat-card and bar-chart say their values in words', async () => {
+  let { page, element } = await open('progress-bar');
+  assert.equal(await element.getByRole('progressbar').getAttribute('aria-valuenow'), '64');
+  await element.evaluate((el) => (el.indeterminate = true));
+  assert.equal(await element.getByRole('progressbar').getAttribute('aria-valuenow'), null);
+  await page.close();
+  ({ page, element } = await open('stat-card'));
+  assert.match(await element.textContent(), /up 12\.4%/);
+  await element.evaluate((el) => { el.change = -3; el.good = 'down'; });
+  assert.equal(await element.locator('.stat-good').count(), 1, 'falling is good when good is "down"');
+  await page.close();
+  ({ page, element } = await open('bar-chart'));
+  assert.deepEqual(await element.locator('li').evaluateAll((items) => items.map((item) => item.textContent.replace(/\s+/g, ' ').trim())), ['Search 42%', 'Direct 23%', 'Social 18%', 'Email 11%', 'Referral 6%']);
+  const widths = await element.locator('.bars-fill').evaluateAll((bars) => bars.map((bar) => bar.style.width));
+  assert.equal(widths[0], '100%');
+  await page.close();
+});
+
+// ---- inputs
+
+test('range-slider, code-input and date-field: native keyboard, two-way values and events', async () => {
+  let { page, element, problems } = await open('range-slider');
+  await element.getByRole('slider').focus();
+  await page.keyboard.press('ArrowRight');
+  assert.equal(await prop(element, 'value'), 450);
+  assert.equal(await element.locator('output').textContent(), '450');
+  await page.close();
+  ({ page, element, problems } = await open('code-input'));
+  await element.evaluate((el) => el.addEventListener('complete', (event) => (window.code = event.detail)));
+  await element.getByLabel(/6-digit code/).focus();
+  await page.keyboard.type('12a 34');
+  assert.equal(await prop(element, 'value'), '1234', 'digits only');
+  await page.keyboard.type('5678');
+  assert.equal(await prop(element, 'value'), '123456', 'no more than six');
+  assert.equal(await page.evaluate(() => window.code), '123456');
+  assert.deepEqual(await element.locator('.code-box').allTextContents(), ['1', '2', '3', '4', '5', '6']);
+  await page.close();
+  ({ page, element, problems } = await open('date-field'));
+  await element.getByLabel('Delivery date').fill('2026-12-24');
+  assert.equal(await prop(element, 'value'), '2026-12-24');
+  assert.deepEqual(problems, []);
+  await page.close();
+});
+
+test('file-drop: lists chosen files, removes one (from the form too), and turns away ones too big', async () => {
+  const { page, element, problems } = await open('file-drop');
+  const input = element.locator('input[type=file]');
+  await input.setInputFiles([
+    { name: 'menu.pdf', mimeType: 'application/pdf', buffer: Buffer.alloc(2048) },
+    { name: 'photo.png', mimeType: 'image/png', buffer: Buffer.alloc(4096) },
+  ]);
+  assert.deepEqual(await element.locator('.drop-name').allTextContents(), ['menu.pdf', 'photo.png']);
+  await element.getByRole('button', { name: 'Remove menu.pdf' }).click();
+  assert.deepEqual(await input.evaluate((field) => [...field.files].map((file) => file.name)), ['photo.png']);
+  await element.evaluate((el) => (el.maxSize = 0.001));
+  await input.setInputFiles([{ name: 'huge.png', mimeType: 'image/png', buffer: Buffer.alloc(4096) }]);
+  assert.match(await element.getByRole('alert').textContent(), /over 0\.001 MB/);
+  assert.equal(await element.locator('.drop-name').count(), 0);
+  assert.deepEqual(problems, []);
+  await page.close();
+});
+
+// ---- page sections
+
+test('faq-list and newsletter-signup: one answer open at a time; a valid address subscribes', async () => {
+  let { page, element, problems } = await open('faq-list');
+  const questions = element.locator('summary');
+  await questions.nth(0).click();
+  await questions.nth(1).click();
+  assert.deepEqual(await element.locator('details').evaluateAll((all) => all.map((item) => item.open)), [false, true, false]);
+  await page.close();
+  ({ page, element, problems } = await open('newsletter-signup'));
+  await element.evaluate((el) => el.addEventListener('subscribe', (event) => (window.signed = event.detail)));
+  await element.getByLabel('Email address').fill('not an email');
+  await element.getByRole('button', { name: 'Subscribe' }).click();
+  assert.equal(await page.evaluate(() => window.signed), undefined);
+  await element.getByLabel('Email address').fill('sam@example.com');
+  await element.getByRole('button', { name: 'Subscribe' }).click();
+  assert.equal(await page.evaluate(() => window.signed), 'sam@example.com');
+  assert.match(await element.getByRole('status').textContent(), /Thanks/);
+  assert.deepEqual(problems, []);
+  await page.close();
+});

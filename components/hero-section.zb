@@ -1,0 +1,41 @@
+<!--
+  The top of a landing page: a short eyebrow line, the headline, a sentence under it, the main
+  actions, and a picture or demo beside (or under) it. Side by side when there's room, stacked
+  when there isn't (by its own width). `align` is start or center.
+  @slot - The sentence under the headline.
+  @slot heading - The headline (defaults to `heading`).
+  @slot actions - The main buttons or links.
+  @slot media - A picture, video or live demo.
+-->
+<script>
+  import { hasSlot } from '@zubra/runtime'
+
+  const media = hasSlot('media')
+  const actions = hasSlot('actions')
+</script>
+<style>
+  :host { display: block; container-type: inline-size; }
+  .hero { display: grid; gap: 2rem; align-items: center; padding: clamp(2rem, 6cqi, 5rem) clamp(1rem, 4cqi, 3rem); }
+  .hero-center { justify-items: center; text-align: center; }
+  @container (min-width: 48rem) { .hero-media { grid-template-columns: 1.1fr 1fr; } }
+  .hero-copy { display: grid; gap: 1rem; max-width: 40rem; }
+  .hero-center .hero-copy { justify-items: center; }
+  .hero-eyebrow { justify-self: start; padding: 0.2rem 0.7rem; border: 1px solid var(--border, #e4e4e7); border-radius: 999px; font-size: 0.8rem; font-weight: 600; color: color-mix(in oklab, var(--muted-foreground, #71717a) 70%, var(--foreground, #18181b)); }
+  .hero-center .hero-eyebrow { justify-self: center; }
+  h1 { margin: 0; font-size: clamp(2rem, 5.5cqi, 3.5rem); line-height: 1.05; letter-spacing: -0.03em; text-wrap: balance; }
+  .hero-text { margin: 0; font-size: clamp(1rem, 2cqi, 1.2rem); text-wrap: pretty; color: color-mix(in oklab, var(--muted-foreground, #71717a) 70%, var(--foreground, #18181b)); }
+  .hero-actions { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 0.5rem; }
+  .hero-center .hero-actions { justify-content: center; }
+  .hero-art { min-width: 0; }
+</style>
+<hero-section eyebrow="" heading="" align="start">
+  <section class="hero" class:hero-center={align === "center"} class:hero-media={media}>
+    <div class="hero-copy">
+      <span zb-if={eyebrow} class="hero-eyebrow">{eyebrow}</span>
+      <h1><zb-slot name="heading">{heading}</zb-slot></h1>
+      <div class="hero-text"><zb-slot></zb-slot></div>
+      <div zb-if={actions} class="hero-actions"><zb-slot name="actions"></zb-slot></div>
+    </div>
+    <div zb-if={media} class="hero-art"><zb-slot name="media"></zb-slot></div>
+  </section>
+</hero-section>

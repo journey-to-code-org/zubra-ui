@@ -1,0 +1,26 @@
+<!--
+  How far along something is: an upload, a setup checklist, a quota. A labelled progressbar with
+  its value as a percentage, or (without `value`, or with `indeterminate`) a moving bar that says
+  something is happening (still, for visitors who asked for less motion).
+-->
+<script>
+  const percent = value == null ? 0 : Math.round((Math.min(Math.max(value, 0), max) / max) * 100)
+  const unknown = indeterminate || value == null
+</script>
+<style>
+  :host { display: block; }
+  .progress-head { display: flex; justify-content: space-between; gap: 1rem; margin-bottom: 0.4rem; font-size: 0.875rem; }
+  .progress-label { font-weight: 600; }
+  .progress-value { font-variant-numeric: tabular-nums; color: color-mix(in oklab, var(--muted-foreground, #71717a) 75%, var(--foreground, #18181b)); }
+  .progress-track { position: relative; height: 0.55rem; overflow: hidden; border-radius: 999px; background: var(--muted, #f4f4f5); }
+  .progress-fill { height: 100%; border-radius: inherit; background: var(--primary, #18181b); transition: width var(--duration-slow, 400ms) var(--ease-out, ease-out); }
+  .progress-unknown .progress-fill { width: 35%; animation: progress-slide 1.4s ease-in-out infinite; }
+  @keyframes progress-slide { from { transform: translateX(-100%); } to { transform: translateX(300%); } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: 0s !important; animation-duration: 0s !important; animation-iteration-count: 1 !important; } }
+</style>
+<progress-bar value={null} max={100} label="Progress" indeterminate={false} show-value={true}>
+  <div class="progress-head"><span class="progress-label">{label}</span><span zb-if={showValue && !unknown} class="progress-value">{percent}%</span></div>
+  <div class="progress-track" class:progress-unknown={unknown} role="progressbar" aria-label={label} aria-valuemin="0" aria-valuemax="100" aria-valuenow={unknown ? null : percent} aria-valuetext={unknown ? "Loading" : `${percent}%`}>
+    <div class="progress-fill" style:width={unknown ? null : `${percent}%`}></div>
+  </div>
+</progress-bar>

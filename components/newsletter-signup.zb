@@ -1,0 +1,47 @@
+<!--
+  An email signup: a heading, a line on what people get, one email field and a button. It checks
+  the address with the browser's own validation, fires `subscribe` with it, and says thank you in
+  place (announced). Without JavaScript it's a plain form that posts to `action`.
+  @fires subscribe - Someone signed up; `detail` is their email address. Cancel it to keep the form showing.
+-->
+<script>
+  import { emit, id } from '@zubra/runtime'
+
+  const fieldId = id()
+  let email = ""
+  let done = false
+
+  function submit(event) {
+    event.preventDefault()
+    if (!event.target.reportValidity()) return
+    if (!emit('subscribe', email)) return
+    done = true
+  }
+</script>
+<style>
+  :host { display: block; }
+  .signup { display: grid; gap: 0.75rem; padding: clamp(1.25rem, 4vw, 2rem); border: 1px solid var(--border, #e4e4e7); border-radius: calc(var(--radius, 0.625rem) * 1.3); background: var(--card, #fff); }
+  h2 { margin: 0; font-size: 1.3rem; letter-spacing: -0.01em; }
+  .signup-text { margin: 0; color: color-mix(in oklab, var(--muted-foreground, #71717a) 75%, var(--foreground, #18181b)); }
+  form { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.25rem; }
+  input { flex: 1 1 14rem; min-width: 0; padding: 0.6rem 0.8rem; border: 1px solid var(--input, #e4e4e7); border-radius: calc(var(--radius, 0.625rem) * 0.8); background: var(--background, #fff); color: var(--foreground, #18181b); font: inherit; }
+  input:focus-visible { outline: none; border-color: var(--ring, #a1a1aa); box-shadow: 0 0 0 3px color-mix(in oklab, var(--ring, #a1a1aa) 40%, transparent); }
+  button { padding: 0.6rem 1.1rem; border: 0; border-radius: calc(var(--radius, 0.625rem) * 0.8); background: var(--primary, #18181b); color: var(--primary-foreground, #fafafa); font: inherit; font-weight: 600; cursor: pointer; }
+  button:focus-visible { outline: 2px solid var(--ring, #a1a1aa); outline-offset: 2px; }
+  .signup-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .signup-done { margin: 0; padding: 0.6rem 0.8rem; border-radius: calc(var(--radius, 0.625rem) * 0.8); background: color-mix(in oklab, oklch(0.6 0.15 150) 14%, var(--background, #fff)); font-weight: 600; }
+  .signup-small { margin: 0; font-size: 0.8rem; color: color-mix(in oklab, var(--muted-foreground, #71717a) 75%, var(--foreground, #18181b)); }
+</style>
+<newsletter-signup heading="Get the newsletter" text="" button="Subscribe" thanks="Thanks! Check your inbox to confirm." note="" action="" name="email">
+  <div class="signup">
+    <h2>{heading}</h2>
+    <p zb-if={text} class="signup-text">{text}</p>
+    <div role="status"><p zb-if={done} class="signup-done">{thanks}</p></div>
+    <form zb-if={!done} action={action || null} method="post" onsubmit={submit}>
+      <label class="signup-label" for={fieldId}>Email address</label>
+      <input id={fieldId} type="email" name={name} required autocomplete="email" placeholder="you@example.com" value={email} oninput={(event) => (email = event.target.value)}>
+      <button type="submit">{button}</button>
+    </form>
+    <p zb-if={note} class="signup-small">{note}</p>
+  </div>
+</newsletter-signup>
