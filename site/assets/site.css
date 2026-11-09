@@ -188,3 +188,8 @@ td small { color: var(--muted-foreground); }
   .stack-switch segmented-control button { padding-inline: 0.45rem; font-size: 0.85rem; }
   .brand { gap: 0.35rem; }
 }
+.source { margin: 0 0 1.5rem; color: var(--muted-foreground); font-size: 0.9rem; }
+/* The demo dialog's action buttons, in the site's button style. */
+modal-dialog [slot=actions] { padding: 0.5rem 0.9rem; border: 1px solid var(--border); border-radius: calc(var(--radius) - 2px); background: var(--background); color: var(--foreground); font: inherit; font-size: 0.92rem; font-weight: 500; cursor: pointer; }
+modal-dialog [slot=actions]:last-child { border-color: var(--destructive); background: var(--destructive); color: #fff; }
+modal-dialog p { margin: 0; }

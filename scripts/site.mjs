@@ -104,6 +104,7 @@ for (const component of components) {
   if (!CATEGORIES[component.category]) throw new Error(`${component.name}: no nav section for category "${component.category}"`);
 }
 const STACK_KEY = 'zubra-ui:stack';
+const REPO = 'https://github.com/journey-to-code-org/zubra-ui';
 
 function frame({ prefix, title, description, current, body, scripts = [] }) {
   const nav = Object.entries(CATEGORIES).map(([category, heading]) => {
@@ -240,6 +241,7 @@ for (const component of components) {
         <h1>${escape(name)}</h1>
         <p class="lead">${prose(component.description)}</p>
         ${preview(name, demo)}
+        <p class="source">Source: <a href="${REPO}/blob/master/components/${component.files[0]}"><code>${component.files[0]}</code></a>, and its <a href="${prefix}r/${name}.json">registry item</a>.</p>
         <h2 id="install">Install</h2>
         ${installs(name).map(([label, command]) => `<div class="install"><span>${escape(label)}</span>${code(command, 'sh', 'Terminal')}</div>`).join('')}
         <p class="note">The compiled install writes <code>src/components/zubra/${name}.js</code> and the theme, and adds <code>@zubra/runtime</code> to your dependencies${component.packages?.length ? `, with ${component.packages.map((pkg) => `<code>${pkg}</code>`).join(' and ')} (Zag.js runs its keyboard and focus behaviour)` : ''}.</p>
@@ -250,7 +252,7 @@ for (const component of components) {
         ${eventRows ? `<div class="table"><table><caption>Events</caption><thead><tr><th scope="col">Event</th><th scope="col">When</th></tr></thead><tbody>${eventRows}</tbody></table></div>` : ''}
         ${slotRows ? `<div class="table"><table><caption>Slots</caption><thead><tr><th scope="col">Slot</th><th scope="col">For</th></tr></thead><tbody>${slotRows}</tbody></table></div>` : ''}
         <h2 id="size">Size</h2>
-        <p><strong>${kb(sizes[name].own)}</strong> gzipped for the component, plus <strong>${kb(runtimeSize)}</strong> for the runtime, which every Zubra component on a page shares. On its own, with the parts of the runtime it uses, it's ${kb(sizes[name].total)}${component.packages?.length ? `, plus ${component.packages.join(' and ')}` : ''}.</p>
+        <p><strong>${kb(sizes[name].own)}</strong> gzipped for the component, plus the runtime, which every Zubra component on a page shares (up to <strong>${kb(runtimeSize)}</strong>, all of it). On its own, with the parts of the runtime it uses, it's ${kb(sizes[name].total)}${component.packages?.length ? `, plus ${component.packages.join(' and ')}` : ''}.</p>
       </article>`;
   write(`components/${name}/index.html`, frame({ prefix, title: `${name} · Zubra UI`, description: component.description, current: name, body, scripts: [previewScript(prefix, name, demo)] }));
 }
@@ -274,6 +276,9 @@ const homeBody = `      <section class="home">
         <h2 id="shadcn">Already on shadcn/ui?</h2>
         <p>The components use your theme as it is: <code>--primary</code>, <code>--border</code>, <code>--muted-foreground</code>, <code>--radius</code> and the rest. Skip the theme file, and they match your app.</p>
         <h2 id="all">All ${components.length} components</h2>
+        <p>Every one at once (shadcn takes several items in one command):</p>
+        ${code(`npx shadcn@latest add ${components.map(({ name }) => `${baseUrl}/r/${name}.json`).join(' ')}`, 'sh', 'Terminal')}
+        <p class="note">The registry's index is <a href="r/registry.json"><code>r/registry.json</code></a>, and <a href="llms.txt"><code>llms.txt</code></a> describes every component for AI tools.</p>
         <ul class="all">${components.map((component) => `<li><a href="components/${component.name}/">${component.name}</a><span>${prose(component.description.split(/(?<=\.)\s/)[0])}</span></li>`).join('')}</ul>
       </section>`;
 write('index.html', frame({
@@ -284,4 +289,21 @@ write('index.html', frame({
   body: homeBody,
   scripts: showcase.map((name) => previewScript('./', name, demos[name])),
 }));
+// llms.txt: what each component is and how to use it, for AI tools (https://llmstxt.org).
+write('llms.txt', [
+  '# Zubra UI',
+  '',
+  "> Copy-in web components for any project (plain HTML, React, Vue, Svelte, Angular). Install one with the shadcn CLI; they're themed with shadcn/ui's CSS variables and share `@zubra/runtime` (at most " + kb(runtimeSize) + ' gzipped).',
+  '',
+  `Install: \`npx shadcn@latest add ${baseUrl}/r/<name>.json\` writes \`src/components/zubra/<name>.js\` and the theme. Import the file, then use the tag. Set arrays and objects as properties; listen for the events.`,
+  '',
+  '## Components',
+  '',
+  ...components.map((component) => {
+    const { props, events } = api(component);
+    const list = (items) => items.map((item) => item.name).join(', ') || 'none';
+    return `- [${component.name}](${baseUrl}/components/${component.name}/): ${component.description} Properties: ${list(props)}. Events: ${list(events)}.`;
+  }),
+  '',
+].join('\n'));
 console.log(`site: ${components.length} component pages and the home page in ${out}`);
