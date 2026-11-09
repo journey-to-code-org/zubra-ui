@@ -231,4 +231,75 @@ export const demos = {
     props: {},
     events: ['send'],
   },
+  'action-button': {
+    attrs: { variant: 'primary' },
+    events: ['click'],
+    html: 'Save changes',
+  },
+  'text-field': {
+    attrs: { label: 'Email', description: "We'll send the receipt here.", type: 'email', name: 'email', autocomplete: 'email', placeholder: 'you@example.com' },
+    props: { required: true },
+    events: ['valuechange'],
+  },
+  'check-box': {
+    attrs: { label: 'Send me product updates', description: 'About once a month. Unsubscribe any time.', name: 'updates' },
+    props: { checked: true },
+    events: ['checkedchange'],
+  },
+  'radio-group': {
+    attrs: { label: 'Delivery', name: 'delivery' },
+    props: {
+      value: 'standard',
+      options: [
+        { value: 'standard', label: 'Standard', description: '3–5 working days, free' },
+        { value: 'express', label: 'Express', description: 'Next working day, $9' },
+        { value: 'pickup', label: 'Collect in store', description: 'Ready in two hours' },
+      ],
+    },
+    events: ['valuechange'],
+  },
+  'select-field': {
+    attrs: { label: 'Country', name: 'country', placeholder: 'Choose a country', autocomplete: 'country' },
+    props: {
+      value: 'ca',
+      options: [
+        { value: 'ca', label: 'Canada' },
+        { value: 'gb', label: 'United Kingdom' },
+        { value: 'us', label: 'United States' },
+        { value: 'ie', label: 'Ireland' },
+      ],
+    },
+    events: ['valuechange'],
+  },
+  'status-badge': {
+    attrs: { variant: 'success' },
+    props: { dot: true },
+    html: 'Paid',
+  },
+  'user-avatar': {
+    attrs: { name: 'Ada Lovelace', size: 'lg', status: 'online' },
+  },
+  'content-card': {
+    attrs: { heading: 'Sourdough for beginners', href: '#sourdough' },
+    html: '<p>A starter, a loaf and a schedule that fits around work. Six steps, two days, mostly waiting.</p>\n<span slot="footer">12 min read</span>',
+  },
+  'alert-banner': {
+    attrs: { variant: 'warning', heading: 'Your trial ends in 3 days' },
+    props: { dismissible: true },
+    events: ['close'],
+    html: 'Add a payment method to keep your projects and their history.',
+  },
+  'toast-region': {
+    attrs: { position: 'bottom-end' },
+    events: ['toastclose'],
+    trigger: { label: 'Save', event: 'toast', detail: { heading: 'Saved', message: 'Your changes are live.', variant: 'success' } },
+  },
+  'loading-spinner': {
+    attrs: { label: 'Loading your projects', size: 'md' },
+    props: { inline: true },
+  },
+  'skeleton-block': {
+    attrs: { shape: 'text', width: '20rem' },
+    props: { lines: 3 },
+  },
 };

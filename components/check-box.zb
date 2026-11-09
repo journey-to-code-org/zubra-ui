@@ -1,0 +1,42 @@
+<!--
+  A checkbox with a label and an optional description, on a native <input type="checkbox">: it
+  submits `value` under its `name` when checked, takes `required`, and the whole label is the
+  target. `indeterminate` shows the mixed state (for a "select all" over a partial selection).
+  `checked` is two-way.
+  @fires checkedchange - It was checked or unchecked; `detail` is the new state.
+-->
+<script>
+  import { effect, id } from '@zubra/runtime'
+
+  const helpId = id()
+  let box = null
+  // `indeterminate` is a property of the input, never an attribute.
+  effect(() => {
+    if (box) box.indeterminate = indeterminate
+  })
+  function change(event) {
+    checked = event.target.checked
+    indeterminate = false
+  }
+</script>
+<style>
+  :host { display: block; }
+  label { display: grid; grid-template-columns: auto 1fr; column-gap: 0.65rem; align-items: start; cursor: pointer; }
+  input { appearance: none; display: grid; place-content: center; width: 1.15rem; height: 1.15rem; margin: 0.15rem 0 0; border: 1px solid var(--input, #a1a1aa); border-radius: 0.3rem; background: var(--background, #fff); cursor: pointer; transition: background var(--duration-fast, 150ms), border-color var(--duration-fast, 150ms); }
+  input::before { content: ""; width: 0.65rem; height: 0.65rem; background: var(--primary-foreground, #fafafa); clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%); transform: scale(0); transition: transform var(--duration-fast, 150ms); }
+  input:checked, input:indeterminate { border-color: var(--primary, #18181b); background: var(--primary, #18181b); }
+  input:checked::before { transform: scale(1); }
+  input:indeterminate::before { clip-path: inset(40% 5%); transform: scale(1); }
+  input:focus-visible { outline: 2px solid var(--ring, #a1a1aa); outline-offset: 2px; }
+  input:disabled, input:disabled + .checkbox-text { opacity: 0.55; cursor: not-allowed; }
+  .checkbox-label { font-weight: 500; }
+  small { grid-column: 2; color: color-mix(in oklab, var(--muted-foreground, #71717a) 75%, var(--foreground, #18181b)); }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: 0s !important; animation-duration: 0s !important; animation-iteration-count: 1 !important; } }
+</style>
+<check-box checked:model={false} indeterminate={false} label="" description="" name="" value="on" required={false} disabled={false}>
+  <label>
+    <input ref={box} type="checkbox" name={name || null} value={value} required={required} disabled={disabled} checked={checked} aria-describedby={description ? helpId : null} onchange={change}>
+    <span class="checkbox-text"><span class="checkbox-label">{label}</span></span>
+    <small zb-if={description} id={helpId}>{description}</small>
+  </label>
+</check-box>

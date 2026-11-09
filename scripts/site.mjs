@@ -213,7 +213,8 @@ const stackCode = (name, demo) => STACKS.map((stack) => `<div class="stack-only"
 function preview(name, demo) {
   // previewAttrs: what the live preview needs that the snippets shouldn't show (a path from this page).
   const attributes = Object.entries({ ...demo.attrs, ...demo.previewAttrs }).map(([attribute, value]) => ` ${attribute}="${escape(value)}"`).join('');
-  const opener = demo.opener ? `<button type="button" class="button" data-open="${name}">${escape(demo.opener)}</button>` : '';
+  const opener = demo.opener ? `<button type="button" class="button" data-open="${name}">${escape(demo.opener)}</button>`
+    : demo.trigger ? `<button type="button" class="button" data-trigger="${name}">${escape(demo.trigger.label)}</button>` : '';
   return `<div class="stage" data-preview="${name}">${opener}<${name}${attributes}>${demo.html ?? ''}</${name}></div>
       <p class="event" data-events="${name}" aria-live="polite">${demo.events?.length ? `Try it: events appear here (${demo.events.map((event) => `<code>${event}</code>`).join(', ')}).` : 'This one has no events: it shows what it\'s given.'}</p>`;
 }
@@ -221,7 +222,7 @@ function previewScript(prefix, name, demo) {
   return `  <script type="module">
     import '${prefix}preview/${name}.js';
     import { wire } from '${prefix}assets/site.js';
-    wire(${JSON.stringify(name)}, ${JSON.stringify({ props: demo.props ?? {}, events: demo.events ?? [], opener: Boolean(demo.opener) })});
+    wire(${JSON.stringify(name)}, ${JSON.stringify({ props: demo.props ?? {}, events: demo.events ?? [], opener: Boolean(demo.opener), trigger: demo.trigger ?? null })});
   </script>`;
 }
 

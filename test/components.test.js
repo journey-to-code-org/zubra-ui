@@ -479,3 +479,144 @@ test('every component that animates uses the motion tokens and honours prefers-r
   assert.equal(duration, '0s');
   await page.close();
 });
+
+// ---- the everyday controls: native elements inside, so forms, keyboard and validation are the browser's
+
+/** Puts `markup` in a new <form> on the page (the component's module is already loaded there) and returns its locator. */
+async function inForm(page, markup) {
+  await page.evaluate((markup) => {
+    const form = Object.assign(document.createElement('form'), { id: 'test-form', innerHTML: markup });
+    form.addEventListener('submit', (event) => { event.preventDefault(); window.submitted = Object.fromEntries(new FormData(form, event.submitter)); });
+    document.body.append(form);
+  }, markup);
+  await page.waitForTimeout(50);
+  return page.locator('#test-form');
+}
+const submit = (page) => page.evaluate(() => { window.submitted = null; document.querySelector('#test-form').requestSubmit(); return window.submitted; });
+
+test('action-button: submits its form, and while loading it is busy and does nothing', async () => {
+  const { page, problems } = await open('action-button');
+  const form = await inForm(page, '<input name="q" value="x"><action-button type="submit" name="intent" value="save">Save</action-button>');
+  await form.getByRole('button', { name: 'Save' }).click();
+  assert.deepEqual(await page.evaluate(() => window.submitted), { q: 'x', intent: 'save' });
+  await page.evaluate(() => { window.submitted = null; window.clicks = 0; const b = document.querySelector('#test-form action-button'); b.addEventListener('click', () => window.clicks++); b.loading = true; });
+  const button = form.getByRole('button', { name: 'Save' });
+  assert.equal(await button.getAttribute('aria-busy'), 'true');
+  await button.click({ force: true });
+  assert.deepEqual(await page.evaluate(() => [window.submitted, window.clicks]), [null, 0]);
+  assert.deepEqual(problems, []);
+  await page.close();
+});
+
+test('text-field: label, two-way value, the browser\'s validation shown after leaving, and form data', async () => {
+  const { page, element, problems } = await open('text-field');
+  const input = element.getByLabel('Email');
+  await input.focus();
+  await page.keyboard.press('Tab');
+  const error = element.locator('.field-error');
+  assert.notEqual((await error.textContent()).trim(), '', 'an empty required field says so once left');
+  assert.equal(await input.getAttribute('aria-invalid'), 'true');
+  assert.match(await input.getAttribute('aria-describedby'), new RegExp(await error.getAttribute('id')));
+  await input.fill('not-an-email');
+  assert.match(await error.textContent(), /@|email/i, 'and keeps checking as you type');
+  await input.fill('sam@example.com');
+  assert.equal((await error.textContent()).trim(), '');
+  assert.equal(await prop(element, 'value'), 'sam@example.com');
+  await element.evaluate((el) => (el.value = 'from@code.dev'));
+  assert.equal(await input.inputValue(), 'from@code.dev');
+  const form = await inForm(page, '<text-field label="Name" name="name" value="Ada"></text-field>');
+  assert.deepEqual(await submit(page), { name: 'Ada' });
+  void form;
+  assert.deepEqual(problems, []);
+  await page.close();
+});
+
+test('check-box, radio-group and select-field: native keyboard, two-way values and form data', async () => {
+  const { page, problems } = await open('radio-group');
+  await inForm(page, `<check-box label="Agree" name="agree"></check-box>
+    <radio-group label="Size" name="size"></radio-group>
+    <select-field label="Colour" name="colour" placeholder="Pick one" required></select-field>`);
+  await page.evaluate(() => {
+    document.querySelector('#test-form radio-group').options = [{ value: 's', label: 'Small' }, { value: 'm', label: 'Medium' }];
+    document.querySelector('#test-form radio-group').value = 's';
+    document.querySelector('#test-form select-field').options = [{ value: 'red', label: 'Red' }, { value: 'blue', label: 'Blue' }];
+  });
+  await page.addScriptTag({ type: 'module', content: "import '/preview/check-box.js'; import '/preview/select-field.js';" });
+  await page.waitForFunction(() => customElements.get('check-box') && customElements.get('select-field'));
+  await page.evaluate(() => {
+    document.querySelector('#test-form select-field').options = [{ value: 'red', label: 'Red' }, { value: 'blue', label: 'Blue' }];
+    window.events = [];
+    for (const type of ['checkedchange', 'valuechange']) document.querySelector('#test-form').addEventListener(type, (event) => window.events.push(`${type}:${event.detail}`));
+  });
+  const form = page.locator('#test-form');
+  assert.equal(await page.evaluate(() => document.querySelector('#test-form').checkValidity()), false, 'a required select with only its placeholder is invalid');
+  await form.getByLabel('Agree').check();
+  await form.getByLabel('Small').focus();
+  await page.keyboard.press('ArrowDown');
+  await form.getByLabel('Colour').selectOption('blue');
+  assert.deepEqual(await submit(page), { agree: 'on', size: 'm', colour: 'blue' });
+  assert.deepEqual(await page.evaluate(() => window.events), ['checkedchange:true', 'valuechange:m', 'valuechange:blue']);
+  assert.deepEqual(await page.evaluate(() => [...document.querySelectorAll('#test-form check-box, #test-form radio-group, #test-form select-field')].map((el) => el.checked ?? el.value)), [true, 'm', 'blue']);
+  await page.evaluate(() => (document.querySelector('#test-form check-box').indeterminate = true));
+  assert.equal(await form.getByLabel('Agree').evaluate((box) => box.indeterminate), true);
+  assert.deepEqual(problems, []);
+  await page.close();
+});
+
+test('alert-banner: the close button hides it and fires close, unless beforeclose is cancelled', async () => {
+  const { page, element, problems } = await open('alert-banner');
+  assert.equal(await element.getByRole('status').count(), 1, 'a warning is announced politely');
+  await element.evaluate((el) => el.addEventListener('beforeclose', (event) => event.preventDefault(), { once: true }));
+  await element.getByRole('button', { name: 'Dismiss' }).click();
+  assert.equal(await element.getByRole('status').isVisible(), true, 'cancelled: still there');
+  await element.evaluate((el) => el.addEventListener('close', () => (window.alertClosed = true)));
+  await element.getByRole('button', { name: 'Dismiss' }).click();
+  assert.equal(await element.getByRole('status').isVisible(), false);
+  assert.equal(await page.evaluate(() => window.alertClosed), true);
+  assert.deepEqual(problems, []);
+  await page.close();
+});
+
+test('toast-region: a document event shows a toast above a modal, it closes itself, and the close button works', async () => {
+  const { page, element, problems } = await open('toast-region');
+  await element.evaluate((el) => (el.duration = 400));
+  await page.evaluate(() => {
+    const dialog = document.body.appendChild(document.createElement('dialog'));
+    dialog.textContent = 'A modal';
+    dialog.showModal();
+    document.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Saved', variant: 'success' } }));
+    document.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Kept', duration: 0 } }));
+  });
+  const toasts = element.locator('.toast-item');
+  assert.deepEqual(await toasts.allTextContents().then((texts) => texts.map((text) => text.replace('×', '').trim())), ['Saved', 'Kept']);
+  assert.equal(await element.locator('section').evaluate((region) => region.matches(':popover-open')), true, 'in the top layer, above the modal');
+  await page.waitForTimeout(700);
+  assert.equal(await toasts.count(), 1, 'the timed one went');
+  await page.keyboard.press('Escape');
+  await element.getByRole('button', { name: 'Dismiss notification' }).click();
+  assert.equal(await toasts.count(), 0);
+  assert.deepEqual(problems, []);
+  await page.close();
+});
+
+test('user-avatar: initials when there is no picture, or the picture fails', async () => {
+  const { page, element, problems } = await open('user-avatar');
+  assert.equal(await element.getByRole('img', { name: 'Ada Lovelace' }).textContent(), 'AL');
+  await element.evaluate((el) => (el.src = '/missing.png'));
+  await page.waitForTimeout(200);
+  assert.equal(await element.getByRole('img', { name: 'Ada Lovelace' }).textContent(), 'AL');
+  assert.match(await element.textContent(), /online/, 'the status is said in words');
+  void problems;
+  await page.close();
+});
+
+test('content-card: one link, named by the heading, covering the card', async () => {
+  const { page, element, problems } = await open('content-card');
+  const links = element.getByRole('link');
+  assert.equal(await links.count(), 1);
+  assert.equal(await links.first().textContent(), 'Sourdough for beginners');
+  const text = await element.locator('.card-text').boundingBox();
+  assert.equal(await page.evaluate(({ x, y }) => document.elementFromPoint(x, y)?.closest('a')?.getAttribute('href'), { x: text.x + 10, y: text.y + 5 }), '#sourdough', 'a click on the text opens it');
+  assert.deepEqual(problems, []);
+  await page.close();
+});

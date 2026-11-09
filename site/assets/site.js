@@ -112,7 +112,7 @@ export function themeCss(css) {
 const countVariables = (css) => new Set([...css.matchAll(/(--[\w-]+)\s*:/g)].map(([, name]) => name)).size;
 
 /** Set a preview's props, show its events, and open it from its button (a dialog). */
-export function wire(name, { props, events, opener }) {
+export function wire(name, { props, events, opener, trigger }) {
   const stage = document.querySelector(`[data-preview="${name}"]`);
   const element = stage.querySelector(name);
   Object.assign(element, props);
@@ -125,4 +125,6 @@ export function wire(name, { props, events, opener }) {
     });
   }
   if (opener) stage.querySelector('[data-open]').addEventListener('click', () => { element.open = true; });
+  // A component driven by a document event (toast-region): the button dispatches it.
+  if (trigger) stage.querySelector('[data-trigger]').addEventListener('click', () => document.dispatchEvent(new CustomEvent(trigger.event, { detail: trigger.detail })));
 }

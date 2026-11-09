@@ -328,6 +328,114 @@
         "tool-tip.zb"
       ],
       "dependencies": []
+    },
+    {
+      "name": "action-button",
+      "category": "input",
+      "description": "A button in six variants and three sizes, on a native <button> (or <a> with `href`), so it submits forms, takes `type`, and works with the keyboard and screen readers as the browser's own. `loading` keeps its size, shows a spinner, marks it busy and stops it being pressed again.",
+      "files": [
+        "action-button.zb"
+      ],
+      "dependencies": []
+    },
+    {
+      "name": "text-field",
+      "category": "input",
+      "description": "A labelled text field on a native <input> (or <textarea> with `rows`), so it submits under its `name`, autofills, and validates as the browser's own (`required`, `type=\"email\"`, `minlength`, `pattern`). The message shows after the field is left, or when the form is submitted, and is linked to the field for screen readers. `value` is two-way.",
+      "files": [
+        "text-field.zb"
+      ],
+      "dependencies": []
+    },
+    {
+      "name": "check-box",
+      "category": "input",
+      "description": "A checkbox with a label and an optional description, on a native <input type=\"checkbox\">: it submits `value` under its `name` when checked, takes `required`, and the whole label is the target. `indeterminate` shows the mixed state (for a \"select all\" over a partial selection). `checked` is two-way.",
+      "files": [
+        "check-box.zb"
+      ],
+      "dependencies": []
+    },
+    {
+      "name": "radio-group",
+      "category": "input",
+      "description": "A set of options where one is chosen, on native radio buttons in a <fieldset>: arrow keys move between them, the choice submits under `name`, and `required` validates. `options` is `[{ value, label, description? }]`; `value` is two-way. `orientation=\"horizontal\"` puts them in a row.",
+      "files": [
+        "radio-group.zb"
+      ],
+      "dependencies": []
+    },
+    {
+      "name": "select-field",
+      "category": "input",
+      "description": "A labelled dropdown on a native <select>: the platform's own picker on every device, keyboard typeahead, autofill, and form submission under `name`. `options` is `[{ value, label }]`, or groups `[{ label, options: [...] }]`. `placeholder` adds an empty first choice, and with `required` the form won't submit until one is chosen. `value` is two-way.",
+      "files": [
+        "select-field.zb"
+      ],
+      "dependencies": []
+    },
+    {
+      "name": "status-badge",
+      "category": "display",
+      "description": "A small label for a status, a count or a category. `variant` is neutral, primary, success, warning, danger or outline; `dot` adds a coloured dot before the text. The colour is never the only signal: the text says it.",
+      "files": [
+        "status-badge.zb"
+      ],
+      "dependencies": []
+    },
+    {
+      "name": "user-avatar",
+      "category": "display",
+      "description": "A person's picture, or their initials when there's no picture or it fails to load. `name` is the picture's text alternative (and where the initials come from). `size` is sm, md, lg or xl. `status` (online, away, busy, offline) adds a dot, and says so in words for screen readers.",
+      "files": [
+        "user-avatar.zb"
+      ],
+      "dependencies": []
+    },
+    {
+      "name": "content-card",
+      "category": "display",
+      "description": "A card: a picture, a heading, text and a footer, each optional. With `href` the heading is a link and the whole card is the target (one link for screen readers and the keyboard, not one per part), and buttons in the footer still work on their own.",
+      "files": [
+        "content-card.zb"
+      ],
+      "dependencies": []
+    },
+    {
+      "name": "alert-banner",
+      "category": "display",
+      "description": "A message in the page: info, success, warning or danger, with an icon, a heading and text. A danger alert is announced as soon as it appears (role=\"alert\"); the others politely (role=\"status\"). `dismissible` adds a close button, which hides it and fires `close`.",
+      "files": [
+        "alert-banner.zb"
+      ],
+      "dependencies": []
+    },
+    {
+      "name": "loading-spinner",
+      "category": "display",
+      "description": "Something is loading. Announced to screen readers once, as `label` (\"Loading\" by default), and shown as a ring that turns (a pulse instead, for visitors who asked for less motion). `size` is sm, md or lg; `inline` puts the label beside it.",
+      "files": [
+        "loading-spinner.zb"
+      ],
+      "dependencies": []
+    },
+    {
+      "name": "skeleton-block",
+      "category": "display",
+      "description": "A grey placeholder in the shape of content that's on its way, so the page doesn't jump when it arrives. `shape` is text (`lines` lines, the last one shorter), circle or rect; `width` and `height` take any CSS length. Hidden from screen readers: say \"loading\" once elsewhere (a loading-spinner, or `aria-busy` on the region being filled).",
+      "files": [
+        "skeleton-block.zb"
+      ],
+      "dependencies": []
+    },
+    {
+      "name": "toast-region",
+      "category": "app",
+      "description": "Short notifications that appear in a corner and go away by themselves. Put one region on the page; anything (a framework, a plain script) shows a toast by dispatching an event, so nothing needs a reference to it: `document.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Saved', variant: 'success' } }))`. `detail` takes `message`, `heading`, `variant` (info, success, warning, danger), `duration` in ms (0 keeps it until closed) and `action: { label, href }`. Toasts are announced politely (an error assertively), wait while hovered or focused, and sit above dialogs (the top layer).",
+      "files": [
+        "toast-region.zb"
+      ],
+      "dependencies": []
     }
   ]
 }

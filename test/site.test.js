@@ -42,11 +42,19 @@ test('every page loads cleanly and its previews render', async () => {
   const failures = [];
   await Promise.all(pages.map(async (path) => {
     const { page, problems } = await open(path, { context });
-    const previews = await page.$$eval('[data-preview]', (stages) => stages.map((stage) => {
-      const name = stage.dataset.preview;
-      const element = stage.querySelector(name);
-      return { name, defined: !!customElements.get(name), rendered: !!element && (element.shadowRoot?.childElementCount ?? element.childElementCount) > 0 };
-    }));
+    // With every page open at once, a module can still be loading at "network idle": wait (up to
+    // ten seconds) for each preview to be defined before judging it.
+    const previews = await page.evaluate(async () => {
+      const stages = [...document.querySelectorAll('[data-preview]')];
+      const names = stages.map((stage) => stage.dataset.preview);
+      await Promise.race([Promise.all(names.map((name) => customElements.whenDefined(name))), new Promise((done) => setTimeout(done, 10000))]);
+      await new Promise(requestAnimationFrame);
+      return stages.map((stage) => {
+        const name = stage.dataset.preview;
+        const element = stage.querySelector(name);
+        return { name, defined: !!customElements.get(name), rendered: !!element && (element.shadowRoot?.childElementCount ?? element.childElementCount) > 0 };
+      });
+    });
     if (!previews.length) problems.push('no previews');
     for (const preview of previews) if (!preview.defined || !preview.rendered) problems.push(`preview ${preview.name}: ${JSON.stringify(preview)}`);
     if (problems.length) failures.push(`${path}\n  ${problems.join('\n  ')}`);

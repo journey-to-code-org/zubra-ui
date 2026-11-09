@@ -1,0 +1,27 @@
+<!--
+  A grey placeholder in the shape of content that's on its way, so the page doesn't jump when it
+  arrives. `shape` is text (`lines` lines, the last one shorter), circle or rect; `width` and
+  `height` take any CSS length. Hidden from screen readers: say "loading" once elsewhere (a
+  loading-spinner, or `aria-busy` on the region being filled).
+-->
+<script>
+  const rows = Array.from({ length: Math.max(1, lines) }, (_, i) => i)
+</script>
+<style>
+  :host { display: block; }
+  .skeleton-bone { display: block; border-radius: calc(var(--radius, 0.625rem) - 4px); background: linear-gradient(90deg, var(--muted, #f4f4f5) 0%, color-mix(in oklab, var(--muted, #f4f4f5) 55%, var(--background, #fff)) 50%, var(--muted, #f4f4f5) 100%) 0 0 / 200% 100%; animation: shimmer 1.4s ease-in-out infinite; }
+  .skeleton-text { display: grid; gap: 0.55rem; }
+  .skeleton-text .skeleton-bone { height: 0.85rem; }
+  .skeleton-text .skeleton-bone.last { width: 65%; }
+  .skeleton-circle { border-radius: 50%; }
+  @keyframes shimmer { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: 0s !important; animation-duration: 0s !important; animation-iteration-count: 1 !important; } }
+</style>
+<skeleton-block shape="text" lines={3} width="" height="">
+  <div zb-if={shape === "text"} class="skeleton-text" aria-hidden="true" style:width={width || null}>
+    <zb-each items={rows} as="row" key={row}>
+      <span class="skeleton-bone" class:skeleton-last={rows.length > 1 && row === rows.length - 1}></span>
+    </zb-each>
+  </div>
+  <span zb-else class="skeleton-bone" class:skeleton-circle={shape === "circle"} aria-hidden="true" style:width={width || (shape === "circle" ? "3rem" : "100%")} style:height={height || (shape === "circle" ? width || "3rem" : "8rem")}></span>
+</skeleton-block>
