@@ -65,7 +65,7 @@ export async function start({ stacks, stackKey }) {
     // Only the variable declarations are kept: a pasted theme can't add other rules to the page.
     userTheme.textContent = themeCss(css);
     store.set('zubra-ui:theme', css ? userTheme.textContent : null);
-    status.textContent = css ? `Applied ${countVariables(css)} variables.` : 'Cleared the pasted theme.';
+    status.textContent = css ? `Applied ${countVariables(userTheme.textContent)} variables.` : 'Cleared the pasted theme.';
   });
   document.querySelector('#theme-reset').addEventListener('click', () => {
     paste.value = '';
@@ -94,6 +94,7 @@ export async function start({ stacks, stackKey }) {
 
 /** A pasted theme, reduced to its variables, for `:root` and `.dark` (other selectors are dropped). */
 export function themeCss(css) {
+  css = css.replace(/\/\*[\s\S]*?(\*\/|$)/g, ''); // comments could hide or swallow declarations
   const blocks = [];
   for (const [, selector, body] of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
     const target = /\.dark\b/.test(selector) ? 'html.dark' : /:root|html|@theme/.test(selector) ? ':root' : null;

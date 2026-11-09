@@ -150,7 +150,7 @@ test('preview text is readable in light and dark', async () => {
 });
 
 test('on a phone nothing scrolls sideways, and the nav lists every component', async () => {
-  const context = await browser.newContext({ viewport: { width: 360, height: 740 } });
+  const context = await browser.newContext({ viewport: { width: 320, height: 740 } });
   const failures = [];
   await Promise.all(['/', ...components.map(({ name }) => `/components/${name}/`)].map(async (path) => {
     const { page } = await open(path, { context });

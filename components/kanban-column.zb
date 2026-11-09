@@ -1,7 +1,7 @@
 <!--
   A board column: a heading with a count and an optional work-in-progress limit, its cards (the
   default slot) and a drop zone for cards dragged from anywhere on the board.
-  @slot - The cards: any elements. A dragged card sets its id as `application/x-card` drag data (`event.dataTransfer.setData("application/x-card", id)`), which the drop reports.
+  @slot - The cards: any elements with `draggable="true"`. A card dragged out of a column carries its `id` (or `data-id`, or its text) as `application/x-card` drag data, which the drop reports; set that data yourself to drag in from elsewhere.
   @slot actions - Buttons under the cards.
   @fires carddrop - A card was dropped here; `detail` is `{ id, index }` (where among the cards).
 -->
@@ -21,6 +21,13 @@
       return y < box.top + box.height / 2
     })
     return after === -1 ? cards.length : after
+  }
+  // Cards dragged from a column carry their id, unless the page set drag data itself.
+  function dragstart(event) {
+    const card = event.target
+    if (!card?.getAttribute || event.dataTransfer.types.includes('application/x-card')) return
+    event.dataTransfer.setData('application/x-card', card.id || card.dataset.id || card.textContent.trim())
+    event.dataTransfer.effectAllowed = 'move'
   }
   function dragover(event) {
     if (!event.dataTransfer.types.includes('application/x-card')) return
@@ -51,7 +58,7 @@
   .empty { display: grid; place-items: center; flex: 1; min-height: 4rem; border: 2px dashed var(--border, #d9dce3); border-radius: 0.7rem; color: var(--muted-foreground, #667085); font-size: 0.8125rem; }
 </style>
 <kanban-column heading="" count={0} limit={0}>
-  <section class:over class:full aria-label={heading} ondragover={dragover} ondragleave={(event) => event.currentTarget.contains(event.relatedTarget) || (over = false)} ondrop={drop}>
+  <section class:over class:full aria-label={heading} ondragstart={dragstart} ondragover={dragover} ondragleave={(event) => event.currentTarget.contains(event.relatedTarget) || (over = false)} ondrop={drop}>
     <header>
       <h2>{heading}</h2>
       <span class="count">{count}</span>

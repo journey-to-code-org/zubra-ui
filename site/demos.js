@@ -99,7 +99,7 @@ export const demos = {
     attrs: { label: 'Delete project' },
     props: { open: false },
     events: ['openchange'],
-    html: '<p>This deletes the project and its 14 files. You can\'t undo it.</p>',
+    html: '<p>This deletes the project and its 14 files. You can\'t undo it.</p>\n<button slot="actions" type="button" data-close>Cancel</button>\n<button slot="actions" type="button" data-close>Delete project</button>',
     // The page adds a button that sets `open`; the snippets show that too.
     opener: 'Delete project…',
   },
@@ -150,7 +150,7 @@ export const demos = {
     attrs: { heading: 'In progress' },
     props: { count: 2, limit: 3 },
     events: ['carddrop'],
-    html: '<article draggable="true">Write the release notes</article>\n<article draggable="true">Review the theme picker</article>',
+    html: '<article id="card-notes" draggable="true">Write the release notes</article>\n<article id="card-theme" draggable="true">Review the theme picker</article>',
   },
   'chat-message': {
     attrs: { me: 'Sam Rivera' },

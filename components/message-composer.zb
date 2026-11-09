@@ -10,6 +10,12 @@
 
   const EMOJI = ["😀", "😂", "😍", "🤔", "👍", "🙏", "🎉", "🔥", "🚀", "✅", "👀", "☕"]
   let box = null
+  let emojiButton = null
+  // Escape in the picker closes it and puts focus back on its button (the picker's buttons go away).
+  function closePicker() {
+    picking = false
+    emojiButton?.focus()
+  }
   let text = ""
   let picking = false
   let lastTyping = 0
@@ -72,9 +78,9 @@
   <div zb-if={replyto} class="reply"><span>Replying to <b>{replyto?.author}</b>: {replyto?.text}</span><button type="button" class="cancel-reply" aria-label="Cancel reply" onclick={() => emit('replycancel')}>×</button></div>
   <div class="box">
     <textarea rows="1" aria-label={placeholder} placeholder={placeholder} disabled={disabled} value={text} ref={box} oninput={input} onkeydown.enter={enter} onkeydown.escape={() => replyto && emit('replycancel')}></textarea>
-    <button type="button" class="icon emoji" aria-label="Insert emoji" aria-expanded={picking ? "true" : "false"} onclick={() => (picking = !picking)}>☺</button>
+    <button type="button" class="icon emoji" ref={emojiButton} aria-label="Insert emoji" aria-expanded={picking ? "true" : "false"} onclick={() => (picking = !picking)}>☺</button>
     <button type="button" class="send" aria-label="Send" disabled={empty || disabled} onclick={send}>➤</button>
-    <div zb-if={picking} class="picker" role="group" aria-label="Emoji" onkeydown.escape={() => (picking = false)}><zb-each items={EMOJI} as="emoji" key={emoji}><button type="button" onclick={() => insert(emoji)}>{emoji}</button></zb-each></div>
+    <div zb-if={picking} class="picker" role="group" aria-label="Emoji" onkeydown.escape={closePicker}><zb-each items={EMOJI} as="emoji" key={emoji}><button type="button" onclick={() => insert(emoji)}>{emoji}</button></zb-each></div>
   </div>
   <p class="hint">Enter to send · Shift+Enter for a new line</p>
 </message-composer>

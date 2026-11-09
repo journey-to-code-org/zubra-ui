@@ -127,7 +127,8 @@ function frame({ prefix, title, description, current, body, scripts = [] }) {
     // Before paint: the remembered stack, mode and theme (per visitor, in this browser only).
     try {
       const html = document.documentElement;
-      html.dataset.stack = localStorage.getItem('${STACK_KEY}') || 'html';
+      const stack = localStorage.getItem('${STACK_KEY}');
+      html.dataset.stack = ${JSON.stringify(STACKS)}.includes(stack) ? stack : 'html';
       if (localStorage.getItem('zubra-ui:mode') === 'dark' || (!localStorage.getItem('zubra-ui:mode') && matchMedia('(prefers-color-scheme: dark)').matches)) html.classList.add('dark');
       const preset = localStorage.getItem('zubra-ui:preset');
       if (preset && preset !== 'zinc') html.classList.add('theme-' + preset);
@@ -191,7 +192,7 @@ ${scripts.join('\n')}
 const language = { html: 'html', react: 'html', vue: 'html', svelte: 'html', angular: 'js' };
 const file = { html: 'index.html', react: 'Example.jsx', vue: 'Example.vue', svelte: 'Example.svelte', angular: 'example.component.ts' };
 function code(text, lang, label) {
-  return `<div class="code"><div class="code-head"><span>${escape(label)}</span><button type="button" class="copy" data-copy>Copy</button></div><pre><code>${highlight(text, lang)}</code></pre></div>`;
+  return `<div class="code"><div class="code-head"><span>${escape(label)}</span><button type="button" class="copy" data-copy>Copy</button></div><pre tabindex="0"><code>${highlight(text, lang)}</code></pre></div>`;
 }
 const stackCode = (name, demo) => STACKS.map((stack) => `<div class="stack-only" data-stack="${stack}">${code(snippets[stack](name, demo), language[stack], file[stack])}</div>`).join('');
 
@@ -259,7 +260,7 @@ for (const component of components) {
 const showcase = ['toggle-switch', 'segmented-control', 'star-rating', 'progress-ring', 'quantity-stepper', 'tag-input'];
 const homeBody = `      <section class="home">
         <h1>Web components you copy in and own.</h1>
-        <p class="lead">Accessible components for any project: plain HTML, React, Vue, Svelte or Angular. Install them with the shadcn CLI, theme them with shadcn's variables, and read every line.</p>
+        <p class="lead">Ready-made pieces for websites: switches, star ratings, date pickers, pop-up dialogs and more. They work on any site, in plain HTML or with React, Vue, Svelte or Angular. Copy one in, and it's yours to change.</p>
         <p class="cta"><a class="button primary" href="#start">Get started</a><a class="button" href="#all">Browse all ${components.length} components</a></p>
         <div class="showcase">
           ${showcase.map((name) => `<div class="tile"><a class="tile-name" href="components/${name}/">${name}</a>${preview(name, demos[name])}</div>`).join('\n          ')}

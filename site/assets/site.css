@@ -54,7 +54,7 @@ code { font-family: var(--mono); font-size: 0.86em; }
 :not(pre) > code { padding: 0.1em 0.35em; border-radius: calc(var(--radius) - 6px); background: var(--muted); }
 .skip { position: absolute; left: -999px; top: 0.5rem; z-index: 20; padding: 0.5rem 0.75rem; background: var(--background); color: var(--foreground); }
 .skip:focus { left: 0.5rem; }
-@media (prefers-reduced-motion: reduce) { * { transition-duration: 0s !important; animation-duration: 0s !important; } }
+@media (prefers-reduced-motion: reduce) { *, ::before, ::after { transition-duration: 0s !important; animation-duration: 0s !important; } }
 
 /* ---- the bar */
 .bar {
@@ -180,3 +180,11 @@ kanban-column article { padding: 0.6rem 0.75rem; border: 1px solid var(--border)
 .cta { display: flex; flex-wrap: wrap; gap: 0.6rem; margin: -0.5rem 0 1rem; }
 caption small { color: var(--muted-foreground); font-weight: 400; }
 td small { color: var(--muted-foreground); }
+
+/* A long event detail wraps rather than widening the page. */
+.event { overflow-wrap: anywhere; }
+/* The narrowest phones: the stack switch's buttons tighten so all five fit. */
+@media (max-width: 24rem) {
+  .stack-switch segmented-control button { padding-inline: 0.45rem; font-size: 0.85rem; }
+  .brand { gap: 0.35rem; }
+}
