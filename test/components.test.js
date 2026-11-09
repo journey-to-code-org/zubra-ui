@@ -431,7 +431,8 @@ test('dashboard-shell: sections switch, the menu reports, and a narrow space fol
 test('the plain elements are the ones under test (with ZUBRA_UI_EMIT=element)', { skip: !ELEMENTS.size }, async () => {
   for (const name of ELEMENTS) {
     const { page, element, problems } = await open(name === 'toggle-switch' ? 'signin-block' : name);
-    const plain = await page.evaluate((name) => Object.getPrototypeOf(customElements.get(name)) === HTMLElement, name);
+    // Wait for it: on a busy machine a module can still be loading at "network idle".
+    const plain = await page.evaluate(async (name) => Object.getPrototypeOf(await customElements.whenDefined(name)) === HTMLElement, name);
     assert.ok(plain, `${name} is the plain element: a class straight on HTMLElement, not on @zubra/runtime's`);
     assert.deepEqual(problems, []);
     void element;
