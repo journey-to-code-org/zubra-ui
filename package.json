@@ -14,15 +14,15 @@
     "build": "node scripts/build.mjs && node scripts/site.mjs",
     "serve": "node scripts/serve.mjs",
     "test": "npm run build && node --test \"test/*.test.js\" \"imager/test/*.test.js\"",
-    "test:vanilla": "node scripts/vanilla.mjs accordion-panel auto-grid chat-message choice-cards cluster-layout color-swatches combo-box dashboard-shell date-range donut-chart dropdown-menu flip-card image-gallery kanban-column line-chart masonry-grid message-composer modal-dialog money-input pricing-block progress-ring quantity-stepper segmented-control settings-block sidebar-layout signin-block spark-line stack-layout star-rating step-indicator streak-grid tab-list tag-input toggle-switch tool-tip && node scripts/run-vanilla.mjs"
+    "test:element": "npm run build && node scripts/test-element.mjs"
   },
   "devDependencies": {
     "@fontsource-variable/instrument-sans": "5.2.8",
     "@fontsource/jetbrains-mono": "5.2.8",
     "@zag-js/combobox": "1.47.0",
     "@zag-js/vanilla": "1.47.0",
-    "@zubra/compiler": "5.1.1",
-    "@zubra/runtime": "5.1.1",
+    "@zubra/compiler": "^5.2.0",
+    "@zubra/runtime": "^5.2.0",
     "axe-core": "4.14.0",
     "esbuild": "0.27.3",
     "playwright": "1.63.0"

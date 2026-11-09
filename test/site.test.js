@@ -15,16 +15,16 @@ before(async () => { site = await serve(join(root, 'dist')); browser = await chr
 after(async () => { await browser?.close(); site?.close(); });
 
 /** A page that records page errors, console errors and failed requests. */
-// ZUBRA_UI_EMIT=vanilla: the L5 spike's plain elements in place of the previews that have one.
-const VANILLA = process.env.ZUBRA_UI_EMIT === 'vanilla'
-  ? new Set(readdirSync(join(root, 'dist/vanilla')).filter((file) => file.endsWith('.js')).map((file) => file.slice(0, -3)))
+// ZUBRA_UI_EMIT=element: the plain elements (`--emit element`) in place of the previews that have one.
+const ELEMENTS = process.env.ZUBRA_UI_EMIT === 'element'
+  ? new Set(readdirSync(join(root, 'dist/elements')).filter((file) => file.endsWith('.js')).map((file) => file.slice(0, -3)))
   : new Set();
 async function open(path, { context } = {}) {
   const page = await (context ?? browser).newPage();
-  if (VANILLA.size) {
+  if (ELEMENTS.size) {
     await page.route(/\/preview\/([\w-]+)\.js$/, (route) => {
       const component = route.request().url().match(/\/preview\/([\w-]+)\.js$/)[1];
-      return VANILLA.has(component) ? route.fulfill({ contentType: 'text/javascript', body: readFileSync(join(root, 'dist/vanilla', `${component}.js`)) }) : route.continue();
+      return ELEMENTS.has(component) ? route.fulfill({ contentType: 'text/javascript', body: readFileSync(join(root, 'dist/elements', `${component}.js`)) }) : route.continue();
     });
   }
   const problems = [];

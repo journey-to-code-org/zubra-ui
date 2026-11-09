@@ -25,6 +25,14 @@ It's a standard custom element:
 - in Vue, Svelte and Angular, the same tag;
 - in a `<form>`, it submits like an input.
 
+**One file, no dependencies.** Most components also come as a plain custom element that needs nothing installed and no build step:
+
+```sh
+npx shadcn add https://journey-to-code-org.github.io/zubra-ui/r/element/toggle-switch.json
+```
+
+It writes the same file, compiled with Zubra's `--emit element`, and adds no dependencies; load it with a `<script type="module">`. On a page with one to three components it's the smaller choice (about 5–7 KB gzipped each); past that, the shared runtime is. flip-card (shadow DOM) and combo-box (Zag) are runtime-only.
+
 ## Why
 
 Web components are the platform's own component model, and they work everywhere. What's missing is an ecosystem as easy as shadcn/ui: good components you can take, read and change. Zubra UI is that, for web components.
@@ -78,7 +86,7 @@ npx zubra-imager photos/          # writes gallery/: AVIF, WebP and JPEG at 480,
 
 ```sh
 npm install
-npm run build     # dist/: compiled components, registry items, themes
+npm run build     # dist/: compiled components, plain elements, registry items, themes
 npm run serve     # http://127.0.0.1:4174/r/registry.json
 npm test          # builds, then installs components with the real shadcn CLI into fresh projects
 ```
@@ -89,6 +97,7 @@ npm test          # builds, then installs components with the real shadcn CLI in
   - every page's code built into React, Vue, Svelte, Angular and HTML apps;
   - each component's edge cases;
   - zubra-imager on photos made in the test.
+- **`npm run test:element`** runs the component, site, snippet and slot tests again with every component swapped for its plain element. CI runs both.
 - **`ZUBRA_UI_URL`** (or `--base-url`) sets the URL the registry items point at. The Pages workflow sets it to the published site.
 
 ISC licence. By Mikey Nichols.

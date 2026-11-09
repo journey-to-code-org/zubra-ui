@@ -193,3 +193,34 @@ test('a block installs with the components it is made of, and works', async () =
     assert.ok(existsSync(join(source, `src/components/${name}.zb`)), `${name}.zb came with it`);
   }
 });
+
+test('the one-file item installs a plain element that runs with nothing installed and no build', async () => {
+  const dir = project('one-file', {
+    'package.json': JSON.stringify({ name: 'one-file', private: true, type: 'module' }),
+    // No bundler: the page loads the files as they were written.
+    'index.html': `<!doctype html><html lang="en"><head><link rel="stylesheet" href="/src/components/zubra/theme.css"></head><body>
+      <signin-block></signin-block>
+      <script type="module" src="/src/components/zubra/signin-block.js"></script></body></html>`,
+  });
+  await add(dir, 'element/signin-block');
+  for (const name of ['signin-block', 'toggle-switch']) {
+    assert.ok(existsSync(join(dir, `src/components/zubra/${name}.js`)), `${name} written`);
+    assert.doesNotMatch(readFileSync(join(dir, `src/components/zubra/${name}.js`), 'utf8'), /from ["']@zubra\/runtime["']/, `${name} imports no runtime`);
+  }
+  const pkg = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'));
+  assert.deepEqual(Object.keys(pkg.dependencies ?? {}), [], 'nothing to install');
+  const site = await serve(dir);
+  sites.push(site);
+  const page = await browser.newPage();
+  const problems = [];
+  page.on('pageerror', (error) => problems.push(error.message));
+  page.on('console', (message) => { if (message.type() === 'error') problems.push(message.text()); });
+  await page.goto(`${site.url}/`, { waitUntil: 'networkidle' });
+  const toggle = page.locator('signin-block toggle-switch [role=switch]');
+  const before = await toggle.getAttribute('aria-checked');
+  await toggle.click();
+  assert.notEqual(await toggle.getAttribute('aria-checked'), before, 'its toggle works');
+  assert.ok(await page.evaluate(() => Object.getPrototypeOf(customElements.get('signin-block')) === HTMLElement), 'a plain class on HTMLElement');
+  assert.deepEqual(problems, []);
+  await page.close();
+});
