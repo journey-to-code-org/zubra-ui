@@ -2,7 +2,7 @@
 // component's template, so when React or Vue add, remove or reorder children of the host, the
 // component has to route that into its slot regions. These apps do exactly that, and the test
 // checks every child lands (and leaves) where it should, on the runtime build and, with
-// ZUBRA_UI_EMIT=vanilla, on the L5 spike's plain elements.
+// ZUBRA_UI_EMIT=element, on the plain elements (`--emit element`).
 import { after, before, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
@@ -92,7 +92,7 @@ before(async () => {
     writeFileSync(join(dir, path), text);
   }
   cpSync(join(root, 'dist/modules'), join(dir, 'src/components/zubra'), { recursive: true });
-  if (process.env.ZUBRA_UI_EMIT === 'vanilla') cpSync(join(root, 'dist/vanilla'), join(dir, 'src/components/zubra'), { recursive: true, filter: (path) => !path.endsWith('.json') });
+  if (process.env.ZUBRA_UI_EMIT === 'element') cpSync(join(root, 'dist/elements'), join(dir, 'src/components/zubra'), { recursive: true, filter: (path) => !path.endsWith('.json') });
   await run(npm, ['install', '--no-audit', '--no-fund', ...Object.entries(VERSIONS).map(([name, version]) => (/[\\/]/.test(version) ? version : `${name}@${version}`))], { cwd: dir, shell: process.platform === 'win32', maxBuffer: 1 << 26 });
   await run(process.execPath, [join(dir, 'node_modules/vite/bin/vite.js'), 'build', '--logLevel', 'error'], { cwd: dir, maxBuffer: 1 << 26 });
   site = await serve(join(dir, 'dist'));

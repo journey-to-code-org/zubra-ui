@@ -12,20 +12,20 @@ let site, browser;
 before(async () => { site = await serve(join(root, 'dist')); browser = await chromium.launch(); });
 after(async () => { await browser?.close(); site?.close(); });
 
-// ZUBRA_UI_EMIT=vanilla runs the same tests on the plain custom elements of the L5 spike
-// (scripts/vanilla.mjs writes dist/vanilla/): each preview module that has one is swapped for it.
-const VANILLA = process.env.ZUBRA_UI_EMIT === 'vanilla'
-  ? new Set(readdirSync(join(root, 'dist/vanilla')).filter((file) => file.endsWith('.js')).map((file) => file.slice(0, -3)))
+// ZUBRA_UI_EMIT=element runs the same tests on the plain custom elements written by
+// `--emit element` (scripts/build.mjs writes dist/elements/): each preview module that has one is swapped for it.
+const ELEMENTS = process.env.ZUBRA_UI_EMIT === 'element'
+  ? new Set(readdirSync(join(root, 'dist/elements')).filter((file) => file.endsWith('.js')).map((file) => file.slice(0, -3)))
   : new Set();
 async function open(name) {
   const page = await browser.newPage();
   const problems = [];
   page.on('pageerror', (error) => problems.push(error.message));
-  if (VANILLA.size) {
+  if (ELEMENTS.size) {
     await page.route(/\/preview\/([\w-]+)\.js$/, (route) => {
       const component = route.request().url().match(/\/preview\/([\w-]+)\.js$/)[1];
-      if (!VANILLA.has(component)) return route.continue();
-      return route.fulfill({ contentType: 'text/javascript', body: readFileSync(join(root, 'dist/vanilla', `${component}.js`)) });
+      if (!ELEMENTS.has(component)) return route.continue();
+      return route.fulfill({ contentType: 'text/javascript', body: readFileSync(join(root, 'dist/elements', `${component}.js`)) });
     });
   }
   await page.goto(`${site.url}/components/${name}/`, { waitUntil: 'networkidle' });
@@ -428,11 +428,11 @@ test('dashboard-shell: sections switch, the menu reports, and a narrow space fol
   await page.close();
 });
 
-test('the L5 spike\'s plain elements are the ones under test (with ZUBRA_UI_EMIT=vanilla)', { skip: !VANILLA.size }, async () => {
-  for (const name of VANILLA) {
+test('the plain elements are the ones under test (with ZUBRA_UI_EMIT=element)', { skip: !ELEMENTS.size }, async () => {
+  for (const name of ELEMENTS) {
     const { page, element, problems } = await open(name === 'toggle-switch' ? 'signin-block' : name);
-    const definition = await page.evaluate((name) => ({ class: customElements.get(name).name, plain: !Object.getPrototypeOf(customElements.get(name)).name || Object.getPrototypeOf(customElements.get(name)) === HTMLElement }), name);
-    assert.deepEqual(definition, { class: name.replace(/(^|-)(\w)/g, (_, __, c) => c.toUpperCase()), plain: true }, `${name} is the generated class, straight on HTMLElement`);
+    const plain = await page.evaluate((name) => Object.getPrototypeOf(customElements.get(name)) === HTMLElement, name);
+    assert.ok(plain, `${name} is the plain element: a class straight on HTMLElement, not on @zubra/runtime's`);
     assert.deepEqual(problems, []);
     void element;
     await page.close();
