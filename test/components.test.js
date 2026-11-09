@@ -458,3 +458,24 @@ test('blocks keep their look when the page has its own .button, .actions and .br
   assert.deepEqual(colors, [], 'no generic class names a host could match');
   await page.close();
 });
+
+// Motion: transitions take their timing from the theme's tokens, and every component that moves
+// stops moving for a visitor who asked for less motion (checked in the source, then in a browser).
+test('every component that animates uses the motion tokens and honours prefers-reduced-motion', async () => {
+  const moving = [];
+  for (const file of readdirSync(join(root, 'components')).filter((name) => name.endsWith('.zb'))) {
+    const style = readFileSync(join(root, 'components', file), 'utf8').match(/<style>([\s\S]*?)<\/style>/)?.[1] ?? '';
+    if (!/transition|animation|@keyframes/.test(style)) continue;
+    moving.push(file);
+    assert.match(style, /@media \(prefers-reduced-motion: reduce\)/, `${file} stops under reduced motion`);
+    for (const [rule] of style.matchAll(/transition:[^;}]*/g)) {
+      assert.doesNotMatch(rule.replace(/var\([^()]*(\([^()]*\))?[^()]*\)/g, ''), /\d(m?s)\b/, `${file}: "${rule}" takes its duration from a token`);
+    }
+  }
+  assert.ok(moving.length >= 8);
+  const page = await browser.newPage({ reducedMotion: 'reduce' });
+  await page.goto(`${site.url}/components/toggle-switch/`, { waitUntil: 'networkidle' });
+  const duration = await page.locator('[data-preview="toggle-switch"] toggle-switch .track').first().evaluate((track) => getComputedStyle(track).transitionDuration);
+  assert.equal(duration, '0s');
+  await page.close();
+});

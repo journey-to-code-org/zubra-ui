@@ -63,7 +63,7 @@
   .grid > li { align-self: start; }
   figure { margin: 0; }
   .thumb { display: block; width: 100%; padding: 0; border: 0; border-radius: var(--radius, 0.6rem); overflow: hidden; background: var(--muted, #f4f4f5) center / cover no-repeat; cursor: zoom-in; }
-  .thumb img { display: block; width: 100%; height: auto; transition: transform 0.25s; }
+  .thumb img { display: block; width: 100%; height: auto; transition: transform var(--duration-normal, 200ms); }
   .thumb:hover img { transform: scale(1.03); }
   .thumb:focus-visible { outline: 2px solid var(--primary, #18181b); outline-offset: 2px; }
   figcaption { padding: 0.35rem 0.1rem 0; color: var(--muted-foreground, #71717a); font-size: 0.875rem; }
@@ -83,7 +83,7 @@
   .close { position: absolute; top: 0.75rem; right: 0.75rem; }
   .prev { grid-area: 1 / 1; justify-self: center; }
   .next { grid-area: 1 / 3; justify-self: center; }
-  @media (prefers-reduced-motion: reduce) { .thumb img { transition: none; } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: 0s !important; animation-duration: 0s !important; animation-iteration-count: 1 !important; } }
 </style>
 <image-gallery items={[]} src="" index:model={-1} label="Photos">
   <p zb-if={failed} class="status" role="status">Couldn't load the photos from {src}.</p>

@@ -22,7 +22,7 @@
   :host { display: grid; grid-template-columns: 11rem 1fr; gap: 1.25rem; align-items: center; }
   .chart { position: relative; }
   svg { display: block; width: 100%; transform: rotate(-90deg); }
-  circle { fill: none; stroke-width: 5; cursor: pointer; transition: stroke-width 0.15s, opacity 0.15s; }
+  circle { fill: none; stroke-width: 5; cursor: pointer; transition: stroke-width var(--duration-fast, 150ms), opacity var(--duration-fast, 150ms); }
   circle.track { stroke: var(--muted, #f3f4f7); cursor: default; }
   circle.dim { opacity: 0.3; }
   circle.on { stroke-width: 6.5; }
@@ -37,6 +37,7 @@
   .t4 { stroke: var(--chart-5, #ea580c); background: var(--chart-5, #ea580c); } .t5 { stroke: #db2777; background: #db2777; }
   .t6 { stroke: #7c3aed; background: #7c3aed; } .t7 { stroke: #64748b; background: #64748b; }
   @media (max-width: 34rem) { :host { grid-template-columns: 1fr; } .chart { max-width: 12rem; margin: 0 auto; } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: 0s !important; animation-duration: 0s !important; animation-iteration-count: 1 !important; } }
 </style>
 <donut-chart segments={[]} value:model="" label="Chart">
   <div class="chart">

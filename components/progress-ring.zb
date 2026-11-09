@@ -12,8 +12,9 @@
   svg { position: absolute; inset: 0; width: 100%; transform: rotate(-90deg); }
   circle { fill: none; stroke-width: 3.2; }
   .track { stroke: var(--border, #ddd); }
-  .fill { stroke: var(--primary, #36c); stroke-linecap: round; transition: stroke-dasharray 0.4s; }
+  .fill { stroke: var(--primary, #36c); stroke-linecap: round; transition: stroke-dasharray var(--duration-slow, 400ms); }
   .middle { position: relative; text-align: center; line-height: 1.15; }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: 0s !important; animation-duration: 0s !important; animation-iteration-count: 1 !important; } }
 </style>
 <progress-ring value={0} max={100} label="Progress">
   <svg viewBox="0 0 42 42" role="img" aria-label={`${label}: ${percent}%`}>
