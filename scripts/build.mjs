@@ -115,7 +115,7 @@ write('index.html', `<!doctype html>
     <h1>Zubra UI</h1>
     <p class="lead">Accessible web components you copy into any project: plain HTML, React, Vue, Svelte or Angular. Install them with the shadcn CLI, theme them with shadcn/ui's variables, and own the code.</p>
     <pre><code>npx shadcn add ${escape(baseUrl)}/r/toggle-switch.json</code></pre>
-    <p>Source: <a href="https://github.com/mnichols08/wcl">github.com/mnichols08/wcl</a>. Written in <a href="https://github.com/journey-to-code-org/zubra">Zubra</a>. The registry's index: <a href="r/registry.json">r/registry.json</a>.</p>
+    <p>Source: <a href="https://github.com/journey-to-code-org/zubra-ui">github.com/journey-to-code-org/zubra-ui</a>. Written in <a href="https://github.com/journey-to-code-org/zubra">Zubra</a>. The registry's index: <a href="r/registry.json">r/registry.json</a>.</p>
     <ul>
 ${components.map((component) => `      <li><h2>${escape(component.name)}</h2><p>${escape(component.description)}</p><pre><code>npx shadcn add ${escape(baseUrl)}/r/${escape(component.name)}.json</code></pre></li>`).join('\n')}
     </ul>

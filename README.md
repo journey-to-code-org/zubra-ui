@@ -3,7 +3,7 @@
 Accessible web components you copy into any project: plain HTML, React, Vue, Svelte, Angular, or anything else that renders HTML. Install them with the shadcn CLI you may already use, theme them with shadcn/ui's CSS variables, and own the code.
 
 ```sh
-npx shadcn add https://mnichols08.github.io/wcl/r/toggle-switch.json
+npx shadcn add https://journey-to-code-org.github.io/zubra-ui/r/toggle-switch.json
 ```
 
 That's the whole setup:
@@ -32,7 +32,7 @@ Web components are the platform's own component model, and they work everywhere.
 The components are written in [Zubra](https://github.com/journey-to-code-org/zubra), which compiles HTML-first `.zb` files into custom elements. You don't need Zubra to use them. If you want to edit the source, install the `.zb` file instead:
 
 ```sh
-npx shadcn add https://mnichols08.github.io/wcl/r/src/toggle-switch.json   # writes src/components/toggle-switch.zb
+npx shadcn add https://journey-to-code-org.github.io/zubra-ui/r/src/toggle-switch.json   # writes src/components/toggle-switch.zb
 ```
 
 ## Theming

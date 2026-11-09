@@ -6,7 +6,7 @@
   "type": "module",
   "license": "ISC",
   "author": "Mikey Nichols",
-  "repository": { "type": "git", "url": "https://github.com/mnichols08/wcl" },
+  "repository": { "type": "git", "url": "https://github.com/journey-to-code-org/zubra-ui" },
   "scripts": {
     "build": "node scripts/build.mjs",
     "serve": "node scripts/serve.mjs",
