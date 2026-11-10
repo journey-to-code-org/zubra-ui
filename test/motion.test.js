@@ -31,41 +31,42 @@ async function open(name, options = {}) {
 }
 const reduce = { reducedMotion: 'reduce' };
 
-// ---- the polyfill for `animate` (polyfill/README.md): one copy, pasted unchanged
+// ---- `animate` (Zubra 5.5): content that leaves, and lists that glide
 
-test('every pasted copy of the motion polyfill is polyfill/presence.js, unchanged', () => {
-  const canonical = readFileSync(join(root, 'polyfill/presence.js'), 'utf8').trimEnd();
-  const users = [];
-  for (const file of readdirSync(join(root, 'components')).filter((name) => name.endsWith('.zb'))) {
-    const source = readFileSync(join(root, 'components', file), 'utf8');
-    const start = source.indexOf('  // ---- motion polyfill');
-    if (start < 0) continue;
-    const end = source.indexOf('// ---- end of the motion polyfill', start);
-    assert.ok(end > start, `${file}: the polyfill has its end marker`);
-    const pasted = source.slice(start, end + '// ---- end of the motion polyfill'.length).split('\n').map((line) => line.replace(/^ {2}/, '')).join('\n');
-    assert.equal(pasted, canonical, `${file}: the pasted polyfill matches polyfill/presence.js`);
-    users.push(file);
-  }
-  assert.deepEqual(users.sort(), ['toast-region.zb', 'word-rotate.zb']);
-});
-
-test('toast-region: a dismissed toast slides out while the rest glide into its place', async () => {
+test('toast-region: a dismissed toast slides out from where it was; in a top corner the rest glide up', async () => {
   const { page, element, problems } = await open('toast-region');
-  await page.evaluate(() => { for (const message of ['One', 'Two', 'Three']) document.dispatchEvent(new CustomEvent('toast', { detail: { message, duration: 0 } })); });
+  const add = () => page.evaluate(() => { for (const message of ['One', 'Two', 'Three']) document.dispatchEvent(new CustomEvent('toast', { detail: { message, duration: 0 } })); });
+  const top = (name) => element.locator('.toast-item', { hasText: name }).evaluate((el) => Math.round(el.getBoundingClientRect().top));
+  const dismiss = (name) => element.locator('.toast-item', { hasText: name }).getByRole('button', { name: 'Dismiss notification' }).click();
   const live = element.locator('.toast-item:not([data-leaving])');
+
+  // Bottom right (the default): the region shrinks from the top, so nothing else moves on screen.
+  await add();
   await page.waitForTimeout(300);
-  const three = element.locator('.toast-item', { hasText: 'Three' });
-  const before = await three.evaluate((el) => el.offsetTop);
-  await element.locator('.toast-item', { hasText: 'One' }).getByRole('button', { name: 'Dismiss notification' }).click();
-  const one = element.locator('.toast-item[data-leaving]');
-  assert.equal(await one.count(), 1, 'the dismissed toast is still there, leaving');
-  assert.deepEqual(await one.evaluate((el) => [el.textContent.includes('One'), el.inert, getComputedStyle(el).position]), [true, true, 'absolute']);
-  const exit = await one.evaluate((el) => el.getAnimations().map((animation) => animation.transitionProperty ?? animation.animationName).sort());
+  const [one, two] = [await top('One'), await top('Two')];
+  await dismiss('One');
+  const leaving = element.locator('.toast-item[data-leaving]');
+  assert.equal(await leaving.count(), 1, 'the dismissed toast is still there, leaving');
+  assert.deepEqual(await leaving.evaluate((el) => [el.textContent.includes('One'), el.inert, getComputedStyle(el).position]), [true, true, 'absolute']);
+  const exit = await leaving.evaluate((el) => el.getAnimations().map((animation) => animation.transitionProperty ?? animation.animationName).sort());
   assert.deepEqual(exit, ['opacity', 'translate'], 'it transitions out, rather than playing its entrance again');
+  assert.equal(Math.round(await leaving.evaluate((el) => el.getBoundingClientRect().top)), one, 'it leaves from where it was, not on top of the next one');
+  assert.equal(await top('Two'), two, 'the one below stays put');
   assert.equal(await live.count(), 2);
-  const moved = await three.evaluate((el, before) => el.offsetTop < before && el.getAnimations().some((animation) => !(animation instanceof CSSAnimation) && !(animation instanceof CSSTransition)), before);
-  assert.equal(moved, true, 'the toasts after it glide up');
   await page.waitForFunction(() => !document.querySelector('toast-region .toast-item[data-leaving]'), null, { timeout: 3000 });
+  await element.evaluate((el) => el.querySelectorAll('.toast-item button').forEach((button) => button.click()));
+  await page.waitForFunction(() => !document.querySelector('[data-preview="toast-region"] toast-region .toast-item'), null, { timeout: 3000 });
+
+  // Top end: the region grows down, so the toasts below a dismissed one glide up into its place.
+  await element.evaluate((el) => (el.position = 'top-end'));
+  await add();
+  await page.waitForTimeout(300);
+  const three = await top('Three');
+  await dismiss('One');
+  const glides = await element.locator('.toast-item', { hasText: 'Three' }).evaluate((el) => el.getAnimations().filter((animation) => !(animation instanceof CSSAnimation) && !(animation instanceof CSSTransition)).length);
+  assert.equal(glides, 1, 'Three glides up');
+  await page.waitForTimeout(700);
+  assert.ok(await top('Three') < three, 'and ends higher');
   assert.deepEqual(problems, []);
   await page.close();
 });

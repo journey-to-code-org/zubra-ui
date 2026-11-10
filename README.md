@@ -80,7 +80,7 @@ A theme is a JSON file in `themes/sets/` that `extends` another and lists only w
 
 **Put a page together.** The **page composer** adds components and sections to a page, arranges them (drag, or the keyboard), edits their text and settings, and previews the page in any theme at desktop, tablet and phone widths. It exports a page that runs as it is (script tags, nothing to install), React or Vue, and the install commands for everything on it.
 
-**Motion:** every component that moves takes its timing and easing from the theme (`--duration-*`, `--ease-out`, `--ease-spring`, `--ease-bounce`), and stops moving for visitors who have asked their system for less motion. Dialogs, sheets, menus, popovers and tooltips animate in and out with the platform's own transitions (`@starting-style`, `transition-behavior: allow-discrete`), accordions grow open, toasts slide out while the rest close the gap, and the Motion components (reveal on scroll, number ticker, word rotate, marquee, shine border, spotlight and tilt cards, typing text, shimmer button) are there for pages that want more.
+**Motion:** every component that moves takes its timing and easing from the theme (`--duration-*`, `--ease-out`, `--ease-spring`, `--ease-bounce`), and stops moving for visitors who have asked their system for less motion. Dialogs, sheets, menus, popovers and tooltips animate in and out with the platform's own transitions (`@starting-style`, `transition-behavior: allow-discrete`), accordions grow open, toasts slide out while the rest close the gap (Zubra's `animate`), and the Motion components (reveal on scroll, number ticker, word rotate, marquee, shine border, spotlight and tilt cards, typing text, shimmer button) are there for pages that want more.
 
 ## The components
 
@@ -130,7 +130,3 @@ npm test          # builds, then installs components with the real shadcn CLI in
 - **`ZUBRA_UI_URL`** (or `--base-url`) sets the URL the registry items point at. The Pages workflow sets it to the published site.
 
 ISC licence. By Mikey Nichols.
-
-## Motion polyfill (temporary)
-
-`toast-region` and `word-rotate` animate content as it's removed, which `animate` in Zubra does once [zubra#116](https://github.com/journey-to-code-org/zubra/pull/116) is released. Until then they paste `polyfill/presence.js`, which does the same thing from outside; `polyfill/README.md` has the three steps to remove it.
