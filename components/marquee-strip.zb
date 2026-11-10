@@ -1,0 +1,50 @@
+<!--
+  A strip that scrolls its content sideways without end: logos, testimonials, announcements. The
+  content is shown twice so the loop has no seam; the copy is hidden from screen readers and
+  can't be focused. It pauses while hovered or focused, `controls` adds a pause button (for
+  anything people need to read: WCAG 2.2.2), and for visitors who asked for less motion it stands
+  still and scrolls by hand. `duration` is the seconds for one loop; `reverse` runs it the other way.
+  @slot - The items, side by side.
+-->
+<script>
+  import { onMount } from '@zubra/runtime'
+
+  let original = null
+  let copy = null
+  let stopped = false
+
+  onMount(() => {
+    // The copy follows the items: cloned again whenever they change.
+    const mirror = () => copy.replaceChildren(...[...original.childNodes].filter((node) => node.nodeType === 1 || node.nodeType === 3).map((node) => node.cloneNode(true)))
+    mirror()
+    const changes = new MutationObserver(mirror)
+    changes.observe(original, { childList: true, subtree: true, characterData: true, attributes: true })
+    return () => changes.disconnect()
+  })
+</script>
+<style>
+  :host { display: block; }
+  .marquee { position: relative; overflow: hidden; mask-image: linear-gradient(90deg, transparent, #000 var(--marquee-fade, 3rem), #000 calc(100% - var(--marquee-fade, 3rem)), transparent); }
+  .marquee-row { display: flex; width: max-content; animation: marquee-scroll calc(var(--marquee-duration) * 1s) linear infinite; }
+  .marquee-reverse .marquee-row { animation-direction: reverse; }
+  .marquee:hover .marquee-row, .marquee:focus-within .marquee-row, .marquee-stopped .marquee-row { animation-play-state: paused; }
+  .marquee-track { display: flex; align-items: center; gap: var(--marquee-gap); padding-inline-end: var(--marquee-gap); }
+  @keyframes marquee-scroll { to { translate: -50% 0; } }
+  .marquee-toggle { position: absolute; inset-block-start: 50%; inset-inline-end: 0.25rem; translate: 0 -50%; display: grid; place-items: center; width: 2rem; height: 2rem; border: 1px solid var(--border, #e4e4e7); border-radius: 50%; background: var(--background, #fff); color: var(--foreground, #18181b); font: inherit; font-size: 0.7rem; cursor: pointer; }
+  .marquee-toggle:focus-visible { outline: 2px solid var(--ring, #a1a1aa); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { transition-duration: 0s !important; animation-duration: 0s !important; animation-iteration-count: 1 !important; }
+    .marquee { overflow-x: auto; mask-image: none; }
+    .marquee-row { animation: none; }
+    .marquee-copy, .marquee-toggle { display: none; }
+  }
+</style>
+<marquee-strip duration={30} gap="2.5rem" reverse={false} controls={false} label="">
+  <div class="marquee" class:marquee-reverse={reverse} class:marquee-stopped={stopped} style:--marquee-duration={Math.max(1, duration)} style:--marquee-gap={gap} role={label ? "region" : null} aria-label={label || null}>
+    <div class="marquee-row">
+      <div class="marquee-track" ref={original}><zb-slot></zb-slot></div>
+      <div class="marquee-track marquee-copy" ref={copy} aria-hidden="true" inert></div>
+    </div>
+    <button zb-if={controls} type="button" class="marquee-toggle" aria-pressed={stopped ? "true" : "false"} aria-label="Pause scrolling" onclick={() => (stopped = !stopped)}>{stopped ? "▶" : "❚❚"}</button>
+  </div>
+</marquee-strip>

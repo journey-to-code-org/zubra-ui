@@ -38,11 +38,19 @@ async function open(path, { context } = {}) {
   return { page, problems };
 }
 
+// Many pages at once outgrow one browser (a page's networkidle times out): open them a few at a time.
+async function eachPage(items, run, at = 10) {
+  const queue = [...items];
+  await Promise.all(Array.from({ length: Math.min(at, queue.length) }, async () => {
+    while (queue.length) await run(queue.shift());
+  }));
+}
+
 test('every page loads cleanly and its previews render', async () => {
   const context = await browser.newContext();
   const pages = ['/', ...TOOL_PAGES, ...components.map(({ name }) => `/components/${name}/`)];
   const failures = [];
-  await Promise.all(pages.map(async (path) => {
+  await eachPage(pages, async (path) => {
     const { page, problems } = await open(path, { context });
     // With every page open at once, a module can still be loading at "network idle": wait (up to
     // ten seconds) for each preview to be defined before judging it.
@@ -61,7 +69,7 @@ test('every page loads cleanly and its previews render', async () => {
     for (const preview of previews) if (!preview.defined || !preview.rendered) problems.push(`preview ${preview.name}: ${JSON.stringify(preview)}`);
     if (problems.length) failures.push(`${path}\n  ${problems.join('\n  ')}`);
     await page.close();
-  }));
+  });
   await context.close();
   assert.deepEqual(failures, [], failures.join('\n'));
 });
@@ -157,14 +165,14 @@ async function lowContrast(page) {
 test('preview text is readable in light and dark', async () => {
   const context = await browser.newContext({ reducedMotion: 'reduce' });
   const failures = [];
-  await Promise.all([...components.map(({ name }) => name), 'themes'].map(async (name) => {
+  await eachPage([...components.map(({ name }) => name), 'themes'], async (name) => {
     const { page } = await open(name === 'themes' ? '/themes/' : `/components/${name}/`, { context });
     for (const mode of ['light', 'dark']) {
       if (mode === 'dark') await page.click('#mode');
       for (const failure of await lowContrast(page)) failures.push(`${name} (${mode}): ${failure}`);
     }
     await page.close();
-  }));
+  });
   await context.close();
   assert.deepEqual(failures, [], failures.join('\n'));
 });
@@ -172,13 +180,13 @@ test('preview text is readable in light and dark', async () => {
 test('on a phone nothing scrolls sideways, and the nav lists every component', async () => {
   const context = await browser.newContext({ viewport: { width: 320, height: 740 } });
   const failures = [];
-  await Promise.all(['/', ...TOOL_PAGES, ...components.map(({ name }) => `/components/${name}/`)].map(async (path) => {
+  await eachPage(['/', ...TOOL_PAGES, ...components.map(({ name }) => `/components/${name}/`)], async (path) => {
     const { page } = await open(path, { context });
     const { scroll, width, nav } = await page.evaluate(() => ({ scroll: document.documentElement.scrollWidth, width: innerWidth, nav: document.querySelectorAll('.site-nav a[href*="components/"]').length }));
     if (scroll > width) failures.push(`${path}: ${scroll}px wide in ${width}px`);
     if (nav !== components.length) failures.push(`${path}: nav lists ${nav} of ${components.length}`);
     await page.close();
-  }));
+  });
   await context.close();
   assert.deepEqual(failures, [], failures.join('\n'));
 });
@@ -189,7 +197,7 @@ test('axe finds no serious or critical problems on any page, light or dark', asy
   const axe = readFileSync(join(root, 'node_modules/axe-core/axe.min.js'), 'utf8');
   const context = await browser.newContext({ reducedMotion: 'reduce' });
   const failures = [];
-  await Promise.all(['/', ...TOOL_PAGES, ...components.map(({ name }) => `/components/${name}/`)].map(async (path) => {
+  await eachPage(['/', ...TOOL_PAGES, ...components.map(({ name }) => `/components/${name}/`)], async (path) => {
     const { page } = await open(path, { context });
     await page.addScriptTag({ content: axe });
     for (const mode of ['light', 'dark']) {
@@ -200,7 +208,7 @@ test('axe finds no serious or critical problems on any page, light or dark', asy
       for (const violation of violations) failures.push(`${path} (${mode}) ${violation}`);
     }
     await page.close();
-  }));
+  });
   await context.close();
   assert.deepEqual(failures, [], failures.join('\n'));
 });

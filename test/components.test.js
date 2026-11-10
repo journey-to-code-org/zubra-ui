@@ -114,6 +114,7 @@ test('tool-tip: the pointer can move from the trigger into the tip', async () =>
   await trigger.hover();
   const tip = element.locator('[role=tooltip]');
   await tip.waitFor({ state: 'visible' });
+  await page.waitForTimeout(250); // until it has faded in, where it stays
   const box = await tip.boundingBox();
   const from = await trigger.boundingBox();
   await page.mouse.move(from.x + from.width / 2, from.y + 2);
@@ -121,7 +122,8 @@ test('tool-tip: the pointer can move from the trigger into the tip', async () =>
   await page.waitForTimeout(400);
   assert.equal(await tip.isVisible(), true);
   await page.keyboard.press('Escape');
-  assert.equal(await tip.isVisible(), false);
+  assert.equal(await tip.evaluate((el) => el.matches(':popover-open')), false, 'closed at once (it fades out as it goes)');
+  await tip.waitFor({ state: 'hidden', timeout: 1000 });
   assert.deepEqual(problems, []);
   await page.close();
 });
@@ -607,7 +609,7 @@ test('toast-region: a document event shows a toast above a modal, it closes itse
     document.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Saved', variant: 'success' } }));
     document.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Kept', duration: 0 } }));
   });
-  const toasts = element.locator('.toast-item');
+  const toasts = element.locator('.toast-item:not([data-leaving])');
   assert.deepEqual(await toasts.allTextContents().then((texts) => texts.map((text) => text.replace('×', '').trim())), ['Saved', 'Kept']);
   assert.equal(await element.locator('section').evaluate((region) => region.matches(':popover-open')), true, 'in the top layer, above the modal');
   await page.waitForTimeout(700);

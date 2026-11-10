@@ -444,4 +444,41 @@ export const demos = {
     attrs: { heading: 'Trusted by bakeries in 40 cities' },
     props: { items: [{ name: 'Northwind' }, { name: 'Rise & Crumb' }, { name: 'Globex' }, { name: 'Initech' }, { name: 'Umbrella' }] },
   },
+  'reveal-on-scroll': {
+    attrs: { effect: 'fade-up' },
+    props: { stagger: 90 },
+    html: '<div class="demo-stats">\n  <div class="demo-box"><strong>1.2k</strong>Loaves this month</div>\n  <div class="demo-box"><strong>38</strong>Classes taught</div>\n  <div class="demo-box"><strong>4.9</strong>Average rating</div>\n</div>',
+  },
+  'number-ticker': {
+    attrs: { suffix: ' loaves', locale: 'en-US' },
+    props: { value: 12480, duration: 1600 },
+  },
+  'word-rotate': {
+    props: { words: ['sourdough', 'focaccia', 'brioche', 'rye'], interval: 2000 },
+  },
+  'marquee-strip': {
+    attrs: { label: 'Bakeries using Bakehouse', gap: '1rem' },
+    props: { duration: 24 },
+    html: '<span class="demo-chip">Northwind</span>\n<span class="demo-chip">Rise &amp; Crumb</span>\n<span class="demo-chip">Globex</span>\n<span class="demo-chip">Initech</span>\n<span class="demo-chip">Umbrella</span>\n<span class="demo-chip">Hooli</span>',
+  },
+  'shine-border': {
+    props: { duration: 6 },
+    html: '<div class="demo-hero">\n  <h2>Team plan</h2>\n  <p>Unlimited projects and five seats, $12 a month.</p>\n</div>',
+  },
+  'spotlight-card': {
+    props: { strength: 14 },
+    html: '<h3>Timers per step</h3>\n<p>Proofs and bakes run side by side, with an alert for each.</p>',
+  },
+  'tilt-card': {
+    props: { max: 8, glare: true },
+    html: '<h3>Recipes that scale</h3>\n<p>Change the batch size and every amount follows.</p>',
+  },
+  'typing-text': {
+    attrs: { text: 'Bake bread you are proud of.' },
+    props: { speed: 45 },
+  },
+  'shimmer-button': {
+    attrs: { type: 'button' },
+    html: 'Book a class',
+  },
 };

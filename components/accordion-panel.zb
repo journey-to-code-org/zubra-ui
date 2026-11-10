@@ -14,6 +14,10 @@
   details[open] > summary::after { transform: rotate(-135deg); }
   summary:focus-visible { outline: 2px solid var(--primary, #36c); outline-offset: 2px; border-radius: calc(var(--radius, 0.625rem) * 0.48); }
   .body { padding: 0 0.25rem 1rem; }
+  /* The panel grows open and shrinks shut (browsers with ::details-content; the rest just open). */
+  details { interpolate-size: allow-keywords; }
+  details::details-content { block-size: 0; overflow: clip; opacity: 0; transition: block-size var(--duration-normal, 200ms) var(--ease-out, ease-out), opacity var(--duration-normal, 200ms) var(--ease-out, ease-out), content-visibility var(--duration-normal, 200ms) allow-discrete; }
+  details[open]::details-content { block-size: auto; opacity: 1; }
   @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: 0s !important; animation-duration: 0s !important; animation-iteration-count: 1 !important; } }
 </style>
 <accordion-panel open:model={false} heading="" group="">

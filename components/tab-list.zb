@@ -47,6 +47,10 @@
   [role=tab][aria-selected=true] { color: var(--foreground, #1d2130); border-bottom-color: var(--primary, #36c); }
   [role=tab]:focus-visible { outline: 2px solid var(--primary, #36c); outline-offset: -2px; border-radius: calc(var(--radius, 0.625rem) * 0.48); }
   [role=tabpanel] { padding: 1rem 0.25rem; }
+  /* The panel a tab shows fades up into place. */
+  [role=tabpanel]:not([hidden]) { animation: panel-in var(--duration-normal, 200ms) var(--ease-out, ease-out); }
+  @keyframes panel-in { from { opacity: 0; translate: 0 0.35rem; } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: 0s !important; animation-duration: 0s !important; animation-iteration-count: 1 !important; } }
   [role=tabpanel]:focus-visible { outline: 2px solid var(--primary, #36c); outline-offset: 2px; }
 </style>
 <tab-list value:model="" tabs={[]} label="" manual={false}>

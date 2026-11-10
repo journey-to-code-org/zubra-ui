@@ -54,7 +54,12 @@
 </script>
 <style>
   dialog { width: min(36rem, calc(100vw - 2rem)); margin: 12vh auto auto; padding: 0; border: 1px solid var(--border, #e4e4e7); border-radius: calc(var(--radius, 0.625rem) * 1.4); background: var(--popover, #fff); color: var(--popover-foreground, #18181b); box-shadow: 0 24px 64px #0d122040; }
-  dialog::backdrop { background: #0d122059; }
+  dialog { opacity: 0; scale: 0.97; translate: 0 -0.5rem; transition: opacity var(--duration-fast, 150ms) var(--ease-out, ease-out), scale var(--duration-fast, 150ms) var(--ease-out, ease-out), translate var(--duration-fast, 150ms) var(--ease-out, ease-out), overlay var(--duration-fast, 150ms) allow-discrete, display var(--duration-fast, 150ms) allow-discrete; }
+  dialog[open] { opacity: 1; scale: 1; translate: 0; }
+  @starting-style { dialog[open] { opacity: 0; scale: 0.97; translate: 0 -0.5rem; } }
+  dialog::backdrop { background: #0d122000; transition: background-color var(--duration-fast, 150ms) var(--ease-out, ease-out), overlay var(--duration-fast, 150ms) allow-discrete, display var(--duration-fast, 150ms) allow-discrete; }
+  dialog[open]::backdrop { background: #0d122059; }
+  @starting-style { dialog[open]::backdrop { background: #0d122000; } }
   .palette-search { display: flex; align-items: center; gap: 0.6rem; padding: 0 1rem; border-bottom: 1px solid var(--border, #e4e4e7); }
   .palette-search svg { flex: none; color: var(--muted-foreground, #71717a); }
   /* The focus ring is the search row's bottom edge: an outline on the field would be cut off by the dialog. */

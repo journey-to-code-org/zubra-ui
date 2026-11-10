@@ -1,0 +1,21 @@
+<!--
+  A frame whose border has a beam of light travelling around it, for the plan you recommend or
+  the feature you're launching. The beam takes the theme's chart colours; `duration` is the
+  seconds for one lap and `width` the border's thickness. Decorative only, and still for visitors
+  who asked for less motion.
+  @slot - What the frame holds.
+-->
+<style>
+  :host { display: block; }
+  .shine { position: relative; isolation: isolate; overflow: hidden; padding: var(--shine-width); border-radius: var(--radius, 0.625rem); background: var(--border, #e4e4e7); }
+  .shine-beam { position: absolute; inset: -100%; z-index: -1; background: conic-gradient(from 0deg, transparent 0 62%, var(--chart-1, oklch(0.65 0.2 40)) 75%, var(--chart-2, oklch(0.6 0.12 185)) 82%, transparent 92%); animation: shine-spin calc(var(--shine-duration) * 1s) linear infinite; pointer-events: none; }
+  .shine-body { position: relative; border-radius: calc(var(--radius, 0.625rem) - var(--shine-width)); background: var(--card, #fff); color: var(--card-foreground, #18181b); }
+  @keyframes shine-spin { to { rotate: 1turn; } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: 0s !important; animation-duration: 0s !important; animation-iteration-count: 1 !important; } .shine-beam { animation: none; } }
+</style>
+<shine-border duration={6} width="1.5px">
+  <div class="shine" style:--shine-duration={Math.max(1, duration)} style:--shine-width={width}>
+    <div class="shine-beam" aria-hidden="true"></div>
+    <div class="shine-body"><zb-slot></zb-slot></div>
+  </div>
+</shine-border>

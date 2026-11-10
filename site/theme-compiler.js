@@ -3,7 +3,7 @@
 
 const kebab = (name) => name.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`).replace(/([a-z])(\d)/g, '$1-$2');
 // Token names that become CSS variables other than `--<kebab>`.
-const TOKENS = { radius: '--radius', durationFast: '--duration-fast', durationNormal: '--duration-normal', durationSlow: '--duration-slow', easeOut: '--ease-out' };
+const TOKENS = { radius: '--radius', durationFast: '--duration-fast', durationNormal: '--duration-normal', durationSlow: '--duration-slow', durationSlower: '--duration-slower', easeOut: '--ease-out', easeIn: '--ease-in', easeInOut: '--ease-in-out', easeSpring: '--ease-spring', easeBounce: '--ease-bounce' };
 
 /** A theme with everything it inherits merged in (`extends`, nearest last). */
 export function resolveTheme(themes, name, seen = []) {

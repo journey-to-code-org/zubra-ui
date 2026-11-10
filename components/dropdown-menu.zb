@@ -69,6 +69,11 @@
   @supports (position-area: bottom) {
     [popover] { position-area: bottom span-right; position-try-fallbacks: flip-block; margin-top: 4px; }
   }
+  /* Opening and closing: a quick fade and scale from the trigger's side. */
+  [popover] { opacity: 0; scale: 0.96; translate: 0 -0.25rem; transition: opacity var(--duration-fast, 150ms) var(--ease-out, ease-out), scale var(--duration-fast, 150ms) var(--ease-out, ease-out), translate var(--duration-fast, 150ms) var(--ease-out, ease-out), overlay var(--duration-fast, 150ms) allow-discrete, display var(--duration-fast, 150ms) allow-discrete; }
+  [popover]:popover-open { opacity: 1; scale: 1; translate: 0; }
+  @starting-style { [popover]:popover-open { opacity: 0; scale: 0.96; translate: 0 -0.25rem; } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after, ::backdrop { transition-duration: 0s !important; animation-duration: 0s !important; } }
   [role=menuitem] { display: block; width: 100%; padding: 0.4rem 0.6rem; border: 0; border-radius: calc(var(--radius, 0.625rem) * 0.64); background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
   [role=menuitem]:hover, [role=menuitem]:focus { background: var(--accent, #f2f4f8); outline: none; }
   [role=menuitem]:disabled { color: var(--muted-foreground, #98a2b3); cursor: default; }

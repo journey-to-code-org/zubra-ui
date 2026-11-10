@@ -113,7 +113,7 @@ function slotDocs(component) {
 // ---- the page frame
 
 const themeIndex = JSON.parse(readFileSync(join(out, 'themes/sets/index.json'), 'utf8'));
-const CATEGORIES = { input: 'Form controls', navigation: 'Navigation', widget: 'Widgets', data: 'Data', display: 'Display', layout: 'Layout', section: 'Page sections', app: 'App pieces', block: 'Blocks' };
+const CATEGORIES = { input: 'Form controls', navigation: 'Navigation', widget: 'Widgets', data: 'Data', display: 'Display', motion: 'Motion', layout: 'Layout', section: 'Page sections', app: 'App pieces', block: 'Blocks' };
 for (const component of components) {
   if (!CATEGORIES[component.category]) throw new Error(`${component.name}: no nav section for category "${component.category}"`);
 }
