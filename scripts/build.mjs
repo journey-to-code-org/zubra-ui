@@ -80,7 +80,13 @@ const items = [themeItem];
 const plainElements = new Map();
 for (const component of components) {
   const plain = compileFile(join(root, 'components', component.files[0]), { emit: 'element' });
-  if (plain.ok) plainElements.set(component.name, plain.output);
+  if (!plain.ok) continue;
+  // The element as you'd write it by hand (@zubra/compiler 5.4): a class over HTMLElement. Before
+  // 5.4 it was the runtime's module with `$define` inlined; the library doesn't publish that shape.
+  if (!/^export class \w+ extends HTMLElement \{/m.test(plain.output) || plain.output.includes('function $define(')) {
+    throw new Error(`zubra-ui: ${component.name}: @zubra/compiler wrote the pre-5.4 plain element ($define inlined). Run \`npm install\` for @zubra/compiler ^5.4.0, which writes the readable class.`);
+  }
+  plainElements.set(component.name, plain.output);
 }
 for (let dropped = true; dropped; ) {
   dropped = false;
