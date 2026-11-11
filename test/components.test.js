@@ -879,3 +879,107 @@ test('faq-list and newsletter-signup: one answer open at a time; a valid address
   assert.deepEqual(problems, []);
   await page.close();
 });
+
+// ---- found by Tailgate (a farm-to-door app built on these components) --------------------------
+
+test('step-indicator: readonly shows where something is with no buttons, and past the end is all done', async () => {
+  const { page, element, problems } = await open('step-indicator');
+  await element.evaluate((el) => { el.steps = ['Placed', 'Driver assigned', 'On the way', 'Delivered']; el.current = 2; el.readonly = true; });
+  assert.equal(await element.getByRole('button').count(), 0, 'nothing to press: it only says where things are');
+  assert.equal((await element.locator('li[aria-current="step"]').textContent()).trim(), 'On the way');
+  assert.match(await element.locator('li').nth(0).textContent(), /Placed \(done\)/, 'done steps say so in words');
+  await element.evaluate((el) => { el.current = 4; });
+  assert.equal(await element.locator('li.done').count(), 4, 'past the last step, every step is done');
+  assert.equal(await element.locator('[aria-current="step"]').count(), 0);
+  // Narrow: read-only keeps its labels (they're the point); buttons fold to numbers.
+  await element.evaluate((el) => { el.current = 2; });
+  await page.setViewportSize({ width: 390, height: 800 });
+  assert.ok(await element.locator('li').nth(2).locator('.label').isVisible(), 'read-only labels stay');
+  // Not read-only: the same steps, as buttons back to the finished ones.
+  await element.evaluate((el) => { el.readonly = false; });
+  assert.equal(await element.getByRole('button').count(), 4);
+  assert.equal(await element.locator('button .label').first().isVisible(), false, 'narrow buttons are numbers');
+  assert.deepEqual(problems, []);
+  await page.close();
+});
+
+test('step-indicator: a page that lays its navs out as flex rows doesn\'t change it', async () => {
+  const { page, element, problems } = await open('step-indicator');
+  // As wide as a page's order card, where Tailgate saw it shrink.
+  await element.evaluate((el) => { el.style.cssText = 'display: block; width: 40rem'; el.steps = ['A', 'B', 'C']; el.current = 1; el.readonly = true; });
+  const width = () => element.evaluate((el) => Math.round(el.querySelector('ol').getBoundingClientRect().width));
+  const before = await width();
+  await page.addStyleTag({ content: 'nav { display: flex; gap: 2rem; }' });
+  assert.equal(await width(), before);
+  assert.deepEqual(problems, []);
+  await page.close();
+});
+
+test('color-swatches: each colour is announced by its name, not its hex value', async () => {
+  const { page, element, problems } = await open('color-swatches');
+  assert.ok(await element.getByRole('radio', { name: 'Green' }).count(), 'the default colours have names');
+  await element.evaluate((el) => { el.colors = ['#9b2d20', '#1f5f8b']; el.names = ['Barn red', 'Creek blue']; el.value = '#9b2d20'; });
+  await element.getByRole('radio', { name: 'Barn red' }).focus();
+  await page.keyboard.press('ArrowRight');
+  assert.equal(await prop(element, 'value'), '#1f5f8b');
+  assert.equal(await element.getByRole('radio', { name: 'Creek blue' }).getAttribute('aria-checked'), 'true');
+  // A colour with no name is announced by its value, as before.
+  await element.evaluate((el) => { el.names = []; });
+  assert.ok(await element.getByRole('radio', { name: '#9b2d20' }).count());
+  assert.deepEqual(problems, []);
+  await page.close();
+});
+
+test('user-avatar: the server writes the initials, so they show before JavaScript', async () => {
+  const { render } = await import('@zubra/compiler');
+  const { html } = await render(join(root, 'components/user-avatar.zb'), { props: { name: '  Dana   Whitlock ' } });
+  assert.match(html, />DW<\/span>/);
+  // Any whitespace between the names (a pasted tab or line break), not only spaces.
+  assert.match((await render(join(root, 'components/user-avatar.zb'), { props: { name: 'Dana\tWhitlock' } })).html, />DW<\/span>/);
+  assert.match((await render(join(root, 'components/user-avatar.zb'), { props: { name: 'Dana\nWhitlock' } })).html, />DW<\/span>/);
+  const page = await browser.newPage({ javaScriptEnabled: false });
+  await page.setContent(html);
+  assert.equal(await page.getByRole('img', { name: 'Dana Whitlock' }).textContent(), 'DW');
+  await page.close();
+});
+
+test('dashboard-shell: a long name shortens in the user menu instead of pushing it out of the shell', async () => {
+  const { page, element, problems } = await open('dashboard-shell');
+  await element.evaluate((el) => { el.user = 'Dana Whitlock-Montgomery of Bittinger Road'; });
+  await page.setViewportSize({ width: 390, height: 800 });
+  const sizes = await element.evaluate((el) => {
+    const shell = el.querySelector('.shell').getBoundingClientRect();
+    const trigger = el.querySelector('header dropdown-menu .trigger').getBoundingClientRect();
+    return { shellRight: shell.right, triggerRight: trigger.right };
+  });
+  assert.ok(sizes.triggerRight <= sizes.shellRight + 0.5, JSON.stringify(sizes));
+  assert.deepEqual(problems, []);
+  await page.close();
+});
+
+test('quantity-stepper: editable takes a typed number, clamped to its limits', async () => {
+  const { page, element, problems } = await open('quantity-stepper');
+  await element.evaluate((el) => { el.editable = true; el.max = 100; el.value = 1; });
+  const field = element.getByRole('spinbutton');
+  await field.fill('40');
+  await field.press('Tab');
+  assert.equal(await prop(element, 'value'), 40);
+  await field.fill('900');
+  await field.press('Enter');
+  assert.equal(await prop(element, 'value'), 100, 'clamped to max');
+  assert.equal(await field.inputValue(), '100');
+  await element.evaluate((el) => { el.min = 5; });
+  await field.fill('-3');
+  await field.press('Tab');
+  assert.equal(await prop(element, 'value'), 5, 'clamped to min');
+  assert.equal(await field.inputValue(), '5');
+  await field.fill('100');
+  await field.press('Tab');
+  await field.fill('');
+  await field.press('Tab');
+  assert.equal(await prop(element, 'value'), 100, 'nothing typed keeps the value');
+  await element.locator('.less').click();
+  assert.equal(await field.inputValue(), '99', 'the buttons still step it');
+  assert.deepEqual(problems, []);
+  await page.close();
+});
