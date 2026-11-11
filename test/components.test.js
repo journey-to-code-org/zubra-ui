@@ -891,9 +891,26 @@ test('step-indicator: readonly shows where something is with no buttons, and pas
   await element.evaluate((el) => { el.current = 4; });
   assert.equal(await element.locator('li.done').count(), 4, 'past the last step, every step is done');
   assert.equal(await element.locator('[aria-current="step"]').count(), 0);
+  // Narrow: read-only keeps its labels (they're the point); buttons fold to numbers.
+  await element.evaluate((el) => { el.current = 2; });
+  await page.setViewportSize({ width: 390, height: 800 });
+  assert.ok(await element.locator('li').nth(2).locator('.label').isVisible(), 'read-only labels stay');
   // Not read-only: the same steps, as buttons back to the finished ones.
-  await element.evaluate((el) => { el.readonly = false; el.current = 2; });
+  await element.evaluate((el) => { el.readonly = false; });
   assert.equal(await element.getByRole('button').count(), 4);
+  assert.equal(await element.locator('button .label').first().isVisible(), false, 'narrow buttons are numbers');
+  assert.deepEqual(problems, []);
+  await page.close();
+});
+
+test('step-indicator: a page that lays its navs out as flex rows doesn\'t change it', async () => {
+  const { page, element, problems } = await open('step-indicator');
+  // As wide as a page's order card, where Tailgate saw it shrink.
+  await element.evaluate((el) => { el.style.cssText = 'display: block; width: 40rem'; el.steps = ['A', 'B', 'C']; el.current = 1; el.readonly = true; });
+  const width = () => element.evaluate((el) => Math.round(el.querySelector('ol').getBoundingClientRect().width));
+  const before = await width();
+  await page.addStyleTag({ content: 'nav { display: flex; gap: 2rem; }' });
+  assert.equal(await width(), before);
   assert.deepEqual(problems, []);
   await page.close();
 });
@@ -917,6 +934,9 @@ test('user-avatar: the server writes the initials, so they show before JavaScrip
   const { render } = await import('@zubra/compiler');
   const { html } = await render(join(root, 'components/user-avatar.zb'), { props: { name: '  Dana   Whitlock ' } });
   assert.match(html, />DW<\/span>/);
+  // Any whitespace between the names (a pasted tab or line break), not only spaces.
+  assert.match((await render(join(root, 'components/user-avatar.zb'), { props: { name: 'Dana\tWhitlock' } })).html, />DW<\/span>/);
+  assert.match((await render(join(root, 'components/user-avatar.zb'), { props: { name: 'Dana\nWhitlock' } })).html, />DW<\/span>/);
   const page = await browser.newPage({ javaScriptEnabled: false });
   await page.setContent(html);
   assert.equal(await page.getByRole('img', { name: 'Dana Whitlock' }).textContent(), 'DW');
@@ -948,6 +968,13 @@ test('quantity-stepper: editable takes a typed number, clamped to its limits', a
   await field.press('Enter');
   assert.equal(await prop(element, 'value'), 100, 'clamped to max');
   assert.equal(await field.inputValue(), '100');
+  await element.evaluate((el) => { el.min = 5; });
+  await field.fill('-3');
+  await field.press('Tab');
+  assert.equal(await prop(element, 'value'), 5, 'clamped to min');
+  assert.equal(await field.inputValue(), '5');
+  await field.fill('100');
+  await field.press('Tab');
   await field.fill('');
   await field.press('Tab');
   assert.equal(await prop(element, 'value'), 100, 'nothing typed keeps the value');
