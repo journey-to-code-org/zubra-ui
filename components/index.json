@@ -48,7 +48,7 @@
     {
       "name": "color-swatches",
       "category": "input",
-      "description": "Pick a colour from `colors`. A form control (a radio group): arrow keys move the choice.",
+      "description": "Pick a colour from `colors`. A form control (a radio group): arrow keys move the choice. `names` are what each colour is called, in the same order (\"Barn red\"), for screen readers and the tooltip; a colour without one is announced by its value.",
       "files": [
         "color-swatches.zb"
       ],
@@ -200,7 +200,7 @@
     {
       "name": "quantity-stepper",
       "category": "input",
-      "description": "A number with − and + buttons, between `min` and `max`. A form control.",
+      "description": "A number with − and + buttons, between `min` and `max`. A form control. `editable` lets the number be typed as well (a stock count of 40 shouldn't take forty presses); what's typed is clamped to `min`..`max` when the field is left.",
       "files": [
         "quantity-stepper.zb"
       ],
@@ -278,7 +278,7 @@
     {
       "name": "step-indicator",
       "category": "display",
-      "description": "Where a multi-step flow is: steps done (which can be revisited), the current one, and those ahead.",
+      "description": "Where a multi-step flow is: steps done (which can be revisited), the current one, and those ahead. `readonly` shows where something is without offering to go back (an order's status): plain list items, not buttons. `current` past the last step shows every step done.",
       "files": [
         "step-indicator.zb"
       ],
