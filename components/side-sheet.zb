@@ -6,7 +6,8 @@
   @slot heading - Its title, which labels it (defaults to `label`).
   @slot actions - Buttons pinned to the bottom, shown only when given. One with `data-close` closes it.
 -->
-<script>
+<script lang="ts">
+  declare const side: "right" | "left" | "bottom";
   import { effect, hasSlot, id } from '@zubra/runtime'
 
   const headingId = id()

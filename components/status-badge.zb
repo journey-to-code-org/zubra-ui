@@ -16,6 +16,9 @@
   .badge-outline { border-color: var(--border, #e4e4e7); background: none; color: var(--foreground, #18181b); }
   .badge-dot::before { content: ""; width: 0.45rem; height: 0.45rem; border-radius: 50%; background: currentColor; }
 </style>
+<script lang="ts">
+  declare const variant: "neutral" | "primary" | "success" | "warning" | "danger" | "outline";
+</script>
 <status-badge variant="neutral" dot={false}>
   <span class="badge-{variant}" class:badge-dot={dot}><zb-slot></zb-slot></span>
 </status-badge>

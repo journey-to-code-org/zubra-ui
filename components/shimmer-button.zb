@@ -18,6 +18,9 @@
   @keyframes shimmer-sweep { 0% { translate: -100% 0; } 55%, 100% { translate: 100% 0; } }
   @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: 0s !important; animation-duration: 0s !important; animation-iteration-count: 1 !important; } .shimmer::before { animation: none; } }
 </style>
+<script lang="ts">
+  declare const type: "button" | "submit" | "reset";
+</script>
 <shimmer-button type="button" href="" name="" value="" disabled={false}>
   <a zb-if={href} class="shimmer" href={href}><zb-slot></zb-slot></a>
   <button zb-else class="shimmer" type={type} name={name || null} value={value || null} disabled={disabled}><zb-slot></zb-slot></button>

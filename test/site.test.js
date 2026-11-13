@@ -74,6 +74,19 @@ test('every page loads cleanly and its previews render', async () => {
   assert.deepEqual(failures, [], failures.join('\n'));
 });
 
+test('API tables list the allowed values of a prop, not just "string"', async () => {
+  // The types come from the compiler's manifest, which reads `declare const` in a lang="ts" script.
+  const typeOf = (page, prop) => page.locator(`#prop-${prop} td:nth-child(2)`).innerText();
+  const button = await open('/components/action-button/');
+  assert.equal(await typeOf(button.page, 'variant'), '"primary" | "secondary" | "outline" | "ghost" | "destructive" | "link"');
+  assert.equal(await typeOf(button.page, 'size'), '"sm" | "md" | "lg"');
+  assert.equal(await typeOf(button.page, 'disabled'), 'boolean');
+  const sheet = await open('/components/side-sheet/');
+  assert.equal(await typeOf(sheet.page, 'side'), '"right" | "left" | "bottom"');
+  await button.page.close();
+  await sheet.page.close();
+});
+
 test('the stack switch shows one stack everywhere and is remembered', async () => {
   const context = await browser.newContext();
   const { page, problems } = await open('/components/star-rating/', { context });

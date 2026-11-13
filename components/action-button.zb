@@ -31,6 +31,11 @@
   @keyframes spin { to { transform: rotate(1turn); } }
   @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: 0s !important; animation-duration: 0s !important; animation-iteration-count: 1 !important; } }
 </style>
+<script lang="ts">
+  declare const variant: "primary" | "secondary" | "outline" | "ghost" | "destructive" | "link";
+  declare const size: "sm" | "md" | "lg";
+  declare const type: "button" | "submit" | "reset";
+</script>
 <action-button variant="primary" size="md" type="button" disabled={false} loading={false} name="" value="" label="" href="" target="">
   <a zb-if={href} class="action-button action-{variant} action-{size}" href={disabled ? null : href} target={target || null} aria-disabled={disabled ? "true" : null} aria-label={label || null}><zb-slot></zb-slot></a>
   <button zb-else class="action-button action-{variant} action-{size}" type={type} name={name || null} value={value || null} disabled={disabled} aria-disabled={loading ? "true" : null} aria-busy={loading ? "true" : null} aria-label={label || null} onclick={(event) => loading && (event.preventDefault(), event.stopPropagation())}>

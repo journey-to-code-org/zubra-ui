@@ -5,7 +5,8 @@
   for less motion, the content is simply there. `again` replays it each time it comes back in.
   @slot - The content to reveal.
 -->
-<script>
+<script lang="ts">
+  declare const effect: "fade" | "fade-up" | "fade-down" | "blur" | "scale" | "slide-left" | "slide-right";
   import { onMount } from '@zubra/runtime'
 
   let frame = null

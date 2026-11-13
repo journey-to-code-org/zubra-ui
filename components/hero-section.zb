@@ -7,7 +7,8 @@
   @slot actions - The main buttons or links.
   @slot media - A picture, video or live demo.
 -->
-<script>
+<script lang="ts">
+  declare const align: "start" | "center";
   import { hasSlot } from '@zubra/runtime'
 
   const media = hasSlot('media')

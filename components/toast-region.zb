@@ -9,7 +9,8 @@
   while a modal dialog is open the rest of the page is inert, so a toast's buttons work once it closes).
   @fires toastclose - A toast closed; `detail` is its message.
 -->
-<script>
+<script lang="ts">
+  declare const position: "top-start" | "top-center" | "top-end" | "bottom-start" | "bottom-center" | "bottom-end";
   import { emit, onUnmount } from '@zubra/runtime'
 
   let toasts = []
