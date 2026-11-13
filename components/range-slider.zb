@@ -9,7 +9,16 @@
 
   const inputId = id()
   const fill = max > min ? ((Math.min(Math.max(value, min), max) - min) / (max - min)) * 100 : 0
-  const shown = `${Number(value).toLocaleString()}${unit}`
+  // en-US grouping and up to three decimals, as toLocaleString("en-US") gives, in arithmetic the
+  // server runs too (toLocaleString is the browser's alone), so the server's HTML has the numbers.
+  const thousands = (n) => (n < 1000 ? String(n) : `${thousands(Math.floor(n / 1000))},${String(n % 1000).padStart(3, "0")}`)
+  const number = (value) => {
+    const milli = Math.round(Math.abs(value) * 1000)
+    const rest = milli % 1000
+    const fraction = rest === 0 ? "" : rest % 100 === 0 ? `.${rest / 100}` : rest % 10 === 0 ? `.${String(rest / 10).padStart(2, "0")}` : `.${String(rest).padStart(3, "0")}`
+    return `${value < 0 && milli > 0 ? "-" : ""}${thousands(Math.floor(milli / 1000))}${fraction}`
+  }
+  const shown = `${number(Number(value))}${unit}`
 </script>
 <style>
   :host { display: block; }
