@@ -264,15 +264,18 @@ test('masonry-grid: items of different heights pack in reading order, and a new 
   assert.equal(layout.overlap, false);
   assert.ok(layout.columns >= 2 && layout.firstRowInOrder);
   assert.ok(layout.widestGap < 20, `largest gap ${layout.widestGap}px`);
-  await element.locator('.grid').evaluate((grid) => {
+  // Each item keeps its own height from the stylesheet (::slotted), not from script.
+  assert.deepEqual(await page.$$eval('masonry-grid article', (items) => [...new Set(items.map((item) => `${getComputedStyle(item).alignSelf} ${item.style.alignSelf || 'no inline style'}`))]), ['start no inline style']);
+  await element.evaluate((host) => {
     const note = document.createElement('article');
     note.innerHTML = '<h3>Added later</h3><p>One more line of text, then another, then another to make it tall.</p>';
-    grid.append(note);
+    host.append(note);
   });
   await page.waitForTimeout(100);
   layout = await packed(page, 'masonry-grid article');
   assert.equal(layout.count, 7);
   assert.equal(layout.overlap, false);
+  assert.equal(await page.$eval('masonry-grid article:last-of-type', (item) => getComputedStyle(item).alignSelf), 'start', 'one added later too');
   assert.deepEqual(problems, []);
   await page.close();
 });
@@ -681,6 +684,7 @@ test('reel-layout: a focusable, labelled region; next and previous move one item
   const { page, element, problems } = await open('reel-layout');
   const reel = element.getByRole('region', { name: 'Upcoming events' });
   assert.equal(await reel.getAttribute('tabindex'), '0');
+  assert.deepEqual(await reel.evaluate((row) => [...new Set([...row.children].map((item) => `${getComputedStyle(item).scrollSnapAlign} ${item.style.scrollSnapAlign || 'no inline style'}`))]), ['start no inline style'], 'each child snaps, from the stylesheet');
   await element.evaluate((el) => (el.style.width = '24rem'));
   await page.emulateMedia({ reducedMotion: 'reduce' });
   const previous = element.getByRole('button', { name: 'Previous' });
