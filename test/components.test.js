@@ -731,6 +731,8 @@ test('side-sheet and popover-panel: open, close with Escape, and give focus back
   const trigger = element.getByRole('button', { name: 'Share' });
   await trigger.click();
   assert.equal(await element.locator('[popover]').evaluate((panel) => panel.matches(':popover-open')), true);
+  // (The popover's toggle event comes a moment after it opens, and `open`, so aria-expanded, follow it.)
+  await element.evaluate((el) => new Promise((done) => (el.open ? done() : el.addEventListener('openchange', done, { once: true }))));
   assert.equal(await trigger.getAttribute('aria-expanded'), 'true');
   await page.keyboard.press('Escape');
   // (The popover's toggle event comes a moment after it closes.)
