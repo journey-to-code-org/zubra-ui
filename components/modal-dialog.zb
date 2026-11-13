@@ -25,7 +25,14 @@
 </script>
 <style>
   dialog { padding: 0; border: 0; border-radius: calc(var(--radius, 0.625rem) * 1.44); width: min(32rem, calc(100vw - 2rem)); background: var(--card, #ffffff); color: var(--foreground, #1d2130); box-shadow: 0 24px 64px #0d122040; }
-  dialog::backdrop { background: #0d122066; }
+  /* Opening and closing: scales up into place and fades, and back; the browser keeps it in the top layer until it's done. */
+  dialog { opacity: 0; scale: 0.96; translate: 0 0.5rem; transition: opacity var(--duration-normal, 200ms) var(--ease-out, ease-out), scale var(--duration-normal, 200ms) var(--ease-out, ease-out), translate var(--duration-normal, 200ms) var(--ease-out, ease-out), overlay var(--duration-normal, 200ms) allow-discrete, display var(--duration-normal, 200ms) allow-discrete; }
+  dialog[open] { opacity: 1; scale: 1; translate: 0; }
+  @starting-style { dialog[open] { opacity: 0; scale: 0.96; translate: 0 0.5rem; } }
+  dialog::backdrop { background: #0d122000; transition: background-color var(--duration-normal, 200ms) var(--ease-out, ease-out), overlay var(--duration-normal, 200ms) allow-discrete, display var(--duration-normal, 200ms) allow-discrete; }
+  dialog[open]::backdrop { background: #0d122066; }
+  @starting-style { dialog[open]::backdrop { background: #0d122000; } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after, ::backdrop { transition-duration: 0s !important; animation-duration: 0s !important; } }
   .panel { display: grid; gap: 1rem; padding: 1.1rem 1.25rem 1.25rem; }
   header { display: flex; align-items: center; gap: 1rem; }
   h2 { flex: 1; margin: 0; font-size: 1.1rem; }

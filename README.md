@@ -80,16 +80,17 @@ A theme is a JSON file in `themes/sets/` that `extends` another and lists only w
 
 **Put a page together.** The **page composer** adds components and sections to a page, arranges them (drag, or the keyboard), edits their text and settings, and previews the page in any theme at desktop, tablet and phone widths. It exports a page that runs as it is (script tags, nothing to install), React or Vue, and the install commands for everything on it.
 
-**Motion:** every component that moves takes its timing from the theme, and stops moving for visitors who have asked their system for less motion.
+**Motion:** every component that moves takes its timing and easing from the theme (`--duration-*`, `--ease-out`, `--ease-spring`, `--ease-bounce`), and stops moving for visitors who have asked their system for less motion. Dialogs, sheets, menus, popovers and tooltips animate in and out with the platform's own transitions (`@starting-style`, `transition-behavior: allow-discrete`), accordions grow open, toasts slide out while the rest close the gap (Zubra's `animate`), and the Motion components (reveal on scroll, number ticker, word rotate, marquee, shine border, spotlight and tilt cards, typing text, shimmer button) are there for pages that want more.
 
 ## The components
 
-35, each tested for its roles, accessible names and keyboard behaviour. They include:
+81, each tested for its roles, accessible names and keyboard behaviour. They include:
 - form controls: toggle switch, star rating, choice cards, colour swatches, money input, quantity stepper, tag input, date range, segmented control;
 - widgets: tabs, dropdown menu, combobox (with Zag.js), tooltip, accordion, modal dialog, flip card, step indicator;
 - display: line, donut and spark line charts, progress ring, streak grid, an image gallery with a lightbox, and a masonry grid;
 - layout: stack, cluster, sidebar and auto grid, which adapt to their space with no media queries;
 - app pieces: chat message, message composer, kanban column.
+- motion: reveal on scroll, number ticker, word rotate, marquee strip, shine border, spotlight card, tilt card, typing text, shimmer button;
 - blocks, which are components made of components: sign in, settings, pricing, and a dashboard shell. `npx shadcn add` on a block brings the components it uses.
 
 `dist/r/registry.json` lists them all. The `legacy/` folder holds the original wcl, which these replace.
@@ -125,7 +126,7 @@ npm test          # builds, then installs components with the real shadcn CLI in
   - every page's code built into React, Vue, Svelte, Angular and HTML apps;
   - each component's edge cases;
   - zubra-imager on photos made in the test.
-- **`npm run test:element`** runs the component, site, snippet and slot tests again with every component swapped for its plain element. CI runs both.
+- **`npm run test:element`** runs the component, site, snippet, slot and motion tests again with every component swapped for its plain element. CI runs both.
 - **`ZUBRA_UI_URL`** (or `--base-url`) sets the URL the registry items point at. The Pages workflow sets it to the published site.
 
 ISC licence. By Mikey Nichols.

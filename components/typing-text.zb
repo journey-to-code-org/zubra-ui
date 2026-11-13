@@ -1,0 +1,47 @@
+<!--
+  Text typed out a letter at a time, with a blinking caret, starting when it scrolls into view:
+  for a hero line or a terminal. `speed` is milliseconds per letter and `delay` the wait before the
+  first. Screen readers get the whole text at once, and visitors who asked for less motion see it
+  typed already.
+-->
+<script>
+  import { onMount } from '@zubra/runtime'
+
+  let typed = 0
+  let box = null
+  const letters = Array.from(String(text))
+  const visible = letters.slice(0, typed).join("")
+  const done = typed >= letters.length
+
+  onMount(() => {
+    const reduced = globalThis.matchMedia?.("(prefers-reduced-motion: reduce)").matches
+    if (reduced || !("IntersectionObserver" in globalThis)) { typed = letters.length; return }
+    let timer = 0
+    const next = () => {
+      if (typed >= letters.length) return
+      typed += 1
+      timer = setTimeout(next, Math.max(5, speed))
+    }
+    const watcher = new IntersectionObserver((entries) => {
+      if (!entries.some((entry) => entry.isIntersecting)) return
+      watcher.disconnect()
+      timer = setTimeout(next, Math.max(0, delay))
+    })
+    watcher.observe(box)
+    return () => { watcher.disconnect(); clearTimeout(timer) }
+  })
+</script>
+<style>
+  :host { display: inline; }
+  .typing-shown::after { content: ""; display: inline-block; width: 0.08em; height: 1.05em; margin-left: 0.06em; vertical-align: -0.12em; background: currentColor; animation: typing-caret 1s steps(1) infinite; }
+  .typing-done.typing-no-caret::after { display: none; }
+  @keyframes typing-caret { 50% { opacity: 0; } }
+  .typing-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: 0s !important; animation-duration: 0s !important; animation-iteration-count: 1 !important; } }
+</style>
+<typing-text text="" speed={45} delay={200} caret={true}>
+  <span class="typing" ref={box}>
+    <span class="typing-label">{text}</span>
+    <span class="typing-shown" class:typing-done={done} class:typing-no-caret={!caret} aria-hidden="true">{visible}</span>
+  </span>
+</typing-text>

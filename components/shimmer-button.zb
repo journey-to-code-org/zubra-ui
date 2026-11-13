@@ -1,0 +1,24 @@
+<!--
+  A button with a band of light sweeping across it, for the one action on a page that should
+  draw the eye: "Get started", "Upgrade". It's a native <button> inside, so it submits forms and
+  works from the keyboard; `href` makes it a link. The sweep repeats every few seconds, pauses
+  on hover so it never moves under the pointer, and doesn't run for visitors who asked for less motion.
+  @slot - The label.
+-->
+<style>
+  :host { display: inline-block; }
+  .shimmer { position: relative; isolation: isolate; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; height: 2.6rem; padding: 0 1.25rem; border: 0; border-radius: calc(var(--radius, 0.625rem) * 0.8); background: var(--primary, #18181b); color: var(--primary-foreground, #fafafa); font: inherit; font-weight: 600; text-decoration: none; cursor: pointer; box-shadow: 0 1px 2px #0000001a, inset 0 1px 0 #ffffff26; transition: translate var(--duration-fast, 150ms) var(--ease-out, ease-out), box-shadow var(--duration-fast, 150ms) var(--ease-out, ease-out); }
+  .shimmer::before { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(105deg, transparent 35%, color-mix(in oklab, var(--primary-foreground, #fafafa) 28%, transparent) 50%, transparent 65%); translate: -100% 0; animation: shimmer-sweep 3s var(--ease-in-out, ease-in-out) infinite; }
+  .shimmer:hover { translate: 0 -1px; box-shadow: 0 6px 16px #00000026, inset 0 1px 0 #ffffff26; }
+  .shimmer:hover::before { animation-play-state: paused; }
+  .shimmer:active { translate: 0 0; }
+  .shimmer:focus-visible { outline: 2px solid var(--ring, #a1a1aa); outline-offset: 2px; }
+  .shimmer:disabled { opacity: 0.55; cursor: not-allowed; }
+  .shimmer:disabled::before { animation: none; }
+  @keyframes shimmer-sweep { 0% { translate: -100% 0; } 55%, 100% { translate: 100% 0; } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: 0s !important; animation-duration: 0s !important; animation-iteration-count: 1 !important; } .shimmer::before { animation: none; } }
+</style>
+<shimmer-button type="button" href="" name="" value="" disabled={false}>
+  <a zb-if={href} class="shimmer" href={href}><zb-slot></zb-slot></a>
+  <button zb-else class="shimmer" type={type} name={name || null} value={value || null} disabled={disabled}><zb-slot></zb-slot></button>
+</shimmer-button>

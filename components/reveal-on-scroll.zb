@@ -1,0 +1,62 @@
+<!--
+  Content that animates into place the first time it scrolls into view: it fades, rises, sharpens
+  from a blur, grows or slides in (`effect`). With `stagger`, each child follows the one before it
+  by that many milliseconds, for a list or a grid. Without JavaScript, or for visitors who asked
+  for less motion, the content is simply there. `again` replays it each time it comes back in.
+  @slot - The content to reveal.
+-->
+<script>
+  import { onMount } from '@zubra/runtime'
+
+  let frame = null
+  const EFFECTS = {
+    "fade": { opacity: 0 },
+    "fade-up": { opacity: 0, translate: "0 1.25rem" },
+    "fade-down": { opacity: 0, translate: "0 -1.25rem" },
+    "blur": { opacity: 0, filter: "blur(10px)" },
+    "scale": { opacity: 0, scale: "0.94" },
+    "slide-left": { opacity: 0, translate: "2rem 0" },
+    "slide-right": { opacity: 0, translate: "-2rem 0" },
+  }
+
+  onMount(() => {
+    const reduced = globalThis.matchMedia?.("(prefers-reduced-motion: reduce)").matches
+    if (reduced || !("IntersectionObserver" in globalThis)) return
+    const style = getComputedStyle(frame)
+    const ms = (name, fallback) => {
+      const time = /^\s*([\d.]+)(ms|s)\s*$/.exec(style.getPropertyValue(name))
+      return time ? Number(time[1]) * (time[2] === "s" ? 1000 : 1) : fallback
+    }
+    const targets = () => (stagger > 0 ? [...frame.querySelectorAll(":scope > .reveal-content > *")] : [frame])
+    const hide = () => frame.classList.add("reveal-waiting")
+    hide()
+    const watcher = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.isIntersecting) {
+          frame.classList.remove("reveal-waiting")
+          targets().forEach((target, index) => target.animate([EFFECTS[effect] ?? EFFECTS["fade-up"], {}], {
+            duration: ms("--duration-slower", 700),
+            delay: index * stagger,
+            easing: style.getPropertyValue("--ease-out").trim() || "ease-out",
+            fill: "backwards",
+          }))
+          if (!again) watcher.disconnect()
+        } else if (again) {
+          for (const target of targets()) target.getAnimations().forEach((animation) => animation.cancel())
+          hide()
+        }
+      }
+    }, { threshold: Math.min(1, Math.max(0, threshold)) })
+    watcher.observe(frame)
+    return () => watcher.disconnect()
+  })
+</script>
+<style>
+  :host { display: block; }
+  .reveal-waiting { opacity: 0; }
+</style>
+<reveal-on-scroll effect="fade-up" stagger={0} threshold={0.2} again={false}>
+  <div class="reveal-frame" ref={frame}>
+    <div class="reveal-content"><zb-slot></zb-slot></div>
+  </div>
+</reveal-on-scroll>

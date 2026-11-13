@@ -1,0 +1,41 @@
+<!--
+  One word at a time from `words`, each sliding out as the next slides in, every `interval`
+  milliseconds: "Build fast | reliable | accessible apps". Screen readers hear the whole list once
+  (the changing word is hidden from them), it pauses while hovered or focused, and visitors who
+  asked for less motion see the first word only.
+-->
+<script>
+  import { onMount } from '@zubra/runtime'
+
+  let index = 0
+  let paused = false
+  const list = Array.isArray(words) ? words.map(String) : []
+  const current = list.length ? [{ at: index % list.length, word: list[index % list.length] }] : []
+  const spoken = list.join(", ")
+
+  onMount(() => {
+    if (globalThis.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return
+    const timer = setInterval(() => {
+      if (!paused && list.length > 1 && !document.hidden) index = (index + 1) % list.length
+    }, Math.max(800, interval))
+    return () => clearInterval(timer)
+  })
+</script>
+<style>
+  :host { display: inline-block; }
+  .rotate-stage { position: relative; display: inline-grid; vertical-align: bottom; overflow: clip; overflow-clip-margin: 0.2em; }
+  .rotate-word { grid-area: 1 / 1; color: var(--rotate-color, inherit); transition: opacity var(--duration-slow, 400ms) var(--ease-out, ease-out), translate var(--duration-slow, 400ms) var(--ease-spring, ease-out), filter var(--duration-slow, 400ms) var(--ease-out, ease-out); }
+  @starting-style { .rotate-word { opacity: 0; translate: 0 0.6em; filter: blur(4px); } }
+  .rotate-word[data-leaving] { opacity: 0; translate: 0 -0.6em; filter: blur(4px); }
+  .rotate-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: 0s !important; animation-duration: 0s !important; animation-iteration-count: 1 !important; } }
+</style>
+<word-rotate words={[]} interval={2500}>
+  <span class="rotate-label">{spoken}</span>
+  <span class="rotate-stage" aria-hidden="true" onmouseenter={() => (paused = true)} onmouseleave={() => (paused = false)}>
+    <!-- animate: the old word slides out ([data-leaving]) as the new one slides in (@starting-style). -->
+    <zb-each items={current} as="item" key={item.at} animate>
+      <span class="rotate-word">{item.word}</span>
+    </zb-each>
+  </span>
+</word-rotate>

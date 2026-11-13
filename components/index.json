@@ -661,6 +661,87 @@
         "logo-cloud.zb"
       ],
       "dependencies": []
+    },
+    {
+      "name": "marquee-strip",
+      "category": "motion",
+      "description": "A strip that scrolls its content sideways without end, for logos or testimonials. Seamless (a hidden copy), pauses on hover and focus, `controls` adds a pause button, and it stands still and scrolls by hand for visitors who asked for less motion.",
+      "files": [
+        "marquee-strip.zb"
+      ],
+      "dependencies": []
+    },
+    {
+      "name": "number-ticker",
+      "category": "motion",
+      "description": "A number that counts to `value` when it scrolls into view, and on from there when `value` changes: for stats and dashboards. Formatted for `locale` with `decimals`, `prefix` and `suffix`; screen readers get the final number, and reduced motion shows it at once.",
+      "files": [
+        "number-ticker.zb"
+      ],
+      "dependencies": []
+    },
+    {
+      "name": "reveal-on-scroll",
+      "category": "motion",
+      "description": "Content that animates into place the first time it scrolls into view: fade, rise, blur, scale or slide (`effect`), each child after the last with `stagger`. Without JavaScript, or for visitors who asked for less motion, it's simply there; `again` replays it each time.",
+      "files": [
+        "reveal-on-scroll.zb"
+      ],
+      "dependencies": []
+    },
+    {
+      "name": "shimmer-button",
+      "category": "motion",
+      "description": "A primary button with a band of light sweeping across it, for the one action that should draw the eye. A native <button> (or a link with `href`), so forms and keyboards work; the sweep pauses on hover and stops under reduced motion.",
+      "files": [
+        "shimmer-button.zb"
+      ],
+      "dependencies": []
+    },
+    {
+      "name": "shine-border",
+      "category": "motion",
+      "description": "A frame with a beam of light travelling around its border, in the theme's chart colours, for the plan or feature you want noticed. Decorative, and still under reduced motion.",
+      "files": [
+        "shine-border.zb"
+      ],
+      "dependencies": []
+    },
+    {
+      "name": "spotlight-card",
+      "category": "motion",
+      "description": "A card lit by a soft spotlight that follows the pointer, in the theme's primary colour at `strength`. An ordinary card on touch screens.",
+      "files": [
+        "spotlight-card.zb"
+      ],
+      "dependencies": []
+    },
+    {
+      "name": "tilt-card",
+      "category": "motion",
+      "description": "A card that tilts toward the pointer in 3D (up to `max` degrees) and springs back flat, with an optional `glare`. Flat on touch screens and under reduced motion.",
+      "files": [
+        "tilt-card.zb"
+      ],
+      "dependencies": []
+    },
+    {
+      "name": "typing-text",
+      "category": "motion",
+      "description": "Text typed out a letter at a time with a blinking caret, starting when it scrolls into view. Screen readers get the whole text at once; reduced motion shows it typed.",
+      "files": [
+        "typing-text.zb"
+      ],
+      "dependencies": []
+    },
+    {
+      "name": "word-rotate",
+      "category": "motion",
+      "description": "One word at a time from `words`, each sliding out as the next slides in every `interval` ms. Screen readers hear the whole list once, it pauses on hover, and reduced motion shows the first word only.",
+      "files": [
+        "word-rotate.zb"
+      ],
+      "dependencies": []
     }
   ]
 }

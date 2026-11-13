@@ -1,0 +1,64 @@
+<!--
+  A number that counts up (or down) to `value` when it first scrolls into view, and again from
+  where it is whenever `value` changes: for stats, totals and dashboards. Formatted for `locale`
+  with `decimals` places, between `prefix` and `suffix`. Screen readers get the final number, not
+  every step; visitors who asked for less motion see it at once.
+-->
+<script>
+  import { onMount, effect } from '@zubra/runtime'
+
+  let shown = from
+  let started = false
+  let box = null
+  // Where the count is, and the frame it's waiting for: plain values, so counting doesn't re-run itself.
+  const at = { number: from, frame: 0 }
+  const format = (number) => `${prefix}${new Intl.NumberFormat(locale || undefined, { minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(number)}${suffix}`
+  const text = format(shown)
+  const final = format(value)
+
+  function show(number) {
+    at.number = number
+    shown = number
+  }
+  function count(to) {
+    cancelAnimationFrame(at.frame)
+    const reduced = globalThis.matchMedia?.("(prefers-reduced-motion: reduce)").matches
+    if (reduced || !(duration > 0)) return show(to)
+    const start = at.number
+    const length = duration
+    const begun = performance.now()
+    const step = (now) => {
+      const progress = Math.min(1, (now - begun) / length)
+      show(progress < 1 ? start + (to - start) * (1 - Math.pow(1 - progress, 3)) : to)
+      if (progress < 1) at.frame = requestAnimationFrame(step)
+    }
+    at.frame = requestAnimationFrame(step)
+  }
+
+  // Once it has been seen, it counts to each new value from where it is.
+  effect(() => {
+    const to = value
+    if (started) count(to)
+  })
+  onMount(() => {
+    if (!("IntersectionObserver" in globalThis)) { started = true; return }
+    const watcher = new IntersectionObserver((entries) => {
+      if (!entries.some((entry) => entry.isIntersecting)) return
+      watcher.disconnect()
+      started = true
+    })
+    watcher.observe(box)
+    return () => { watcher.disconnect(); cancelAnimationFrame(at.frame) }
+  })
+</script>
+<style>
+  :host { display: inline-block; }
+  .ticker-number { font-variant-numeric: tabular-nums; }
+  .ticker-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+</style>
+<number-ticker value={0} from={0} duration={1500} decimals={0} prefix="" suffix="" locale="">
+  <span class="ticker" ref={box}>
+    <span class="ticker-number" aria-hidden="true">{text}</span>
+    <span class="ticker-label">{final}</span>
+  </span>
+</number-ticker>

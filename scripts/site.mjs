@@ -48,7 +48,7 @@ mkdirSync(join(out, 'assets/fonts'), { recursive: true });
 for (const [name, path] of Object.entries(fonts)) cpSync(join(root, 'node_modules', path), join(out, 'assets/fonts', name));
 // Zag's runtime half, as one shared module the import map points at; each component bundles its own machine.
 await build({ stdin: { contents: "export * from '@zag-js/vanilla';", resolveDir: root }, bundle: true, format: 'esm', minify: true, outfile: join(out, 'vendor/zag-vanilla.js'), logLevel: 'error' });
-const RUNTIME = ['index', 'primitives', 'spread', 'signal', 'effect', 'zag'];
+const RUNTIME = ['index', 'primitives', 'spread', 'motion', 'signal', 'effect', 'zag'];
 const importMap = (prefix) => JSON.stringify({
   imports: {
     ...Object.fromEntries(RUNTIME.map((entry) => [entry === 'index' ? '@zubra/runtime' : `@zubra/runtime/${entry}`, `${prefix}runtime/${entry}.js`])),
@@ -113,7 +113,7 @@ function slotDocs(component) {
 // ---- the page frame
 
 const themeIndex = JSON.parse(readFileSync(join(out, 'themes/sets/index.json'), 'utf8'));
-const CATEGORIES = { input: 'Form controls', navigation: 'Navigation', widget: 'Widgets', data: 'Data', display: 'Display', layout: 'Layout', section: 'Page sections', app: 'App pieces', block: 'Blocks' };
+const CATEGORIES = { input: 'Form controls', navigation: 'Navigation', widget: 'Widgets', data: 'Data', display: 'Display', motion: 'Motion', layout: 'Layout', section: 'Page sections', app: 'App pieces', block: 'Blocks' };
 for (const component of components) {
   if (!CATEGORIES[component.category]) throw new Error(`${component.name}: no nav section for category "${component.category}"`);
 }
