@@ -16,10 +16,9 @@
       atStart = reel.scrollLeft <= 1
       atEnd = reel.scrollLeft + reel.clientWidth >= reel.scrollWidth - 1
     }
-    // The children are the page's, which this component's styles don't reach: each snaps from here.
-    const snap = () => { [...reel.children].forEach((item) => { item.style.scrollSnapAlign = 'start' }); update() }
-    snap()
-    const children = new MutationObserver(snap)
+    update()
+    // Children added or removed move the ends.
+    const children = new MutationObserver(update)
     children.observe(reel, { childList: true })
     const sizes = new ResizeObserver(update)
     sizes.observe(reel)
@@ -37,6 +36,7 @@
   :host { display: block; }
   .reel-wrap { display: grid; gap: 0.5rem; }
   .reel-row { display: grid; grid-auto-flow: column; grid-auto-columns: var(--item); gap: var(--gap); overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; scroll-padding-inline: 0; padding-bottom: 0.5rem; scrollbar-width: thin; scrollbar-color: var(--border, #d4d4d8) transparent; }
+  .reel-row > ::slotted(*) { scroll-snap-align: start; }
   .reel-row:focus-visible { outline: 2px solid var(--ring, #a1a1aa); outline-offset: -2px; border-radius: calc(var(--radius, 0.625rem) * 0.4); }
   .reel-controls { display: flex; justify-content: flex-end; gap: 0.4rem; }
   .reel-controls button { width: 2.25rem; height: 2.25rem; border: 1px solid var(--border, #e4e4e7); border-radius: 50%; background: var(--background, #fff); color: var(--foreground, #18181b); font: inherit; font-size: 1.1rem; line-height: 1; cursor: pointer; }

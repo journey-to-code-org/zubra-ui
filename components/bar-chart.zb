@@ -5,7 +5,7 @@
   ("%", " visits"). `max` sets the full length (defaults to the largest value).
 -->
 <script>
-  const list = sorted ? [...items].sort((a, b) => b.value - a.value) : items
+  const list = sorted ? items.toSorted((a, b) => b.value - a.value) : items
   const top = max > 0 ? max : Math.max(1, ...items.map((item) => item.value))
   // en-US grouping and up to three decimals, as toLocaleString("en-US") gives, in arithmetic the
   // server runs too (toLocaleString is the browser's alone), so the server's HTML has the numbers.
