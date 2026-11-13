@@ -7,7 +7,8 @@
   Set `busy` while you check.
   @fires signin - The form was submitted; `detail` is `{ email, password, remember }`.
 -->
-<script>
+<script lang="ts">
+  declare const errorField: "email" | "password" | "both";
   import { effect, emit, id } from '@zubra/runtime'
   import './toggle-switch.zb'
 

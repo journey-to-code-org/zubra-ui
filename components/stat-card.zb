@@ -4,7 +4,8 @@
   screen readers ("up 12%"); `good` says which direction is good ("up" or "down"), so a falling
   error rate shows as good news.
 -->
-<script>
+<script lang="ts">
+  declare const good: "up" | "down";
   const direction = change == null ? "" : change > 0 ? "up" : change < 0 ? "down" : "flat"
   const tone = direction === "flat" || !direction ? "neutral" : direction === good ? "good" : "bad"
   const changeText = change == null ? "" : `${direction === "up" ? "▲" : direction === "down" ? "▼" : "■"} ${Math.abs(change)}%`

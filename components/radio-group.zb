@@ -4,7 +4,8 @@
   `[{ value, label, description? }]`; `value` is two-way. `orientation="horizontal"` puts them in a row.
   @fires valuechange - The choice changed; `detail` is the chosen value.
 -->
-<script>
+<script lang="ts">
+  declare const orientation: "vertical" | "horizontal";
   import { id } from '@zubra/runtime'
 
   // The radios need a shared name to act as one group; a fallback keeps two unnamed groups apart.

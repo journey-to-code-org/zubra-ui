@@ -5,7 +5,8 @@
   room), or by script where that isn't supported. `align` is start or end. `open` is two-way.
   @slot - The panel's content.
 -->
-<script>
+<script lang="ts">
+  declare const align: "start" | "end";
   import { effect, id, onMount } from '@zubra/runtime'
 
   const panelId = id()

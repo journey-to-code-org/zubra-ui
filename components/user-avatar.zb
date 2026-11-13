@@ -3,7 +3,9 @@
   the picture's text alternative (and where the initials come from). `size` is sm, md, lg or xl.
   `status` (online, away, busy, offline) adds a dot, and says so in words for screen readers.
 -->
-<script>
+<script lang="ts">
+  declare const size: "sm" | "md" | "lg" | "xl";
+  declare const status: "" | "online" | "away" | "busy" | "offline";
   let failed = false
   // Plain string methods, so the server renders them too (a pattern is the browser's alone): a
   // tab or line break between the names counts as a space.

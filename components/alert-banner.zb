@@ -8,7 +8,8 @@
   @fires beforeclose - The close button was pressed; cancel it to keep the alert.
   @fires close - The alert was closed.
 -->
-<script>
+<script lang="ts">
+  declare const variant: "info" | "success" | "warning" | "danger";
   import { emit, hasSlot } from '@zubra/runtime'
 
   const actions = hasSlot('actions')

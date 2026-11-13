@@ -4,7 +4,8 @@
   `height` take any CSS length. Hidden from screen readers: say "loading" once elsewhere (a
   loading-spinner, or `aria-busy` on the region being filled).
 -->
-<script>
+<script lang="ts">
+  declare const shape: "text" | "circle" | "rect";
   const rows = Array.from({ length: Math.max(1, lines) }, (_, i) => i)
 </script>
 <style>

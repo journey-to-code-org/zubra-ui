@@ -25,6 +25,9 @@
   @keyframes drift { to { background-position: 100% 100%; } }
   @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: 0s !important; animation-duration: 0s !important; animation-iteration-count: 1 !important; } }
 </style>
+<script lang="ts">
+  declare const pattern: "grid" | "dots" | "mesh" | "grain" | "aurora";
+</script>
 <backdrop-pattern pattern="grid" size="24px" fade={true} animated={false}>
   <div class="backdrop-frame backdrop-{pattern}" class:backdrop-fade={fade} class:backdrop-animated={animated} style:--size={size}>
     <div class="backdrop-layer" aria-hidden="true"></div>

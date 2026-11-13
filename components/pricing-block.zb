@@ -7,7 +7,8 @@
   @fires periodchange - The billing period changed; `detail` is "monthly" or "yearly".
   @fires choose - A plan was chosen; `detail` is `{ plan, period }` (the plan's id).
 -->
-<script>
+<script lang="ts">
+  declare const period: "monthly" | "yearly";
   import { emit, id } from '@zubra/runtime'
   import './segmented-control.zb'
 
