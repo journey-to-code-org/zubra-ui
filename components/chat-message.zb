@@ -10,7 +10,9 @@
 
   const QUICK = ["👍", "🎉", "❤️", "😂"]
   const mine = message.author === me
-  const initials = message.author.split(/\s+/).map((part) => part[0]).join("").slice(0, 2)
+  // Plain string methods, so the server renders them too (a pattern is the browser's alone): a
+  // tab or line break between the names counts as a space.
+  const initials = message.author.replaceAll("\t", " ").replaceAll("\n", " ").replaceAll("\r", " ").trim().split(" ").filter((part) => part !== "").map((part) => part[0]).join("").slice(0, 2)
   const hue = [...message.author].reduce((sum, char) => sum + char.charCodeAt(0) * 47, 0) % 360
   const time = new Date(message.time).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })
   const reactions = Object.entries(message.reactions ?? {}).filter(([, people]) => people.length > 0)
