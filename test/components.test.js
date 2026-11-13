@@ -819,6 +819,15 @@ test('progress-bar, stat-card and bar-chart say their values in words', async ()
   assert.deepEqual(await element.locator('li').evaluateAll((items) => items.map((item) => item.textContent.replace(/\s+/g, ' ').trim())), ['Search 42%', 'Direct 23%', 'Social 18%', 'Email 11%', 'Referral 6%']);
   const widths = await element.locator('.bars-fill').evaluateAll((bars) => bars.map((bar) => bar.style.width));
   assert.equal(widths[0], '100%');
+  // sorted: highest first, without changing the items it was given.
+  const given = await element.evaluate((el) => {
+    el.items = [{ label: 'Low', value: 1 }, { label: 'High', value: 9 }, { label: 'Mid', value: 5 }];
+    el.sorted = true;
+    return el.items.map((item) => item.label);
+  });
+  await page.waitForTimeout(50);
+  assert.deepEqual(await element.locator('.bars-label').allTextContents(), ['High', 'Mid', 'Low']);
+  assert.deepEqual(given, ['Low', 'High', 'Mid'], 'its items keep their order');
   await page.close();
 });
 
