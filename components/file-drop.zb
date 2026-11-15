@@ -3,6 +3,10 @@
   chosen files submit with the form under `name` and the keyboard opens the picker as usual.
   Files are listed with their size and can be removed. `accept` limits the types (".pdf,image/*"),
   `multiple` allows several, and `max-size` (in MB) turns away files that are too big, saying so.
+  `capture` ("environment" or "user") asks a phone to open its camera instead of its library.
+  `look="button"` shows one plain button named by `label` (no drop zone, which a phone can't use,
+  and no list): each pick is handed over in `fileschange` and the input is emptied, so the page
+  keeps the files and the same photo can be picked again.
   @fires fileschange - The chosen files changed; `detail` is the array of File objects.
 -->
 <script>
@@ -23,6 +27,12 @@
     const turned = [...list].length - kept.length
     problem = turned ? `${turned === 1 ? "One file is" : `${turned} files are`} over ${maxSize} MB and ${turned === 1 ? "wasn't" : "weren't"} added.` : ""
     const chosen = multiple ? kept : kept.slice(0, 1)
+    if (look === "button") {
+      input.value = ""
+      files = []
+      emit('fileschange', chosen)
+      return
+    }
     const transfer = new DataTransfer()
     chosen.forEach((file) => transfer.items.add(file))
     input.files = transfer.files
@@ -59,17 +69,24 @@
   .drop-remove { width: 1.75rem; height: 1.75rem; border: 0; border-radius: 50%; background: none; color: inherit; font-size: 1.15rem; line-height: 1; cursor: pointer; }
   .drop-remove:hover { background: var(--accent, #f4f4f5); }
   .drop-remove:focus-visible { outline: 2px solid var(--ring, #a1a1aa); outline-offset: 1px; }
+  .drop-button { display: flex; align-items: center; justify-content: center; min-height: 2.75rem; padding: 0.5rem 1rem; border: 1px solid var(--border, #d4d4d8); border-radius: var(--radius, 0.625rem); background: var(--secondary, #f4f4f5); color: var(--secondary-foreground, #18181b); font-weight: 600; text-align: center; cursor: pointer; }
+  .drop-button:hover { background: color-mix(in oklab, var(--secondary, #f4f4f5) 80%, var(--foreground, #18181b)); }
+  .drop-button:focus-within { outline: 2px solid var(--ring, #a1a1aa); outline-offset: 2px; }
+  .drop-button.drop-disabled { opacity: 0.55; cursor: not-allowed; }
+  .drop-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .drop-under { display: block; margin-top: 0.35rem; font-size: 0.85rem; color: color-mix(in oklab, var(--muted-foreground, #71717a) 75%, var(--foreground, #18181b)); }
+  .drop-under:empty { display: none; }
   @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: 0s !important; animation-duration: 0s !important; animation-iteration-count: 1 !important; } }
 </style>
-<file-drop label="Attachments" hint="" name="" accept="" multiple={true} max-size={0} disabled={false}>
-  <span class="drop-label" id={`${inputId}-label`}>{label}</span>
-  <label class="drop-zone" class:drop-over={over} class:drop-disabled={disabled} ondragover.prevent={() => !disabled && (over = true)} ondragleave={() => (over = false)} ondrop={drop}>
-    <span class="drop-main">Drop {multiple ? "files" : "a file"} here, or <u>choose</u></span>
-    <span class="drop-hint" id={hintId}>{hint || (maxSize > 0 ? `Up to ${maxSize} MB${multiple ? " each" : ""}` : "")}</span>
-    <input ref={input} id={inputId} type="file" name={name || null} accept={accept || null} multiple={multiple} disabled={disabled} aria-labelledby={`${inputId}-label`} aria-describedby={hintId} onchange={(event) => use(event.target.files)}>
+<file-drop label="Attachments" hint="" name="" accept="" multiple={true} max-size={0} disabled={false} capture="" look="zone">
+  <span class="drop-label" class:drop-hidden={look === "button"} id={`${inputId}-label`}>{label}</span>
+  <label class="drop-box" class:drop-zone={look !== "button"} class:drop-button={look === "button"} class:drop-over={over} class:drop-disabled={disabled} ondragover.prevent={() => !disabled && (over = true)} ondragleave={() => (over = false)} ondrop={drop}>
+    <span class="drop-main" aria-hidden={look === "button" ? "true" : null}>{look === "button" ? label : `Drop ${multiple ? "files" : "a file"} here, or `}<u zb-if={look !== "button"}>choose</u></span>
+    <span class="drop-hint" class:drop-hidden={look === "button"} id={hintId}>{hint || (maxSize > 0 ? `Up to ${maxSize} MB${multiple ? " each" : ""}` : "")}</span>
+    <input ref={input} id={inputId} type="file" name={name || null} accept={accept || null} capture={capture || null} multiple={multiple} disabled={disabled} aria-labelledby={`${inputId}-label`} aria-describedby={hintId} onchange={(event) => use(event.target.files)}>
   </label>
   <p class="drop-problem" role="alert">{problem}</p>
-  <ul zb-if={files.length} aria-label="Chosen files">
+  <ul zb-if={files.length && look !== "button"} aria-label="Chosen files">
     <zb-each items={files} as="entry" key={entry.key}>
       <li><span class="drop-name">{entry.file.name}</span><span class="drop-size">{size(entry.file.size)}</span><button type="button" class="drop-remove" aria-label={`Remove ${entry.file.name}`} onclick={() => remove(entry)}>×</button></li>
     </zb-each>
