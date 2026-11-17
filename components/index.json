@@ -314,7 +314,7 @@
     {
       "name": "toggle-switch",
       "category": "input",
-      "description": "An on/off switch with a label and a description. A form control (submits \"on\" when checked).",
+      "description": "An on/off switch with a label and a description. A form control (submits \"on\" when checked), switched off by `disabled` or a disabled fieldset.",
       "files": [
         "toggle-switch.zb"
       ],
