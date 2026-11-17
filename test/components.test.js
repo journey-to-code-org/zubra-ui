@@ -588,6 +588,48 @@ test('check-box, radio-group and select-field: native keyboard, two-way values a
   await page.close();
 });
 
+test('toggle-switch: disabled, or inside a disabled fieldset, it can\'t be switched and isn\'t submitted', async () => {
+  const { page, problems } = await open('toggle-switch');
+  const form = await inForm(page, `<toggle-switch label="Own" name="own" disabled></toggle-switch>
+    <fieldset disabled><toggle-switch label="Set" name="set"></toggle-switch></fieldset>
+    <toggle-switch label="Free" name="free"></toggle-switch>`);
+  await page.evaluate(() => {
+    for (const el of document.querySelectorAll('#test-form toggle-switch')) el.checked = true;
+    window.events = [];
+    document.querySelector('#test-form').addEventListener('checkedchange', (event) => window.events.push(`${event.target.getAttribute('name')}:${event.detail}`));
+  });
+  const button = (name) => form.locator(`toggle-switch[name=${name}] [role=switch]`);
+  assert.deepEqual(await Promise.all(['own', 'set', 'free'].map((name) => button(name).isDisabled())), [true, true, false]);
+  // A press does nothing, and the form leaves both out.
+  await button('own').click({ force: true });
+  await button('set').click({ force: true });
+  assert.deepEqual(await Promise.all(['own', 'set'].map((name) => button(name).getAttribute('aria-checked'))), ['true', 'true']);
+  assert.deepEqual(await page.evaluate(() => window.events), []);
+  assert.deepEqual(await submit(page), { free: 'on' });
+
+  // Enabled again, each is an ordinary switch.
+  await page.evaluate(() => {
+    document.querySelector('#test-form toggle-switch[name=own]').removeAttribute('disabled');
+    document.querySelector('#test-form fieldset').disabled = false;
+  });
+  assert.deepEqual(await Promise.all(['own', 'set'].map((name) => button(name).isDisabled())), [false, false]);
+  assert.deepEqual(await submit(page), { own: 'on', set: 'on', free: 'on' });
+  await button('own').click();
+  assert.deepEqual(await page.evaluate(() => window.events), ['own:false']);
+  assert.deepEqual(await submit(page), { set: 'on', free: 'on' });
+
+  // Disabled from code is the same as the attribute: off, and left out of the form.
+  await page.evaluate(() => (document.querySelector('#test-form toggle-switch[name=free]').disabled = true));
+  await page.waitForFunction(() => document.querySelector('#test-form toggle-switch[name=free] [role=switch]').disabled);
+  assert.equal(await form.locator('toggle-switch[name=free]').getAttribute('disabled'), '');
+  assert.deepEqual(await submit(page), { set: 'on' });
+  await page.evaluate(() => (document.querySelector('#test-form toggle-switch[name=free]').disabled = false));
+  await page.waitForFunction(() => !document.querySelector('#test-form toggle-switch[name=free] [role=switch]').disabled);
+  assert.deepEqual(await submit(page), { set: 'on', free: 'on' });
+  assert.deepEqual(problems, []);
+  await page.close();
+});
+
 test('alert-banner: the close button hides it and fires close, unless beforeclose is cancelled', async () => {
   const { page, element, problems } = await open('alert-banner');
   assert.equal(await element.getByRole('status').count(), 1, 'a warning is announced politely');
