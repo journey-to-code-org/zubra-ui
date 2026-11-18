@@ -108,6 +108,37 @@ test('message-composer: Escape in the emoji picker puts focus back on its button
   await page.close();
 });
 
+test('tab-list: a panel that arrives later, or changes its tab, is set up like the first ones', async () => {
+  const { page, problems, element } = await open('tab-list');
+  await element.locator('[role=tabpanel]').first().waitFor({ state: 'attached' });
+  /** Each panel as `tab:role:hidden:labelled`, in order. */
+  const panels = () => element.evaluate((el) => [...el.querySelectorAll('[data-tab]')].map((p) => `${p.dataset.tab}:${p.getAttribute('role')}:${p.hidden}:${p.getAttribute('aria-labelledby')?.endsWith(`-tab-${p.dataset.tab}`) ?? false}`));
+  assert.deepEqual(await panels(), ['profile:tabpanel:false:true', 'billing:tabpanel:true:true', 'team:tabpanel:true:true']);
+
+  // Panels added after the tabs chose: one for another tab, one for the chosen one, one inside a
+  // wrapper (as a framework's own element would put it).
+  await element.evaluate((el) => {
+    el.insertAdjacentHTML('beforeend', '<p data-tab="billing">Late billing</p><p data-tab="profile">Late profile</p><div><section data-tab="team">Wrapped team</section></div>');
+  });
+  await page.waitForFunction((el) => [...el.querySelectorAll('[data-tab]')].every((p) => p.getAttribute('role') === 'tabpanel'), await element.elementHandle());
+  assert.deepEqual(await panels(), ['profile:tabpanel:false:true', 'billing:tabpanel:true:true', 'team:tabpanel:true:true', 'billing:tabpanel:true:true', 'profile:tabpanel:false:true', 'team:tabpanel:true:true']);
+
+  // A panel that changes its tab: the first one becomes Team's (hidden), Billing's first becomes the chosen tab's.
+  await element.evaluate((el) => {
+    const [first, second] = el.querySelectorAll('[data-tab]');
+    first.dataset.tab = 'team';
+    second.dataset.tab = 'profile';
+  });
+  await page.waitForFunction((el) => el.querySelector('[data-tab]').hidden, await element.elementHandle());
+  assert.deepEqual((await panels()).slice(0, 2), ['team:tabpanel:true:true', 'profile:tabpanel:false:true']);
+
+  // And choosing a tab still shows each of its panels, old and new.
+  await element.locator('[role=tab][data-value=team]').click();
+  assert.deepEqual(await panels(), ['team:tabpanel:false:true', 'profile:tabpanel:true:true', 'team:tabpanel:false:true', 'billing:tabpanel:true:true', 'profile:tabpanel:true:true', 'team:tabpanel:false:true']);
+  assert.deepEqual(problems, []);
+  await page.close();
+});
+
 test('tool-tip: the pointer can move from the trigger into the tip', async () => {
   const { page, element, problems } = await open('tool-tip');
   const trigger = element.getByRole('button', { name: 'Save draft' });

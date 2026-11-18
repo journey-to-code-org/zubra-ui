@@ -3,7 +3,8 @@
   `data-tab` attribute matching a tab's value; they get role=tabpanel, are labelled by their tab,
   and are hidden unless chosen. Arrow keys, Home and End move between the tabs (one tab stop), and
   the focused tab is chosen as it moves, unless `manual`, where Enter or Space chooses it.
-  `tabs` is `[{ value, label }]`; `value` is two-way and defaults to the first tab.
+  `tabs` is `[{ value, label }]`; `value` is two-way and defaults to the first tab. A panel added
+  later, or whose `data-tab` changes (as a framework's `if` or router does), is set up as it comes.
   @slot - The panels.
   @fires valuechange - Another tab was chosen; `detail` is its value.
 -->
@@ -15,6 +16,8 @@
   const element = host()
   const current = value || tabs[0]?.value || ""
   let list = null
+  /** Counts changes to the panels themselves: one added or taken away, or its `data-tab` changed. */
+  let panelChanges = 0
 
   const tabId = (tab) => `${uid}-tab-${tab}`
   const panels = () => [...element.querySelectorAll("[data-tab]")].filter((panel) => panel.closest("tab-list") === element)
@@ -24,6 +27,7 @@
     if (!list) return
     const chosen = current
     tabs.length // and again when the tabs change
+    panelChanges // and when the panels do
     for (const panel of panels()) {
       panel.id ||= `${uid}-panel-${panel.dataset.tab}`
       panel.setAttribute("role", "tabpanel")
@@ -32,6 +36,17 @@
       panel.hidden = panel.dataset.tab !== chosen
       list.querySelector(`[data-value="${CSS.escape(panel.dataset.tab)}"]`)?.setAttribute("aria-controls", panel.id)
     }
+  })
+
+  // A framework may add a panel after the tabs have chosen, or change a panel's tab in the same
+  // pass as it changes `value`, after this has run: watch for both, and set the panels up again.
+  onMount(() => {
+    const isPanel = (node) => node.nodeType === 1 && (node.hasAttribute("data-tab") || node.querySelector("[data-tab]") !== null)
+    const watch = new MutationObserver((records) => {
+      if (records.some((record) => record.type === "attributes" || [...record.addedNodes, ...record.removedNodes].some(isPanel))) panelChanges += 1
+    })
+    watch.observe(element, { childList: true, subtree: true, attributes: true, attributeFilter: ["data-tab"] })
+    return () => watch.disconnect()
   })
 
   onMount(() => rovingFocus(list, {
