@@ -619,6 +619,76 @@ test('check-box, radio-group and select-field: native keyboard, two-way values a
   await page.close();
 });
 
+// zubra-ui#22: every value control, as toggle-switch above. Each is put in a form three times:
+// disabled itself, inside a disabled fieldset, and free; given a value; then checked by what the
+// form submits and whether anything inside it can still be used.
+const DISABLE = {
+  'color-swatches': { value: '#2563eb' },
+  'star-rating': { value: 3 },
+  'tag-input': { value: ['red'] },
+  'money-input': { value: 12.5 },
+  'date-range': { value: { start: '2026-12-01', end: '2026-12-03' } },
+  'combo-box': { items: [{ value: 'apple', label: 'Apple' }, { value: 'pear', label: 'Pear' }], value: 'pear', label: 'Fruit' },
+  'choice-cards': { items: [{ id: 'small', title: 'Small' }, { id: 'large', title: 'Large' }], value: 'large', label: 'Size' },
+  'quantity-stepper': { value: 2, editable: true },
+};
+for (const [name, props] of Object.entries(DISABLE)) {
+  test(`${name}: disabled, or inside a disabled fieldset, it can't be used and isn't submitted`, async () => {
+    const { page, problems } = await open(name);
+    await inForm(page, `<${name} name="own" disabled></${name}><fieldset disabled><${name} name="set"></${name}></fieldset><${name} name="free"></${name}>`);
+    await page.evaluate(({ name, props }) => {
+      for (const el of document.querySelectorAll(`#test-form ${name}`)) Object.assign(el, structuredClone(props));
+    }, { name, props });
+    await page.waitForTimeout(50);
+    /** Whether each copy's own buttons and fields are all disabled. */
+    const off = () => page.evaluate((name) => ['own', 'set', 'free'].map((n) => {
+      const parts = [...document.querySelectorAll(`#test-form ${name}[name=${n}] :is(button, input)`)];
+      return parts.length > 0 && parts.every((part) => part.matches(':disabled'));
+    }), name);
+    const sent = async () => Object.keys(await submit(page)).sort();
+    assert.deepEqual(await off(), [true, true, false], 'only the free one can be used');
+    assert.deepEqual(await sent(), ['free']);
+
+    // Enabled again: all three are submitted.
+    await page.evaluate((name) => {
+      document.querySelector(`#test-form ${name}[name=own]`).removeAttribute('disabled');
+      document.querySelector('#test-form fieldset').disabled = false;
+    }, name);
+    await page.waitForTimeout(50);
+    assert.deepEqual(await off(), [false, false, false]);
+    assert.deepEqual(await sent(), ['free', 'own', 'set']);
+
+    // Disabled from code is the same as the attribute.
+    await page.evaluate((name) => (document.querySelector(`#test-form ${name}[name=free]`).disabled = true), name);
+    await page.waitForTimeout(50);
+    assert.equal(await page.locator(`#test-form ${name}[name=free]`).getAttribute('disabled'), '');
+    assert.deepEqual((await off())[2], true);
+    assert.deepEqual(await sent(), ['own', 'set']);
+    assert.deepEqual(problems, []);
+    await page.close();
+  });
+}
+
+test('segmented-control: disabled, no option can be picked', async () => {
+  const { page, problems } = await open('segmented-control');
+  await page.evaluate(() => {
+    const el = Object.assign(document.createElement('segmented-control'), { id: 'off', label: 'View', options: [{ value: 'a', label: 'A' }, { value: 'b', label: 'B' }], value: 'a' });
+    document.body.append(el);
+    el.disabled = true;
+    window.picked = [];
+    el.addEventListener('valuechange', (event) => window.picked.push(event.detail));
+  });
+  const b = page.locator('#off button[data-value=b]');
+  await b.click({ force: true });
+  assert.equal(await b.isDisabled(), true);
+  assert.deepEqual(await page.evaluate(() => [document.querySelector('#off').value, window.picked]), ['a', []]);
+  await page.evaluate(() => (document.querySelector('#off').disabled = false));
+  await b.click();
+  assert.deepEqual(await page.evaluate(() => [document.querySelector('#off').value, window.picked]), ['b', ['b']]);
+  assert.deepEqual(problems, []);
+  await page.close();
+});
+
 test('toggle-switch: disabled, or inside a disabled fieldset, it can\'t be switched and isn\'t submitted', async () => {
   const { page, problems } = await open('toggle-switch');
   const form = await inForm(page, `<toggle-switch label="Own" name="own" disabled></toggle-switch>
