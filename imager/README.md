@@ -1,6 +1,6 @@
 # zubra-imager
 
-A folder of photos in; web-ready images and a `gallery.json` out, for [Zubra UI](https://github.com/journey-to-code-org/zubra-ui)'s `<image-gallery>`.
+A folder of photos in; web-ready images and a `gallery.json` out, for [Zubra UI](https://github.com/zubra-js/zubra-ui)'s `<image-gallery>`.
 
 ```sh
 npx zubra-imager photos/ --out public/gallery

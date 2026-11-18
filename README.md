@@ -3,7 +3,7 @@
 Accessible web components you copy into any project: plain HTML, React, Vue, Svelte, Angular, or anything else that renders HTML. Install them with the shadcn CLI you may already use, theme them with shadcn/ui's CSS variables, and own the code.
 
 ```sh
-npx shadcn add https://journey-to-code-org.github.io/zubra-ui/r/toggle-switch.json
+npx shadcn add https://zubra-js.github.io/zubra-ui/r/toggle-switch.json
 ```
 
 That's the whole setup:
@@ -28,7 +28,7 @@ It's a standard custom element:
 **One file, no dependencies.** Most components also come as a plain custom element that needs nothing installed and no build step:
 
 ```sh
-npx shadcn add https://journey-to-code-org.github.io/zubra-ui/r/element/toggle-switch.json
+npx shadcn add https://zubra-js.github.io/zubra-ui/r/element/toggle-switch.json
 ```
 
 It writes the same file, compiled with Zubra's `--emit element`, and adds no dependencies; load it with a `<script type="module">`.
@@ -36,8 +36,8 @@ It writes the same file, compiled with Zubra's `--emit element`, and adds no dep
 **No build at all.** The site serves the same plain elements for a script tag, so a page with no bundler and nothing installed can use them:
 
 ```html
-<link rel="stylesheet" href="https://journey-to-code-org.github.io/zubra-ui/themes/default.css">
-<script type="module" src="https://journey-to-code-org.github.io/zubra-ui/cdn/toggle-switch.js"></script>
+<link rel="stylesheet" href="https://zubra-js.github.io/zubra-ui/themes/default.css">
+<script type="module" src="https://zubra-js.github.io/zubra-ui/cdn/toggle-switch.js"></script>
 ```
 
 A block's file loads the components it's made of; tab-list and dropdown-menu load the small runtime piece they use from the site too. On a page with one to three components it's the smaller choice (about 5–7 KB gzipped each); past that, the shared runtime is. flip-card (shadow DOM) and combo-box (Zag) are runtime-only.
@@ -46,10 +46,10 @@ A block's file loads the components it's made of; tab-list and dropdown-menu loa
 
 Web components are the platform's own component model, and they work everywhere. What's missing is an ecosystem as easy as shadcn/ui: good components you can take, read and change. Zubra UI is that, for web components.
 
-The components are written in [Zubra](https://github.com/journey-to-code-org/zubra), which compiles HTML-first `.zb` files into custom elements. You don't need Zubra to use them. If you want to edit the source, install the `.zb` file instead:
+The components are written in [Zubra](https://github.com/zubra-js/zubra), which compiles HTML-first `.zb` files into custom elements. You don't need Zubra to use them. If you want to edit the source, install the `.zb` file instead:
 
 ```sh
-npx shadcn add https://journey-to-code-org.github.io/zubra-ui/r/src/toggle-switch.json   # writes src/components/toggle-switch.zb
+npx shadcn add https://zubra-js.github.io/zubra-ui/r/src/toggle-switch.json   # writes src/components/toggle-switch.zb
 ```
 
 ## Theming
@@ -66,7 +66,7 @@ So:
 **Themes with character, on a whole page or one section.** A theme here is more than a colour: it sets the colours for light and dark, the fonts, the corners (everything rounds from `--radius`) and the motion (`--duration-fast`, `--duration-normal`, `--duration-slow`, `--ease-out`). Five come with it: Zinc (shadcn's default), Paper, Terminal, Candy and Midnight. Each applies wherever `data-theme` is set, so one page can hold several:
 
 ```sh
-npx shadcn add https://journey-to-code-org.github.io/zubra-ui/r/themes/paper.json
+npx shadcn add https://zubra-js.github.io/zubra-ui/r/themes/paper.json
 ```
 
 ```html

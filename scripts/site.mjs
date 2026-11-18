@@ -1,7 +1,7 @@
 // The library site, into dist/ (after scripts/build.mjs): the home page, a page per component,
 // the runtime and the components' modules for the previews, and the site's own CSS and script.
 //
-//   node scripts/site.mjs [--base-url https://journey-to-code-org.github.io/zubra-ui]
+//   node scripts/site.mjs [--base-url https://zubra-js.github.io/zubra-ui]
 //
 // Every link is relative, so the site works at any path (GitHub Pages serves it at /zubra-ui/).
 import { compileFile } from '@zubra/compiler';
@@ -118,7 +118,7 @@ for (const component of components) {
   if (!CATEGORIES[component.category]) throw new Error(`${component.name}: no nav section for category "${component.category}"`);
 }
 const STACK_KEY = 'zubra-ui:stack';
-const REPO = 'https://github.com/journey-to-code-org/zubra-ui';
+const REPO = 'https://github.com/zubra-js/zubra-ui';
 
 function frame({ prefix, title, description, current, body, scripts = [] }) {
   const nav = Object.entries(CATEGORIES).map(([category, heading]) => {
@@ -175,7 +175,7 @@ function frame({ prefix, title, description, current, body, scripts = [] }) {
     <div class="bar-tools">
       <button type="button" class="tool" id="theme-open" aria-haspopup="dialog">Theme</button>
       <button type="button" class="tool" id="mode" aria-pressed="false">Dark</button>
-      <a class="tool" href="https://github.com/journey-to-code-org/zubra-ui">GitHub</a>
+      <a class="tool" href="https://github.com/zubra-js/zubra-ui">GitHub</a>
     </div>
   </header>
   <div class="layout">
@@ -509,7 +509,7 @@ const homeBody = `      <section class="home">
         <ol class="steps">
           <li><p>Add a component. No setup first: no <code>components.json</code>, no Tailwind, no framework.</p>${code(`npx shadcn@latest add ${baseUrl}/r/toggle-switch.json`, 'sh', 'Terminal')}</li>
           <li><p>Import it and the theme once, then use the tag.</p>${stackCode('toggle-switch', demos['toggle-switch'])}</li>
-          <li><p>Change it. The file is yours. For the readable source, add <code>/r/src/toggle-switch.json</code> instead and edit the <code>.zb</code> file with <a href="https://github.com/journey-to-code-org/zubra">Zubra</a>.</p></li>
+          <li><p>Change it. The file is yours. For the readable source, add <code>/r/src/toggle-switch.json</code> instead and edit the <code>.zb</code> file with <a href="https://github.com/zubra-js/zubra">Zubra</a>.</p></li>
         </ol>
         <h2 id="shadcn">Already on shadcn/ui?</h2>
         <p>The components use your theme as it is: <code>--primary</code>, <code>--border</code>, <code>--muted-foreground</code>, <code>--radius</code> and the rest. Skip the theme file, and they match your app.</p>

@@ -8,7 +8,7 @@
   "author": "Mikey Nichols",
   "repository": {
     "type": "git",
-    "url": "https://github.com/journey-to-code-org/zubra-ui"
+    "url": "https://github.com/zubra-js/zubra-ui"
   },
   "scripts": {
     "build": "node scripts/build.mjs && node scripts/site.mjs",
