@@ -1,16 +1,24 @@
 <!--
   Pick one of several cards: a radio group. A form control; arrow keys move the choice.
   Each item is `{ id, title, detail, price, note }` (`note` and `price` optional).
+  With `disabled`, or inside a disabled <fieldset>, no card can be chosen and the choice isn't
+  submitted (one item's own `disabled` still turns off just that card).
   @fires valuechange - The choice changed; `detail` is the chosen id.
 -->
 <script>
-  import { validity } from '@zubra/runtime'
+  import { effect, host, validity } from '@zubra/runtime'
+
+  // `disabled` set from code (el.disabled = true) also goes on the element as the attribute, which
+  // is where the browser looks: it leaves a disabled control out of the form. A disabled
+  // <fieldset> needs nothing here; the browser disables the controls inside it too.
+  const element = host()
+  effect(() => element.toggleAttribute('disabled', disabled))
 
   let group = null
   validity(() => (required && !value ? "Choose one" : ""))
 
   function choose(item) {
-    if (item.disabled || item.id === value) return
+    if (disabled || item.disabled || item.id === value) return
     value = item.id
   }
   function move(index, step) {
@@ -35,10 +43,10 @@
   .note { font-size: 0.75rem; font-weight: 600; color: var(--primary, #36c); }
   @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: 0s !important; animation-duration: 0s !important; animation-iteration-count: 1 !important; } }
 </style>
-<choice-cards form-associated value:model="" items={[]} required={false} label="">
+<choice-cards form-associated value:model="" items={[]} required={false} disabled={false} label="">
   <div role="radiogroup" aria-label={label} ref={group}>
   <zb-each items={items} as="item" index="index" key={item.id}>
-    <button type="button" role="radio" data-id={item.id} aria-checked={item.id === value ? "true" : "false"} tabindex={item.id === value || (!value && index === 0) ? "0" : "-1"} disabled={item.disabled ?? false} onclick={() => choose(item)} onkeydown.down.right.prevent={() => move(index, 1)} onkeydown.up.left.prevent={() => move(index, -1)}>
+    <button type="button" role="radio" data-id={item.id} aria-checked={item.id === value ? "true" : "false"} tabindex={item.id === value || (!value && index === 0) ? "0" : "-1"} disabled={disabled || (item.disabled ?? false)} onclick={() => choose(item)} onkeydown.down.right.prevent={() => move(index, 1)} onkeydown.up.left.prevent={() => move(index, -1)}>
       <strong>{item.title}</strong>
       <span class="detail">{item.detail}</span>
       <span class="row"><span class="note">{item.note ?? ""}</span><span class="price">{item.price ?? ""}</span></span>

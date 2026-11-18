@@ -1,10 +1,17 @@
 <!--
   An amount of money. Typing is free-form; on blur it's formatted (`1234.5` → `1,234.50`). The
   value is a number (or null when empty). A form control: `required` and `min` validate it.
+  With `disabled`, or inside a disabled <fieldset>, it can't be typed in and isn't submitted.
   @fires valuechange - The amount changed; `detail` is the number, or null.
 -->
 <script>
-  import { validity } from '@zubra/runtime'
+  import { effect, host, validity } from '@zubra/runtime'
+
+  // `disabled` set from code (el.disabled = true) also goes on the element as the attribute, which
+  // is where the browser looks: it leaves a disabled control out of the form. A disabled
+  // <fieldset> needs nothing here; the browser disables the controls inside it too.
+  const element = host()
+  effect(() => element.toggleAttribute('disabled', disabled))
 
   const format = (amount) => (amount == null ? "" : amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }))
   let text = format(value)
@@ -40,10 +47,10 @@
   .error { margin: 0.35rem 0 0; color: var(--destructive, #d92d20); font-size: 0.875rem; }
   input { flex: 1; min-width: 0; padding: 0.55rem 0.7rem 0.55rem 0.3rem; border: 0; outline: 0; background: none; font: inherit; font-variant-numeric: tabular-nums; color: inherit; text-align: right; }
 </style>
-<money-input form-associated value:model={null} symbol="$" required={false} min={0} label="Amount">
+<money-input form-associated value:model={null} symbol="$" required={false} min={0} disabled={false} label="Amount">
   <div class="box">
     <span aria-hidden="true">{symbol}</span>
-    <input inputmode="decimal" autocomplete="off" aria-label={label} aria-invalid={bad ? "true" : "false"} placeholder="0.00" value={shown} oninput={input} onfocus={focus} onblur={() => (focused = false)}>
+    <input inputmode="decimal" autocomplete="off" aria-label={label} aria-invalid={bad ? "true" : "false"} placeholder="0.00" disabled={disabled} value={shown} oninput={input} onfocus={focus} onblur={() => (focused = false)}>
   </div>
   <p class="error" aria-live="polite">{bad ? "Enter an amount, like 12.50" : ""}</p>
 </money-input>

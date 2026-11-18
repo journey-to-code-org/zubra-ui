@@ -3,11 +3,19 @@
   Its behaviour is Zag.js's combobox machine (through @zubra/runtime/zag); its markup and styles are
   this file's. It needs `npm install @zag-js/vanilla @zag-js/combobox`. `items` is
   `[{ value, label }]`; `value` is two-way.
+  With `disabled`, or inside a disabled <fieldset>, it can't be opened or typed in and isn't
+  submitted.
   @fires valuechange - An item was picked; `detail` is its value.
 -->
 <script>
   import * as combobox from '@zag-js/combobox'
-  import { id, computed } from '@zubra/runtime'
+  import { id, computed, effect, host } from '@zubra/runtime'
+
+  // `disabled` set from code (el.disabled = true) also goes on the element as the attribute, which
+  // is where the browser looks: it leaves a disabled control out of the form. A disabled
+  // <fieldset> needs nothing here; the browser disables the controls inside it too.
+  const element = host()
+  effect(() => element.toggleAttribute('disabled', disabled))
   import { useMachine, normalizeProps } from '@zubra/runtime/zag'
 
   let query = ""
@@ -20,6 +28,7 @@
     collection,
     value: value ? [value] : [],
     placeholder,
+    disabled,
     onInputValueChange: (details) => { query = details.inputValue },
     // Opened from the button or the arrow keys: show everything, as Zag's own examples do.
     onOpenChange: (details) => { if (details.open && details.reason !== "input-change") query = "" },
@@ -41,7 +50,7 @@
   li[data-highlighted] { background: var(--accent, #f2f4f8); }
   li[data-state=checked] { font-weight: 700; }
 </style>
-<combo-box form-associated value:model="" label="" placeholder="" items={[]}>
+<combo-box form-associated value:model="" label="" placeholder="" items={[]} disabled={false}>
   <div {...api.getRootProps()}>
     <label {...api.getLabelProps()}>{label}</label>
     <div {...api.getControlProps()}>

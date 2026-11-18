@@ -1,10 +1,18 @@
 <!--
   A list of tags you type: Enter or comma adds one, Backspace in the empty field removes the
   last, × removes any. Suggestions come from `suggestions`. A form control.
+  With `disabled`, or inside a disabled <fieldset>, no tag can be added or removed and none are
+  submitted.
   @fires valuechange - The tags changed; `detail` is the new array.
 -->
 <script>
-  import { formValue, id } from '@zubra/runtime'
+  import { effect, formValue, host, id } from '@zubra/runtime'
+
+  // `disabled` set from code (el.disabled = true) also goes on the element as the attribute, which
+  // is where the browser looks: it leaves a disabled control out of the form. A disabled
+  // <fieldset> needs nothing here; the browser disables the controls inside it too.
+  const element = host()
+  effect(() => element.toggleAttribute('disabled', disabled))
 
   const listId = id()
   let draft = ""
@@ -54,16 +62,18 @@
   .box:focus-within { outline: 2px solid var(--primary, #4f5df5); outline-offset: 1px; }
   .tag { display: inline-flex; align-items: center; gap: 0.15rem; padding: 0.1rem 0.2rem 0.1rem 0.5rem; border-radius: calc(var(--radius, 0.625rem) * 0.64); background: var(--chip, var(--secondary, #f4f4f5)); color: var(--chip-ink, var(--secondary-foreground, #18181b)); font-size: 0.8125rem; font-weight: 600; }
   .tag button { display: inline-grid; place-items: center; min-width: 1.5rem; min-height: 1.5rem; border: 0; border-radius: calc(var(--radius, 0.625rem) * 0.48); background: none; color: inherit; padding: 0; cursor: pointer; font: inherit; font-size: 1rem; }
+  .tag button:disabled { cursor: not-allowed; }
+  :host([disabled]) .box { opacity: 0.55; }
   .tag button:hover { background: color-mix(in oklab, currentColor 12%, transparent); }
   input { flex: 1; min-width: 7rem; border: 0; outline: 0; padding: 0.3rem; font: inherit; background: none; color: inherit; }
   .hint { margin: 0.3rem 0 0; font-size: 0.75rem; color: var(--muted-foreground, #667085); }
 </style>
-<tag-input form-associated value:model={[]} suggestions={[]} max={6} label="Tags">
+<tag-input form-associated value:model={[]} suggestions={[]} max={6} disabled={false} label="Tags">
   <div class="box">
     <zb-each items={value} as="tag" key={tag}>
-      <span class="tag">{tag}<button type="button" aria-label={`Remove ${tag}`} onclick={() => remove(tag)}>×</button></span>
+      <span class="tag">{tag}<button type="button" aria-label={`Remove ${tag}`} disabled={disabled} onclick={() => remove(tag)}>×</button></span>
     </zb-each>
-    <input aria-label={label} list={listId} placeholder={value.length >= max ? "" : "Add a tag…"} ref={input} readonly={value.length >= max} value={draft} oninput={(event) => (draft = event.target.value)} onkeydown={key} onpaste={paste} onblur={() => draft.trim() && add(draft)} onchange={(event) => offered.includes(event.target.value) && add(event.target.value)}>
+    <input aria-label={label} list={listId} placeholder={value.length >= max ? "" : "Add a tag…"} ref={input} readonly={value.length >= max} disabled={disabled} value={draft} oninput={(event) => (draft = event.target.value)} onkeydown={key} onpaste={paste} onblur={() => draft.trim() && add(draft)} onchange={(event) => offered.includes(event.target.value) && add(event.target.value)}>
     <datalist id={listId}><zb-each items={offered} as="tag" key={tag}><option value={tag}></option></zb-each></datalist>
   </div>
   <p class="hint" aria-live="polite">{value.length >= max ? `That's the most tags (${max}). Remove one to add another.` : `Press Enter after each tag. ${value.length} of ${max}.`}</p>

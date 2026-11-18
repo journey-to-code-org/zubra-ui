@@ -1,10 +1,17 @@
 <!--
   A star rating that is a form control: it submits its value under its `name`, is invalid while
   `required` and unset, and goes back to 0 when its form resets. `readonly` shows a rating.
+  With `disabled`, or inside a disabled <fieldset>, it can't be rated and isn't submitted.
   @fires valuechange - The user picked a rating; `detail` is the number of stars.
 -->
 <script>
-  import { formValue, validity } from '@zubra/runtime'
+  import { effect, formValue, host, validity } from '@zubra/runtime'
+
+  // `disabled` set from code (el.disabled = true) also goes on the element as the attribute, which
+  // is where the browser looks: it leaves a disabled control out of the form. A disabled
+  // <fieldset> needs nothing here; the browser disables the controls inside it too.
+  const element = host()
+  effect(() => element.toggleAttribute('disabled', disabled))
 
   let hovered = 0
   const shown = hovered || value
@@ -14,7 +21,7 @@
   validity(() => (required && !value ? "Pick a rating" : ""))
 
   function rate(stars) {
-    if (readonly) return
+    if (readonly || disabled) return
     value = stars
   }
 </script>
@@ -25,11 +32,12 @@
   button { font: inherit; font-size: 1.5rem; line-height: 1; min-width: 2rem; min-height: 2rem; padding: 0; border: 0; background: none; color: color-mix(in oklab, var(--muted-foreground, #71717a) 80%, transparent); cursor: pointer; }
   button.on { color: var(--primary, #e07a2f); }
   :host([readonly]) button { cursor: default; font-size: 1rem; }
+  button:disabled { opacity: 0.55; cursor: not-allowed; }
 </style>
-<star-rating form-associated value:model={0} max={5} required={false} readonly={false} label="Rating">
+<star-rating form-associated value:model={0} max={5} required={false} readonly={false} disabled={false} label="Rating">
   <span role="group" aria-label={label}>
   <zb-each items={stars} as="n" key={n}>
-    <button type="button" class:on={n <= shown} aria-label={`${n} of ${max}`} aria-pressed={n === value ? "true" : "false"} onclick={() => rate(n)} onmouseenter={() => (hovered = readonly ? 0 : n)} onmouseleave={() => (hovered = 0)}>★</button>
+    <button type="button" class:on={n <= shown} aria-label={`${n} of ${max}`} aria-pressed={n === value ? "true" : "false"} disabled={disabled} onclick={() => rate(n)} onmouseenter={() => (hovered = readonly || disabled ? 0 : n)} onmouseleave={() => (hovered = 0)}>★</button>
   </zb-each>
   </span>
 </star-rating>

@@ -2,12 +2,22 @@
   A number with − and + buttons, between `min` and `max`. A form control. `editable` lets the
   number be typed as well (a stock count of 40 shouldn't take forty presses); what's typed is
   clamped to `min`..`max` when the field is left.
+  With `disabled`, or inside a disabled <fieldset>, it can't be stepped and isn't submitted.
   @fires valuechange - The value changed; `detail` is the new value.
 -->
 <script>
+  import { effect, host } from '@zubra/runtime'
+
+  // `disabled` set from code (el.disabled = true) also goes on the element as the attribute, which
+  // is where the browser looks: it leaves a disabled control out of the form. A disabled
+  // <fieldset> needs nothing here; the browser disables the controls inside it too.
+  const element = host()
+  effect(() => element.toggleAttribute('disabled', disabled))
+
   // A value set from code is shown clamped to min..max (and a non-number as min).
   const shown = Number.isFinite(Number(value)) ? Math.min(max, Math.max(min, Number(value))) : min
   function step(by) {
+    if (disabled) return
     const next = Math.min(max, Math.max(min, shown + by))
     if (next === value) return
     value = next
@@ -24,13 +34,15 @@
   button { width: 2.25rem; height: 2.25rem; border-radius: 50%; border: 1px solid var(--border, #ccd); background: var(--card, #fff); font: inherit; font-size: 1.125rem; cursor: pointer; }
   /* aria-disabled, not disabled: a disabled button would drop keyboard focus at the limit. */
   button[aria-disabled=true] { opacity: 0.5; cursor: default; }
+  /* `disabled` itself: the whole control is off. */
+  button:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
   output { min-width: 2ch; text-align: center; font-weight: 700; font-variant-numeric: tabular-nums; }
   input { width: calc(4ch + 1.2rem); padding: 0.35rem 0.4rem; border: 1px solid var(--border, #ccd); border-radius: calc(var(--radius, 0.625rem) * 0.8); background: var(--background, #fff); color: inherit; font: inherit; font-weight: 700; font-variant-numeric: tabular-nums; text-align: center; appearance: textfield; }
   input::-webkit-inner-spin-button, input::-webkit-outer-spin-button { appearance: none; margin: 0; }
 </style>
-<quantity-stepper form-associated value:model={1} min={0} max={10} label="Quantity" editable={false}>
-  <button type="button" class="less" aria-label={`Fewer ${label}`} aria-disabled={shown <= min ? "true" : "false"} onclick={() => step(-1)}>−</button>
-  <input zb-if={editable} type="number" inputmode="numeric" min={min} max={max} step="1" aria-label={label} value={shown} onchange={typed} onkeydown.enter={typed}>
+<quantity-stepper form-associated value:model={1} min={0} max={10} label="Quantity" editable={false} disabled={false}>
+  <button type="button" class="less" aria-label={`Fewer ${label}`} aria-disabled={shown <= min ? "true" : "false"} disabled={disabled} onclick={() => step(-1)}>−</button>
+  <input zb-if={editable} type="number" inputmode="numeric" min={min} max={max} step="1" aria-label={label} disabled={disabled} value={shown} onchange={typed} onkeydown.enter={typed}>
   <output zb-else aria-live="polite" aria-label={label}>{shown}</output>
-  <button type="button" class="more" aria-label={`More ${label}`} aria-disabled={shown >= max ? "true" : "false"} onclick={() => step(1)}>+</button>
+  <button type="button" class="more" aria-label={`More ${label}`} aria-disabled={shown >= max ? "true" : "false"} disabled={disabled} onclick={() => step(1)}>+</button>
 </quantity-stepper>

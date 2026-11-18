@@ -1,10 +1,18 @@
 <!--
   A check-in and check-out date, as one value `{ start, end }` ("YYYY-MM-DD" strings). A form
   control: invalid until both are set and `end` is after `start`.
+  With `disabled`, or inside a disabled <fieldset>, neither date can be changed and it isn't
+  submitted.
   @fires valuechange - Either date changed; `detail` is the new `{ start, end }`.
 -->
 <script>
-  import { formValue, validity, id } from '@zubra/runtime'
+  import { effect, formValue, host, validity, id } from '@zubra/runtime'
+
+  // `disabled` set from code (el.disabled = true) also goes on the element as the attribute, which
+  // is where the browser looks: it leaves a disabled control out of the form. A disabled
+  // <fieldset> needs nothing here; the browser disables the controls inside it too.
+  const element = host()
+  effect(() => element.toggleAttribute('disabled', disabled))
 
   const startId = id()
   const endId = id()
@@ -39,12 +47,12 @@
   .error:empty { display: none; }
   .nights { padding: 0.55rem 0.8rem; border-radius: 999px; background: var(--chip, var(--secondary, #f4f4f5)); color: var(--chip-ink, var(--secondary-foreground, #18181b)); font-weight: 700; white-space: nowrap; }
 </style>
-<date-range form-associated value:model={{ start: "", end: "" }} min="">
+<date-range form-associated value:model={{ start: "", end: "" }} min="" disabled={false}>
   <label for={startId}>Check-in
-    <input id={startId} type="date" class="start" min={min} value={value.start} onchange={(event) => set("start", event.target.value)}>
+    <input id={startId} type="date" class="start" min={min} disabled={disabled} value={value.start} onchange={(event) => set("start", event.target.value)}>
   </label>
   <label for={endId}>Check-out
-    <input id={endId} type="date" class="end" min={nextDay(value.start)} value={value.end} onchange={(event) => set("end", event.target.value)}>
+    <input id={endId} type="date" class="end" min={nextDay(value.start)} disabled={disabled} value={value.end} onchange={(event) => set("end", event.target.value)}>
   </label>
   <span class="nights" aria-live="polite">{nights > 0 ? `${nights} night${nights === 1 ? "" : "s"}` : "—"}</span>
   <p class="error" aria-live="polite">{wrongOrder ? "Check-out must be after check-in" : ""}</p>
