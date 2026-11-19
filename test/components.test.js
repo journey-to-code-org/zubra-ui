@@ -531,6 +531,21 @@ async function inForm(page, markup) {
 }
 const submit = (page) => page.evaluate(() => { window.submitted = null; document.querySelector('#test-form').requestSubmit(); return window.submitted; });
 
+test('choice-cards: a card has a detail line and a price row only when its item does', async () => {
+  const { page, element, problems } = await open('choice-cards');
+  await element.evaluate((el) => {
+    el.items = [{ id: 'plain', title: 'Plain' }, { id: 'full', title: 'Full', detail: 'With everything', note: 'Popular', price: '$5' }];
+  });
+  await page.waitForTimeout(50);
+  const parts = await element.evaluate((el) => [...el.querySelectorAll('[role="radio"]')].map((card) => [card.querySelector('strong').textContent, !!card.querySelector('.detail'), !!card.querySelector('.row')]));
+  assert.deepEqual(parts, [['Plain', false, false], ['Full', true, true]]);
+  // A title-only card is no taller than its title needs.
+  const [plain, title] = await element.evaluate((el) => { const card = el.querySelector('[role="radio"]'); return [card.getBoundingClientRect().height, card.querySelector('strong').getBoundingClientRect().height]; });
+  assert.ok(plain < title + 40, `a title-only card is ${plain}px for a ${title}px title`);
+  assert.deepEqual(problems, []);
+  await page.close();
+});
+
 test('action-button: submits its form, and while loading it is busy and does nothing', async () => {
   const { page, problems } = await open('action-button');
   const form = await inForm(page, '<input name="q" value="x"><action-button type="submit" name="intent" value="save">Save</action-button>');

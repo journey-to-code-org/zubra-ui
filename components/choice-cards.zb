@@ -1,6 +1,7 @@
 <!--
   Pick one of several cards: a radio group. A form control; arrow keys move the choice.
-  Each item is `{ id, title, detail, price, note }` (`note` and `price` optional).
+  Each item is `{ id, title, detail, price, note }` (`detail`, `note` and `price` optional: a card
+  without them is only as tall as its title).
   With `disabled`, or inside a disabled <fieldset>, no card can be chosen and the choice isn't
   submitted (one item's own `disabled` still turns off just that card).
   @fires valuechange - The choice changed; `detail` is the chosen id.
@@ -48,8 +49,8 @@
   <zb-each items={items} as="item" index="index" key={item.id}>
     <button type="button" role="radio" data-id={item.id} aria-checked={item.id === value ? "true" : "false"} tabindex={item.id === value || (!value && index === 0) ? "0" : "-1"} disabled={disabled || (item.disabled ?? false)} onclick={() => choose(item)} onkeydown.down.right.prevent={() => move(index, 1)} onkeydown.up.left.prevent={() => move(index, -1)}>
       <strong>{item.title}</strong>
-      <span class="detail">{item.detail}</span>
-      <span class="row"><span class="note">{item.note ?? ""}</span><span class="price">{item.price ?? ""}</span></span>
+      <span zb-if={item.detail} class="detail">{item.detail}</span>
+      <span zb-if={item.note || item.price} class="row"><span class="note">{item.note ?? ""}</span><span class="price">{item.price ?? ""}</span></span>
     </button>
   </zb-each>
   </div>
