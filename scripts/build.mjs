@@ -13,7 +13,7 @@
 //   dist/themes/sets/<name>.css a scoped theme (data-theme="<name>"), from themes/sets/<name>.json
 //   dist/r/themes/<name>.json   that theme as a registry item
 //
-//   node scripts/build.mjs [--base-url https://example.github.io/wcl] [--out dist]
+//   node scripts/build.mjs [--base-url https://zubra-js.github.io/zubra-ui] [--out dist]
 //
 // --base-url is where dist/ will be served: registry items name their dependencies (the theme, other
 // components) by URL. It defaults to $ZUBRA_UI_URL, then http://127.0.0.1:4174 (scripts/serve.mjs).
